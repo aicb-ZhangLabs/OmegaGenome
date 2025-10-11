@@ -1,0 +1,37 @@
+[project]
+name = "omega-genome"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "accelerate==1.10.1",
+    "bpnet-pytorch>=0.0.2",
+    "ipython>=9.6.0",
+    "nntool==1.8.0",
+    "numpy==1.26.4",
+    "pydantic==2.10.6",
+    "scikit-learn>=1.7.2",
+    "torch==2.6.0",
+    "transformers>=4.57.0",
+    "tyro>=0.9.33",
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu118", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+    { index = "pytorch-cu118", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+nntool = [{ index = "nntool", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu118"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true
+
+[[tool.uv.index]]
+name = "nntool"
+url = "https://jhliu17.github.io/nntool/wheel/"
+format = "flat"
