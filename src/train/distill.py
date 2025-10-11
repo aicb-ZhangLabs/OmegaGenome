@@ -1,25 +1,16 @@
 import tyro
 
-from dataclasses import dataclass, replace
+from dataclasses import replace
 
-from ..model.glm import build_glm, GLMConfig
-from ..model.bpnet_classifier import BPNetClassifier, BPNetClassifierConfig
+from ..model.glm import build_glm
+from ..model.bpnet_classifier import BPNetClassifier
 from ..data.dataset import (
-    DatasetConfig,
     get_num_labels,
     build_data_splits,
 )
-from ..trainer.distill_trainer import DistillTrainerConfig, train_distill_task
-from .utils import get_best_checkpoint
-
-
-@dataclass
-class DistillationExperimentConfig:
-    dataset_config: DatasetConfig
-    teacher_config: GLMConfig
-    teacher_parent_dir: str
-    student_config: BPNetClassifierConfig
-    trainer_config: DistillTrainerConfig
+from ..trainer.distill_trainer import train_distill_task, get_best_checkpoint
+from config.distillation.config import configs
+from config.distillation.config_schema import DistillationExperimentConfig
 
 
 def distill(config: DistillationExperimentConfig):
@@ -67,5 +58,5 @@ def distill(config: DistillationExperimentConfig):
 
 
 if __name__ == "__main__":
-    config = tyro.cli(DistillationExperimentConfig)
+    config = tyro.extras.overridable_config_cli(configs, sort_subcommands=True)
     distill(config)
