@@ -327,6 +327,22 @@ def train_distill_task(
         step=global_step,
     )
 
+    # Best test evaluation
+    best_dir = os.path.join(run_dir, "best_model")
+    best_test_metrics = None
+    if os.path.exists(best_dir):
+        best_model_state_dict = torch.load(os.path.join(best_dir, "student.pt"))
+        best_model = model.load_state_dict(best_model_state_dict)
+        best_model.to(config.device)
+        best_test_metrics = evaluate(best_model, test_loader, config.device)
+        wandb.log(
+            {
+                "best_test/f1": best_test_metrics["f1"],
+                "best_test/mcc": best_test_metrics["mcc"],
+            },
+            step=global_step,
+        )
+
     # Save training history
     with open(os.path.join(run_dir, "training_history.json"), "w") as f:
         json.dump(training_history, f, indent=2)
@@ -338,6 +354,12 @@ def train_distill_task(
         "best_val_mcc": float(best_val_mcc),
         "final_test_mcc": float(test_metrics["mcc"]),
         "final_test_f1": float(test_metrics["f1"]),
+        "best_test_mcc": float(best_test_metrics["mcc"])
+        if best_test_metrics is not None
+        else None,
+        "best_test_f1": float(best_test_metrics["f1"])
+        if best_test_metrics is not None
+        else None,
         "total_epochs": config.epochs,
         "hyperparameters": {
             "weight_ce": config.weight_ce,
@@ -362,11 +384,38 @@ def train_distill_task(
         w.writerow(["best_val_mcc", f"{best_val_mcc:.4f}"])
         w.writerow(["final_test_mcc", f"{test_metrics['mcc']:.4f}"])
         w.writerow(["final_test_f1", f"{test_metrics['f1']:.4f}"])
+        w.writerow(
+            [
+                "best_test_mcc",
+                f"{best_test_metrics['mcc']:.4f}"
+                if best_test_metrics is not None
+                else None,
+            ]
+        )
+        w.writerow(
+            [
+                "best_test_f1",
+                f"{best_test_metrics['f1']:.4f}"
+                if best_test_metrics is not None
+                else None,
+            ]
+        )
 
     print(f"\n{'=' * 60}")
     print(f"Training completed for {task_name}")
     print(f"Best epoch: {best_epoch} (val_mcc: {best_val_mcc:.4f})")
     print(f"Final test MCC: {test_metrics['mcc']:.4f}")
+    print(f"Final test F1: {test_metrics['f1']:.4f}")
+    print(
+        f"Best test MCC: {best_test_metrics['mcc']:.4f}"
+        if best_test_metrics is not None
+        else None
+    )
+    print(
+        f"Best test F1: {best_test_metrics['f1']:.4f}"
+        if best_test_metrics is not None
+        else None
+    )
     print(f"Results saved to: {run_dir}")
     print(f"{'=' * 60}\n")
 
