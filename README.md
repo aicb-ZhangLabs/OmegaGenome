@@ -6,6 +6,8 @@
 uv sync
 ```
 
+Set up the `env.toml` file. A template is provided in `env_sample.toml`.
+
 ## Training
 
 ### Finetuning
