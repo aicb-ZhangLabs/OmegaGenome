@@ -3,21 +3,24 @@ import tyro
 from dataclasses import replace
 from nntool.slurm import slurm_fn
 
+from config.distillation.config import configs
+from config.distillation.config_schema import DistillationExperimentConfig
+from accelerate.utils import set_seed
 from ..model.glm import build_glm
 from ..model.bpnet_classifier import BPNetClassifier
 from ..data.dataset import (
     get_num_labels,
-    build_data_splits,
+    build_data_splits_from_huggingface,
 )
 from ..trainer.distill_trainer import train_distill_task, get_best_checkpoint
-from config.distillation.config import configs
-from config.distillation.config_schema import DistillationExperimentConfig
 
 
 @slurm_fn
 def distill(config: DistillationExperimentConfig, task_name: str):
     print(f"\n=== Distilling {task_name} ===")
+    set_seed(config.random_state)
 
+    # load teacher model
     teacher_ckpt = get_best_checkpoint(config.teacher_parent_dir, task_name)
     if teacher_ckpt is None:
         print(f"[!] No teacher checkpoint for {task_name}, skipping.")
@@ -27,6 +30,7 @@ def distill(config: DistillationExperimentConfig, task_name: str):
     teacher_tokenizer, teacher_model = build_glm(teacher_config)
     teacher_model.eval()
 
+    # build student model
     num_labels = get_num_labels(task_name)
     teacher_hidden = teacher_model.config.hidden_size
     model = BPNetClassifier(
@@ -38,7 +42,7 @@ def distill(config: DistillationExperimentConfig, task_name: str):
     )
 
     # build data splits
-    X_train, y_train, X_val, y_val, X_test, y_test = build_data_splits(
+    X_train, y_train, X_val, y_val, X_test, y_test = build_data_splits_from_huggingface(
         config.dataset_config
     )
 

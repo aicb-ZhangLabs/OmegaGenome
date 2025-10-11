@@ -16,3 +16,4 @@ class DistillationExperimentConfig:
     student_config: BPNetClassifierConfig
     trainer_config: DistillTrainerConfig
     slurm_config: SlurmConfig
+    random_state: int = 42
