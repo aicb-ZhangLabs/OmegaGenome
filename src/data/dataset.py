@@ -3,7 +3,7 @@ import csv
 import torch
 import numpy as np
 
-from typing import List, Literal
+from typing import Literal
 from torch.utils.data import Dataset
 from dataclasses import dataclass
 from sklearn.model_selection import train_test_split
@@ -37,27 +37,25 @@ def read_csv_split(split_csv):
 
 @dataclass
 class DatasetConfig:
-    task_name: List[
-        Literal[
-            "H2AFZ",
-            "H3K27ac",
-            "H3K27me3",
-            "H3K36me3",
-            "H3K4me1",
-            "H3K4me2",
-            "H3K4me3",
-            "H3K9ac",
-            "H3K9me3",
-            "H4K20me1",
-            "promoter_all",
-            "promoter_tata",
-            "promoter_no_tata",
-            "enhancers",
-            "enhancers_types",
-            "splice_sites_all",
-            "splice_sites_acceptors",
-            "splice_sites_donors",
-        ]
+    task_name: Literal[
+        "H2AFZ",
+        "H3K27ac",
+        "H3K27me3",
+        "H3K36me3",
+        "H3K4me1",
+        "H3K4me2",
+        "H3K4me3",
+        "H3K9ac",
+        "H3K9me3",
+        "H4K20me1",
+        "promoter_all",
+        "promoter_tata",
+        "promoter_no_tata",
+        "enhancers",
+        "enhancers_types",
+        "splice_sites_all",
+        "splice_sites_acceptors",
+        "splice_sites_donors",
     ]
     data_path: str
     random_state: int = 42

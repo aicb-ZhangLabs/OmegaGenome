@@ -8,3 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Environment variables
+data
+output
+env.toml
+
+!src/data
