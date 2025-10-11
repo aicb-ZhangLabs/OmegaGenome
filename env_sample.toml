@@ -1,0 +1,8 @@
+[project]
+path = "YOUR_PROJECT_PATH"
+
+[slurm]
+mode = 'slurm'
+job_name = "distill"
+partition = "zhanglab.p"
+node_list = "galaxy,laniakea"

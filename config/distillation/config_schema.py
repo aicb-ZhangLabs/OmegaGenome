@@ -5,6 +5,7 @@ from src.data.dataset import (
     DatasetConfig,
 )
 from src.trainer.distill_trainer import DistillTrainerConfig
+from nntool.slurm import SlurmConfig
 
 
 @dataclass
@@ -14,3 +15,4 @@ class DistillationExperimentConfig:
     teacher_parent_dir: str
     student_config: BPNetClassifierConfig
     trainer_config: DistillTrainerConfig
+    slurm_config: SlurmConfig
