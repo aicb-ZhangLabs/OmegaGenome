@@ -1,3 +1,7 @@
+import os
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 import tyro
 
 from dataclasses import replace
@@ -12,7 +16,8 @@ from ..data.dataset import (
     get_num_labels,
     build_data_splits_from_huggingface,
 )
-from ..trainer.distill_trainer import train_distill_task, get_best_checkpoint
+from ..trainer.distill_trainer import train_distill_task
+from ..trainer.utils import get_best_checkpoint
 
 
 @slurm_fn

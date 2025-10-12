@@ -195,21 +195,6 @@ wheels = [
 ]
 
 [[package]]
-name = "bpnet-pytorch"
-version = "0.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "einops" },
-    { name = "numpy" },
-    { name = "torch", version = "2.6.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
-    { name = "torch", version = "2.6.0+cu118", source = { registry = "https://download.pytorch.org/whl/cu118" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/57/50/fdd9b2d7596b862cd7521025112844c79568d596b2b071662136c972bd7d/bpnet-pytorch-0.0.2.tar.gz", hash = "sha256:2c22ba700fb613aa706469cf309590d2851e68dcbe3599a1658b17643031dc08", size = 4358, upload-time = "2023-02-22T15:43:47.529Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2f/2a/3f861c84753c20eeedfaeb7ddec574bfb9e04b7060816efaa53770d7d15d/bpnet_pytorch-0.0.2-py3-none-any.whl", hash = "sha256:640b042773e937cf4cd2575e98c06d52c68b8db5419d990e119d1fcdffae9258", size = 4932, upload-time = "2023-02-22T15:43:46.366Z" },
-]
-
-[[package]]
 name = "certifi"
 version = "2025.10.5"
 source = { registry = "https://pypi.org/simple" }
@@ -1415,8 +1400,8 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "accelerate" },
-    { name = "bpnet-pytorch" },
     { name = "datasets" },
+    { name = "einops" },
     { name = "ipython" },
     { name = "nntool" },
     { name = "numpy" },
@@ -1431,8 +1416,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", specifier = "==1.10.1" },
-    { name = "bpnet-pytorch", specifier = ">=0.0.2" },
     { name = "datasets", specifier = ">=4.2.0" },
+    { name = "einops", specifier = ">=0.8.1" },
     { name = "ipython", specifier = ">=9.6.0" },
     { name = "nntool", marker = "sys_platform != 'linux'", specifier = "==1.8.0" },
     { name = "nntool", marker = "sys_platform == 'linux'", specifier = "==1.8.0", index = "https://jhliu17.github.io/nntool/wheel/" },

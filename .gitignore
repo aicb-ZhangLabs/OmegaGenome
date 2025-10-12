@@ -13,5 +13,5 @@ wheels/
 data
 output
 env.toml
-
+wandb/
 !src/data

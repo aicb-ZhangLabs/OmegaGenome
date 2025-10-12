@@ -6,4 +6,4 @@ project_path = env["project"]["path"]
 
 dataset_path = f"{project_path}/datasets"
 
-output_path, _ = get_output_path(f"{project_path}/outputs")
+output_path, _ = get_output_path(f"{project_path}/output")

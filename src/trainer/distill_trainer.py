@@ -1,6 +1,5 @@
 import os
 import csv
-import datetime
 import time
 import json
 import torch
@@ -9,6 +8,7 @@ import numpy as np
 import wandb
 import shutil
 
+from datetime import datetime
 from dataclasses import dataclass, asdict
 from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score, matthews_corrcoef
@@ -331,10 +331,11 @@ def train_distill_task(
     best_dir = os.path.join(run_dir, "best_model")
     best_test_metrics = None
     if os.path.exists(best_dir):
-        best_model_state_dict = torch.load(os.path.join(best_dir, "student.pt"))
-        best_model = model.load_state_dict(best_model_state_dict)
-        best_model.to(config.device)
-        best_test_metrics = evaluate(best_model, test_loader, config.device)
+        best_model_state_dict = torch.load(
+            os.path.join(best_dir, "student.pt"), map_location=config.device
+        )
+        _ = model.load_state_dict(best_model_state_dict)
+        best_test_metrics = evaluate(model, test_loader, config.device)
         wandb.log(
             {
                 "best_test/f1": best_test_metrics["f1"],

@@ -1,7 +1,7 @@
 import torch.nn.functional as F
 from typing import Optional
 from torch import nn
-from bpnet_pytorch import BPNet
+from .nn.bpnet_pytorch import BPNet
 from dataclasses import dataclass
 
 

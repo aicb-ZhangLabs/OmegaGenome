@@ -19,4 +19,5 @@ basic_distillation_slurm = SlurmConfig(
     cpus_per_task=4,
     gpus_per_task=1,
     output_parent_path=output_path,
+    mem="256GB",
 )

@@ -1,6 +1,8 @@
 import os
 import torch
 
+from tqdm import tqdm
+
 
 def get_best_checkpoint(parent_dir, task_name):
     task_dir = os.path.join(parent_dir, task_name)
@@ -27,7 +29,9 @@ def precompute_teacher_logits(
     # Debug flag to print structure once
     debug_printed = False
 
-    for i in range(0, len(sequences), batch_size):
+    for i in tqdm(
+        range(0, len(sequences), batch_size), total=len(sequences) // batch_size
+    ):
         batch = sequences[i : i + batch_size]
         tok = tokenizer(
             batch,
