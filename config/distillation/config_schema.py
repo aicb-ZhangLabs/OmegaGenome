@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Literal, List
 from src.model.glm import GLMConfig
 from src.model.bpnet_classifier import BPNetClassifierConfig
+from src.model.distillation import DistillationModelConfig
 from src.data.dataset import (
     DatasetConfig,
 )
@@ -38,6 +39,7 @@ class DistillationExperimentConfig:
     teacher_config: GLMConfig
     teacher_parent_dir: str
     student_config: BPNetClassifierConfig
+    distillation_config: DistillationModelConfig
     trainer_config: DistillTrainerConfig
     slurm_config: SlurmConfig
     random_state: int = 42

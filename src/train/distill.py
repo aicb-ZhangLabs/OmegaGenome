@@ -12,6 +12,7 @@ from config.distillation.config_schema import DistillationExperimentConfig
 from accelerate.utils import set_seed
 from ..model.glm import build_glm
 from ..model.bpnet_classifier import BPNetClassifier
+from ..model.distillation import DistillationModel
 from ..data.dataset import (
     get_num_labels,
     build_data_splits_from_huggingface,
@@ -46,6 +47,14 @@ def distill(config: DistillationExperimentConfig, task_name: str):
         )
     )
 
+    # build distillation model
+    distillation_model = DistillationModel(
+        config.distillation_config,
+        teacher_model,
+        model,
+        config.trainer_config.device,
+    )
+
     # build data splits
     X_train, y_train, X_val, y_val, X_test, y_test = build_data_splits_from_huggingface(
         config.dataset_config
@@ -54,10 +63,12 @@ def distill(config: DistillationExperimentConfig, task_name: str):
     # train
     train_distill_task(
         config.trainer_config,
+        config.distillation_config,
         task_name,
         teacher_tokenizer,
         teacher_model,
         model,
+        distillation_model,
         X_train,
         y_train,
         X_val,

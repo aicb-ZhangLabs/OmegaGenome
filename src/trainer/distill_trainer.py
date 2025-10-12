@@ -15,6 +15,7 @@ from sklearn.metrics import f1_score, matthews_corrcoef
 from transformers import PreTrainedTokenizer
 from typing import List
 
+from ..model.distillation import DistillationModel, DistillationModelConfig
 from .utils import precompute_teacher_logits
 from ..data.dataset import (
     SeqDataset,
@@ -106,11 +107,6 @@ class DistillTrainerConfig:
     batch_size: int = 8
     lr: float = 1e-4
     max_len: int = 1024
-    weight_ce: float = 0.5
-    weight_kl: float = 0.5
-    weight_mse: float = 0.0
-    temperature: float = 2.0
-    zscore: bool = False
     log_batch_every: int = 50
     eval_every_n_epochs: int = 5
     num_workers: int = 4
@@ -119,10 +115,12 @@ class DistillTrainerConfig:
 
 def train_distill_task(
     config: DistillTrainerConfig,
+    distillation_config: DistillationModelConfig,
     task_name: str,
     teacher_tokenizer: PreTrainedTokenizer,
     teacher_model: torch.nn.Module,
     model: torch.nn.Module,
+    distillation_model: DistillationModel,
     X_train: List[str],
     y_train: List[int],
     X_val: List[str],
@@ -133,8 +131,9 @@ def train_distill_task(
     # move models to device
     model.to(config.device)
     teacher_model.to(config.device)
+    distillation_model.to(config.device)
 
-    needs_features = config.weight_mse > 0
+    needs_features = distillation_config.weight_mse > 0
     if needs_features:
         print("Precomputing teacher logits and features...")
     else:
@@ -171,10 +170,10 @@ def train_distill_task(
     run_dir = create_run_directory(
         config.output_dir,
         task_name,
-        config.weight_ce,
-        config.weight_kl,
-        config.weight_mse,
-        config.temperature,
+        distillation_config.weight_ce,
+        distillation_config.weight_kl,
+        distillation_config.weight_mse,
+        distillation_config.temperature,
     )
     print(f"Run directory: {run_dir}")
 
@@ -188,7 +187,7 @@ def train_distill_task(
         json.dump(hyperparams, f, indent=2)
 
     # WandB setup
-    prefix = f"wCE{config.weight_ce}_wKL{config.weight_kl}_wMSE{config.weight_mse}_T{config.temperature}"
+    prefix = f"wCE{distillation_config.weight_ce}_wKL{distillation_config.weight_kl}_wMSE{distillation_config.weight_mse}_T{distillation_config.temperature}"
     run_name = f"{task_name}_{prefix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     wandb.init(project=config.wandb_project, name=run_name, config=asdict(config))
     wandb.watch(model, log="all", log_freq=100)
@@ -208,64 +207,19 @@ def train_distill_task(
         total_loss = 0.0
 
         for batch in train_loader:
-            ids, labs = batch[0].to(config.device), batch[1].to(config.device)
-            tlog = (
-                batch[2].to(config.device)
-                if len(batch) > 2 and config.weight_kl > 0
-                else None
-            )
-            tfeats = (
-                batch[3].to(config.device)
-                if len(batch) > 3 and config.weight_mse > 0
-                else None
-            )
-
             optimizer.zero_grad()
-            s_logits, s_feats = model(ids, return_feats=True)
-
-            ce = F.cross_entropy(s_logits, labs)
-            loss = config.weight_ce * ce
-
-            if config.weight_kl > 0 and tlog is not None:
-                if config.zscore:
-                    m = s_logits.mean(dim=-1, keepdims=True)
-                    sd = s_logits.std(dim=-1, keepdims=True) + 1e-6
-                    s_dist = (s_logits - m) / sd
-                else:
-                    s_dist = s_logits / config.temperature
-                t_dist = tlog / config.temperature
-                kl = F.kl_div(
-                    F.log_softmax(s_dist, dim=-1),
-                    F.softmax(t_dist, dim=-1),
-                    reduction="batchmean",
-                ) * (config.temperature**2)
-                loss += config.weight_kl * kl
-            else:
-                kl = torch.tensor(0.0, device=config.device)
-
-            if config.weight_mse > 0 and tfeats is not None:
-                # Use precomputed teacher features
-                proj = model.teacher_proj(tfeats)
-                mse = F.mse_loss(s_feats, proj)
-                loss += config.weight_mse * mse
-            else:
-                mse = torch.tensor(0.0, device=config.device)
-
+            loss, metrics = distillation_model(batch)
             loss.backward()
             optimizer.step()
 
             global_step += 1
             total_loss += loss.item()
-
             if global_step % config.log_batch_every == 0:
-                wandb.log(
-                    {
-                        "train/batch_loss": loss.item(),
-                        "train/kl": kl.item(),
-                        "train/mse": mse.item(),
-                        "step": global_step,
-                    }
-                )
+                log_dict = {
+                    "train/batch_loss": loss.item(),
+                }
+                log_dict.update({f"train/{k}": v for k, v in metrics.items()})
+                wandb.log(log_dict, step=global_step)
 
         # Epoch-end evaluation
         avg_loss = total_loss / len(train_loader)
@@ -363,10 +317,10 @@ def train_distill_task(
         else None,
         "total_epochs": config.epochs,
         "hyperparameters": {
-            "weight_ce": config.weight_ce,
-            "weight_kl": config.weight_kl,
-            "weight_mse": config.weight_mse,
-            "temperature": config.temperature,
+            "weight_ce": distillation_config.weight_ce,
+            "weight_kl": distillation_config.weight_kl,
+            "weight_mse": distillation_config.weight_mse,
+            "temperature": distillation_config.temperature,
             "lr": config.lr,
             "batch_size": config.batch_size,
         },
