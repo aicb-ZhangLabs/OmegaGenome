@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, List
 from src.model.glm import GLMConfig
 from src.model.bpnet_classifier import BPNetClassifierConfig
@@ -43,3 +43,12 @@ class DistillationExperimentConfig:
     trainer_config: DistillTrainerConfig
     slurm_config: SlurmConfig
     random_state: int = 42
+
+
+@dataclass
+class DistillationHyperparamExperimentConfig(DistillationExperimentConfig):
+    weight_ces: List[float] = field(default_factory=lambda: [1.0])
+    weight_kls: List[float] = field(default_factory=lambda: [0.0, 0.5, 1.0])
+    weight_mses: List[float] = field(default_factory=lambda: [0.0, 0.5, 1.0])
+    temperatures: List[float] = field(default_factory=lambda: [1.5, 2.0, 4.0])
+    zscores: List[bool] = field(default_factory=lambda: [False])
