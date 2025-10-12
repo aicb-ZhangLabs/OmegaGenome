@@ -90,8 +90,6 @@ def distill(config: DistillationExperimentConfig, task_name: str):
     hyperparams = asdict(config)
     hyperparams["run_dir"] = run_dir
     hyperparams["timestamp"] = datetime.now().isoformat()
-    # Convert any non-serializable types
-    hyperparams["device"] = str(hyperparams["device"])
     with open(os.path.join(run_dir, "hyperparameters.json"), "w") as f:
         json.dump(hyperparams, f, indent=2)
 
