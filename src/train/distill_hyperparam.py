@@ -13,7 +13,7 @@ from .distill import main as distill_main
 
 
 def main(config: DistillationHyperparamExperimentConfig):
-    # Cartesian product of the three lists
+    # Cartesian product
     combinations = list(
         itertools.product(
             config.weight_ces,
@@ -24,15 +24,31 @@ def main(config: DistillationHyperparamExperimentConfig):
         )
     )
 
+    # filter out the combinations where weight_kl is 0.0 and the first combination is not covered
+    # this is to avoid running the same combination multiple times
+    to_skip = set()
+    is_covered = False
+    for i, (weight_ce, weight_kl, weight_mse, temperature, zscore) in enumerate(
+        combinations
+    ):
+        if weight_kl == 0.0 and not is_covered:
+            is_covered = True
+        else:
+            to_skip.add(i)
+
+    combinations = [
+        combination for i, combination in enumerate(combinations) if i not in to_skip
+    ]
+
     print(f"Running {len(combinations)} experiments...")
-    for combination in combinations:
+    for weight_ce, weight_kl, weight_mse, temperature, zscore in combinations:
         new_distill_config = replace(
             config.distillation_config,
-            weight_ce=combination[0],
-            weight_kl=combination[1],
-            weight_mse=combination[2],
-            temperature=combination[3],
-            zscore=combination[4],
+            weight_ce=weight_ce,
+            weight_kl=weight_kl,
+            weight_mse=weight_mse,
+            temperature=temperature,
+            zscore=zscore,
         )
 
         new_experiment_config = replace(config, distillation_config=new_distill_config)

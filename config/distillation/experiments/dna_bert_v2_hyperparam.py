@@ -21,9 +21,10 @@ experiment_configs = {
             trainer_config=trainer_config,
             slurm_config=basic_distillation_slurm,
             weight_ces=[1.0],
-            weight_kls=[0.1, 0.5, 1.0],
-            weight_mses=[0.1, 0.5, 1.0],
-            temperatures=[1.5, 2.0, 4.0],
+            weight_kls=[0.0, 0.5, 1.0],
+            weight_mses=[0.0, 0.5, 1.0],
+            temperatures=[0.5, 1.0, 1.5, 2.0, 4.0],
+            zscores=[False, True],
         ),
     )
 }
