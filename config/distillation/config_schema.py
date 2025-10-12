@@ -48,7 +48,7 @@ class DistillationExperimentConfig:
 @dataclass
 class DistillationHyperparamExperimentConfig(DistillationExperimentConfig):
     weight_ces: List[float] = field(default_factory=lambda: [1.0])
-    weight_kls: List[float] = field(default_factory=lambda: [0.0, 0.5, 1.0])
-    weight_mses: List[float] = field(default_factory=lambda: [0.0, 0.5, 1.0])
+    weight_kls: List[float] = field(default_factory=lambda: [0.1, 0.5, 1.0])
+    weight_mses: List[float] = field(default_factory=lambda: [0.1, 0.5, 1.0])
     temperatures: List[float] = field(default_factory=lambda: [1.5, 2.0, 4.0])
     zscores: List[bool] = field(default_factory=lambda: [False])

@@ -3,8 +3,11 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import tyro
+import json
+import wandb
 
-from dataclasses import replace
+from datetime import datetime
+from dataclasses import replace, asdict
 from nntool.slurm import slurm_fn
 
 from config.distillation.config import configs
@@ -17,7 +20,11 @@ from ..data.dataset import (
     get_num_labels,
     build_data_splits_from_huggingface,
 )
-from ..trainer.distill_trainer import train_distill_task
+from ..trainer.distill_trainer import (
+    train_distill_task,
+    create_run_directory,
+    create_run_hyperparams_str,
+)
 from ..trainer.utils import get_best_checkpoint
 
 
@@ -60,6 +67,34 @@ def distill(config: DistillationExperimentConfig, task_name: str):
         config.dataset_config
     )
 
+    # Create systematic run directory
+    run_dir = create_run_directory(
+        config.trainer_config.output_dir,
+        task_name,
+        config.distillation_config,
+    )
+    print(f"Run directory: {run_dir}")
+
+    # WandB setup
+    hyperparams_str = create_run_hyperparams_str(config.distillation_config)
+    run_name = f"{task_name}/{hyperparams_str}"
+    wandb.init(
+        project=config.trainer_config.wandb_project,
+        name=run_name,
+        config=asdict(config),
+        notes=f"run_dir: {run_dir}",
+    )
+    wandb.watch(model, log="all", log_freq=100)
+
+    # Save hyperparameters
+    hyperparams = asdict(config)
+    hyperparams["run_dir"] = run_dir
+    hyperparams["timestamp"] = datetime.now().isoformat()
+    # Convert any non-serializable types
+    hyperparams["device"] = str(hyperparams["device"])
+    with open(os.path.join(run_dir, "hyperparameters.json"), "w") as f:
+        json.dump(hyperparams, f, indent=2)
+
     # train
     train_distill_task(
         config.trainer_config,
@@ -75,7 +110,11 @@ def distill(config: DistillationExperimentConfig, task_name: str):
         y_val,
         X_test,
         y_test,
+        run_dir,
     )
+
+    # finish wandb
+    wandb.finish()
 
 
 def main(config: DistillationExperimentConfig):

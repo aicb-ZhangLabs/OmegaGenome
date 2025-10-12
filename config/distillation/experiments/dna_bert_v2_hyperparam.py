@@ -1,7 +1,7 @@
 from ..config_schema import DistillationHyperparamExperimentConfig
 from ..glm import dna_bert_v2
 from ..bpnet import bpnet_classifier_config
-from ..trainer import trainer_config, debug_trainer_config
+from ..trainer import trainer_config
 from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import distillation_model_config
 
@@ -21,8 +21,8 @@ experiment_configs = {
             trainer_config=trainer_config,
             slurm_config=basic_distillation_slurm,
             weight_ces=[1.0],
-            weight_kls=[0.0, 0.5, 1.0],
-            weight_mses=[0.0, 0.5, 1.0],
+            weight_kls=[0.1, 0.5, 1.0],
+            weight_mses=[0.1, 0.5, 1.0],
             temperatures=[1.5, 2.0, 4.0],
         ),
     )

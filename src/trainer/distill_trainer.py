@@ -3,10 +3,10 @@ import csv
 import time
 import json
 import torch
-import torch.nn.functional as F
 import numpy as np
 import wandb
 import shutil
+import uuid
 
 from datetime import datetime
 from dataclasses import dataclass, asdict
@@ -20,6 +20,12 @@ from .utils import precompute_teacher_logits
 from ..data.dataset import (
     SeqDataset,
 )
+
+
+def create_run_hyperparams_str(config: DistillationModelConfig) -> str:
+    config_dict = asdict(config)
+    sorted_keys = sorted(config_dict.keys())
+    return "_".join([f"{k}{config_dict[k]}" for k in sorted_keys])
 
 
 def evaluate(model, loader, device):
@@ -45,17 +51,17 @@ def evaluate(model, loader, device):
 
 
 def create_run_directory(
-    parent_dir, task_name, weight_ce, weight_kl, weight_mse, temperature, dry_run=False
+    parent_dir, task_name, config: DistillationModelConfig, dry_run=False
 ):
     """
     Creates a systematic directory structure:
-    {parent_dir}/{task_name}/{date}_CE{ce}_KL{kl}_MSE{mse}_T{temp}/
+    {parent_dir}/{task_name}/{uuid}/{date}_CE{ce}_KL{kl}_MSE{mse}_T{temp}/
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    hyperparam_str = f"CE{weight_ce}_KL{weight_kl}_MSE{weight_mse}_T{temperature}"
+    hyperparam_str = create_run_hyperparams_str(config)
     prefix = "DRYRUN_" if dry_run else ""
     run_dir = os.path.join(
-        parent_dir, task_name, f"{prefix}{timestamp}_{hyperparam_str}"
+        parent_dir, task_name, f"{prefix}{timestamp}/{uuid.uuid4()}/{hyperparam_str}"
     )
     os.makedirs(run_dir, exist_ok=True)
     return run_dir
@@ -127,6 +133,7 @@ def train_distill_task(
     y_val: List[int],
     X_test: List[str],
     y_test: List[int],
+    run_dir: str,
 ):
     # move models to device
     model.to(config.device)
@@ -165,32 +172,6 @@ def train_distill_task(
     test_loader = DataLoader(
         test_ds, batch_size=config.batch_size, shuffle=False, num_workers=4
     )
-
-    # Create systematic run directory
-    run_dir = create_run_directory(
-        config.output_dir,
-        task_name,
-        distillation_config.weight_ce,
-        distillation_config.weight_kl,
-        distillation_config.weight_mse,
-        distillation_config.temperature,
-    )
-    print(f"Run directory: {run_dir}")
-
-    # Save hyperparameters
-    hyperparams = asdict(config).copy()
-    hyperparams["run_dir"] = run_dir
-    hyperparams["timestamp"] = datetime.now().isoformat()
-    # Convert any non-serializable types
-    hyperparams["device"] = str(hyperparams["device"])
-    with open(os.path.join(run_dir, "hyperparameters.json"), "w") as f:
-        json.dump(hyperparams, f, indent=2)
-
-    # WandB setup
-    prefix = f"wCE{distillation_config.weight_ce}_wKL{distillation_config.weight_kl}_wMSE{distillation_config.weight_mse}_T{distillation_config.temperature}"
-    run_name = f"{task_name}_{prefix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    wandb.init(project=config.wandb_project, name=run_name, config=asdict(config))
-    wandb.watch(model, log="all", log_freq=100)
 
     best_val_mcc = -1.0
     best_epoch = 0
@@ -373,5 +354,3 @@ def train_distill_task(
     )
     print(f"Results saved to: {run_dir}")
     print(f"{'=' * 60}\n")
-
-    wandb.finish()
