@@ -14,14 +14,20 @@ class BPNetClassifierConfig:
 class BPNetClassifier(nn.Module):
     def __init__(self, config: BPNetClassifierConfig):
         super().__init__()
+        self.config = config
         self.bpnet = BPNet()
         C = self.bpnet.stem[0].out_channels
         self.pool = nn.AdaptiveAvgPool1d(1)
-        self.classifier = nn.Linear(C, config.num_labels)
         if config.teacher_hidden_size is not None:
-            self.teacher_proj = nn.Linear(config.teacher_hidden_size, C)
+            self.teacher_proj = nn.Sequential(
+                nn.Linear(C, C * 2),
+                nn.GELU(),
+                nn.Linear(C * 2, config.teacher_hidden_size),
+            )
+            self.classifier = nn.Linear(config.teacher_hidden_size, config.num_labels)
         else:
             self.teacher_proj = None
+            self.classifier = nn.Linear(C, config.num_labels)
 
     def forward(self, input_ids, return_feats: bool = False):
         one_hot = F.one_hot(input_ids, num_classes=4).float()
@@ -29,6 +35,8 @@ class BPNetClassifier(nn.Module):
         out = self.bpnet(x)
         feats = out["x"]
         pooled = self.pool(feats).squeeze(-1)
+        if self.teacher_proj is not None:
+            pooled = self.teacher_proj(pooled)
         logits = self.classifier(pooled)
         if return_feats:
             return logits, pooled

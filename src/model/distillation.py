@@ -102,8 +102,8 @@ class DistillationModel(nn.Module):
 
         if self.config.weight_mse > 0 and tfeats is not None:
             # Use precomputed teacher features
-            proj = self.student_model.teacher_proj(tfeats)
-            mse = F.mse_loss(s_feats, proj)
+            # proj = self.student_model.teacher_proj(tfeats)
+            mse = F.mse_loss(s_feats, tfeats)
             loss += self.config.weight_mse * mse
         else:
             mse = torch.tensor(0.0, device=self.device)
