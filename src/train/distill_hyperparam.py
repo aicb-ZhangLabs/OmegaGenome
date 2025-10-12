@@ -14,11 +14,9 @@ from .distill import main as distill_main
 
 def main(config: DistillationHyperparamExperimentConfig):
     # Cartesian product
-    combinations = list(
+    kl_combinations = list(
         itertools.product(
-            config.weight_ces,
             config.weight_kls,
-            config.weight_mses,
             config.temperatures,
             config.zscores,
         )
@@ -28,31 +26,39 @@ def main(config: DistillationHyperparamExperimentConfig):
     # this is to avoid running the same combination multiple times
     to_skip = set()
     is_covered = False
-    for i, (weight_ce, weight_kl, weight_mse, temperature, zscore) in enumerate(
-        combinations
-    ):
-        if weight_kl == 0.0 and not is_covered:
-            is_covered = True
-        else:
-            to_skip.add(i)
-
-    combinations = [
-        combination for i, combination in enumerate(combinations) if i not in to_skip
+    for i, (weight_kl, temperature, zscore) in enumerate(kl_combinations):
+        if weight_kl == 0.0:
+            if not is_covered:
+                is_covered = True
+            else:
+                to_skip.add(i)
+    kl_combinations = [
+        combination for i, combination in enumerate(kl_combinations) if i not in to_skip
     ]
 
-    print(f"Running {len(combinations)} experiments...")
-    for weight_ce, weight_kl, weight_mse, temperature, zscore in combinations:
-        new_distill_config = replace(
-            config.distillation_config,
-            weight_ce=weight_ce,
-            weight_kl=weight_kl,
-            weight_mse=weight_mse,
-            temperature=temperature,
-            zscore=zscore,
+    other_combinations = list(
+        itertools.product(
+            config.weight_ces,
+            config.weight_mses,
         )
+    )
 
-        new_experiment_config = replace(config, distillation_config=new_distill_config)
-        distill_main(new_experiment_config)
+    print(f"Running {len(kl_combinations) * len(other_combinations)} experiments...")
+    for weight_ce, weight_mse in other_combinations:
+        for weight_kl, temperature, zscore in kl_combinations:
+            new_distill_config = replace(
+                config.distillation_config,
+                weight_ce=weight_ce,
+                weight_kl=weight_kl,
+                weight_mse=weight_mse,
+                temperature=temperature,
+                zscore=zscore,
+            )
+
+            new_experiment_config = replace(
+                config, distillation_config=new_distill_config
+            )
+            distill_main(new_experiment_config)
 
 
 if __name__ == "__main__":
