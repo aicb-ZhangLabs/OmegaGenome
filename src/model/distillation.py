@@ -35,16 +35,8 @@ class DistillationModel(nn.Module):
 
     def prepare_batch(self, batch: List[torch.Tensor]):
         ids, labs = batch[0].to(self.device), batch[1].to(self.device)
-        tlog = (
-            batch[2].to(self.device)
-            if len(batch) > 2 and self.config.weight_kl > 0
-            else None
-        )
-        tfeats = (
-            batch[3].to(self.device)
-            if len(batch) > 3 and self.config.weight_mse > 0
-            else None
-        )
+        tlog = batch[2].to(self.device) if len(batch) > 2 and self.config.weight_kl > 0 else None
+        tfeats = batch[3].to(self.device) if len(batch) > 3 and self.config.weight_mse > 0 else None
         return {
             "ids": ids,
             "labs": labs,
@@ -71,9 +63,7 @@ class DistillationModel(nn.Module):
         tfeats = inputs["tfeats"]
         return tlog, tfeats
 
-    def forward(
-        self, batch: List[torch.Tensor]
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    def forward(self, batch: List[torch.Tensor]) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         inputs = self.prepare_batch(batch)
         loss, metrics = self.distillation_loss(inputs)
         return loss, metrics

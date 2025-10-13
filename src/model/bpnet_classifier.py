@@ -35,9 +35,7 @@ class BPNetClassifier(nn.Module):
                     nn.ReLU(),
                     nn.Linear(C * 2, self.config.teacher_hidden_size),
                 )
-                self.classifier = nn.Linear(
-                    self.config.teacher_hidden_size, self.config.num_labels
-                )
+                self.classifier = nn.Linear(self.config.teacher_hidden_size, self.config.num_labels)
             else:
                 raise ValueError(
                     f"Invalid teacher projection option: {self.config.teacher_projection_opt}"
@@ -69,9 +67,7 @@ class BPNetClassifier(nn.Module):
             return logits, pooled
         return logits
 
-    def aligned_feats(
-        self, sfeats: torch.Tensor, tfeats: Optional[torch.Tensor] = None
-    ):
+    def aligned_feats(self, sfeats: torch.Tensor, tfeats: Optional[torch.Tensor] = None):
         """align the features from the student and the teacher
 
         :param sfeats: the features from the student

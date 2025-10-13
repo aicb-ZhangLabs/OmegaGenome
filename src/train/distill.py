@@ -118,9 +118,7 @@ def distill(config: DistillationExperimentConfig, task_name: str):
 def main(config: DistillationExperimentConfig):
     for task_name in config.task_names:
         # here we always set the task name to the current task name to avoid confusion
-        distill_dataset_config_config = replace(
-            config.dataset_config, task_name=task_name
-        )
+        distill_dataset_config_config = replace(config.dataset_config, task_name=task_name)
         distill_config = replace(config, dataset_config=distill_dataset_config_config)
 
         # here we use the slurm to run the distill function

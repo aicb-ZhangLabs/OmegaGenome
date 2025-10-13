@@ -55,14 +55,10 @@ def main(config: DistillationHyperparamExperimentConfig):
                 zscore=zscore,
             )
 
-            new_experiment_config = replace(
-                config, distillation_config=new_distill_config
-            )
+            new_experiment_config = replace(config, distillation_config=new_distill_config)
             distill_main(new_experiment_config)
 
 
 if __name__ == "__main__":
-    config = tyro.extras.overridable_config_cli(
-        hyperparam_configs, sort_subcommands=True
-    )
+    config = tyro.extras.overridable_config_cli(hyperparam_configs, sort_subcommands=True)
     main(config)

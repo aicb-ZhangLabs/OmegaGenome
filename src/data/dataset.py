@@ -115,17 +115,11 @@ def build_data_splits_from_huggingface(config: DatasetConfig):
 
 
 class SeqDataset(Dataset):
-    def __init__(
-        self, sequences, labels, max_len, teacher_logits=None, teacher_features=None
-    ):
-        self.ids = torch.tensor(
-            [encode_seq(s, max_len) for s in sequences], dtype=torch.long
-        )
+    def __init__(self, sequences, labels, max_len, teacher_logits=None, teacher_features=None):
+        self.ids = torch.tensor([encode_seq(s, max_len) for s in sequences], dtype=torch.long)
         self.labels = torch.tensor(labels, dtype=torch.long)
         self.teacher_logits = (
-            torch.tensor(teacher_logits, dtype=torch.float)
-            if teacher_logits is not None
-            else None
+            torch.tensor(teacher_logits, dtype=torch.float) if teacher_logits is not None else None
         )
         self.teacher_features = (
             torch.tensor(teacher_features, dtype=torch.float)
@@ -133,9 +127,7 @@ class SeqDataset(Dataset):
             else None
         )
         assert self.teacher_logits is None or len(self.teacher_logits) == len(self.ids)
-        assert self.teacher_features is None or len(self.teacher_features) == len(
-            self.ids
-        )
+        assert self.teacher_features is None or len(self.teacher_features) == len(self.ids)
 
     def __len__(self):
         return len(self.ids)
