@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import warnings
 
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Literal, Optional
@@ -15,18 +14,9 @@ class DistillationModelConfig:
     temperature: float = 2.0
     zscore: bool = False
     kl_method: Literal["kl", "mse"] = "kl"
-    tie_ce_and_kl: bool = True
 
     def __post_init__(self):
-        if self.tie_ce_and_kl:
-            if 0 <= self.weight_kl <= 1:
-                self.weight_ce = 1 - self.weight_kl
-                warnings.warn(
-                    "Tied CE and KL: weight_ce automatically set to 1 - weight_kl",
-                    UserWarning,
-                )
-            else:
-                raise ValueError("Tied CE and KL: weight_kl must be between 0 and 1")
+        pass
 
 
 class DistillationModel(nn.Module):
