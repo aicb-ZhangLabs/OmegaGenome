@@ -6,4 +6,5 @@ distillation_model_config = DistillationModelConfig(
     weight_mse=0.0,
     temperature=2.0,
     zscore=False,
+    tie_ce_and_kl=True,
 )
