@@ -103,6 +103,7 @@ class DistillationModel(nn.Module):
         if self.config.weight_mse > 0 and tfeats is not None:
             # Use precomputed teacher features
             # proj = self.student_model.teacher_proj(tfeats)
+            s_feats, tfeats = self.student_model.aligned_feats(s_feats, tfeats)
             mse = F.mse_loss(s_feats, tfeats)
             loss += self.config.weight_mse * mse
         else:
