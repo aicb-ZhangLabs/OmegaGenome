@@ -22,4 +22,5 @@ basic_distillation_slurm = SlurmConfig(
     mem="256GB",
     pack_code=True,
     use_packed_code=True,
+    exclude_code_folders=exclude_code_folders,
 )
