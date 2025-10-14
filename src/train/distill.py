@@ -12,6 +12,7 @@ from nntool.slurm import slurm_fn
 
 from config.distillation.config import configs
 from config.distillation.config_schema import DistillationExperimentConfig
+from config.env import project_output_path
 from accelerate.utils import set_seed
 from ..model.glm import build_glm
 from ..model.bpnet_classifier import BPNetClassifier
@@ -81,6 +82,7 @@ def distill(config: DistillationExperimentConfig, task_name: str):
     wandb.init(
         project=config.trainer_config.wandb_project,
         name=run_name,
+        dir=project_output_path,
         config=asdict(config),
         notes=f"run_dir: {run_dir}",
     )
