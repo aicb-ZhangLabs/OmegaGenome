@@ -9,7 +9,7 @@ dependencies = [
     "datasets>=4.2.0",
     "einops>=0.8.1",
     "ipython>=9.6.0",
-    "nntool==1.8.1",
+    "nntool==1.8.3",
     "numpy==1.26.4",
     "pydantic==2.10.6",
     "scikit-learn>=1.7.2",
