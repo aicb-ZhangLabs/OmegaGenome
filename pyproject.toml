@@ -9,12 +9,12 @@ dependencies = [
     "datasets>=4.2.0",
     "einops>=0.8.1",
     "ipython>=9.6.0",
-    "nntool==1.8.0",
+    "nntool==1.8.1",
     "numpy==1.26.4",
     "pydantic==2.10.6",
     "scikit-learn>=1.7.2",
     "torch==2.6.0",
-    "transformers>=4.57.0",
+    "transformers==4.57.1",
     "tyro>=0.9.33",
 ]
 
