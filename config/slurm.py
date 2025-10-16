@@ -3,6 +3,7 @@ from .env import env, output_path
 
 exclude_code_folders = [
     "wandb",
+    "output",
     "outputs",
     "datasets",
     ".venv",
