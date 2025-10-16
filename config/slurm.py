@@ -5,6 +5,7 @@ exclude_code_folders = [
     "wandb",
     "output",
     "outputs",
+    "data",
     "datasets",
     ".venv",
     ".vscode",
