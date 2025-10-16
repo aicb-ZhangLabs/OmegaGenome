@@ -12,7 +12,7 @@ from nntool.slurm import SlurmConfig
 
 @dataclass
 class DistillationExperimentConfig:
-    # this is for doing distillation for multiple tasks one by one
+    # task_names: List[str] = field(default_factory=lambda: ["H3K4me2", "H3K4me3"])
     task_names: List[
         Literal[
             "H2AFZ",
@@ -35,14 +35,19 @@ class DistillationExperimentConfig:
             "splice_sites_donors",
         ]
     ]
-    dataset_config: DatasetConfig
-    teacher_config: GLMConfig
-    teacher_parent_dir: str
-    student_config: BPNetClassifierConfig
-    distillation_config: DistillationModelConfig
-    trainer_config: DistillTrainerConfig
-    slurm_config: SlurmConfig
+    teacher_config: GLMConfig = field(default_factory=GLMConfig)
+    student_config: BPNetClassifierConfig = field(default_factory=BPNetClassifierConfig)
+    distillation_config: DistillationModelConfig = field(
+        default_factory=DistillationModelConfig
+    )
+    trainer_config: DistillTrainerConfig = field(default_factory=DistillTrainerConfig)
+    dataset_config: DatasetConfig = field(default_factory=DatasetConfig)
+    slurm_config: SlurmConfig = field(default_factory=SlurmConfig)
     random_state: int = 42
+
+    # Extended for NT support
+    teacher_parent_dir: str = ""  # Path to teacher checkpoints
+    model_type: str = "glm"  # "glm" or "nt" to determine checkpoint structure
 
 
 @dataclass
