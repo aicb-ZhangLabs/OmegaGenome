@@ -33,8 +33,8 @@ nt_base_config = DistillationExperimentConfig(
     distillation_config=DistillationModelConfig(
         weight_ce=0.5,
         weight_kl=0.5,
-        weight_mse=0.2,
-        temperature=4.0,
+        weight_mse=0.0,
+        temperature=2.0,
         distill_method="vanilla",
     ),
     trainer_config=DistillTrainerConfig(
