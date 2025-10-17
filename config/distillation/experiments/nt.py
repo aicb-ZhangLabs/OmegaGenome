@@ -10,7 +10,7 @@ from ...env import project_path
 from ...slurm import SlurmConfig, basic_distillation_slurm
 
 # NT parent path for checkpoints
-NT_PARENT_PATH = f"{project_path}/data/finetuned_models/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2"
+NT_PARENT_PATH = f"{project_path}/data/finetuned_models/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label"
 
 # Base NT experiment configuration
 nt_base_config = DistillationExperimentConfig(

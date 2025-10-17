@@ -11,6 +11,7 @@ dependencies = [
     "ipython>=9.6.0",
     "nntool==1.8.3",
     "numpy==1.26.4",
+    "peft>=0.17.1",
     "pydantic==2.10.6",
     "scikit-learn>=1.7.2",
     "torch==2.6.0",
