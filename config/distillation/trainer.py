@@ -6,7 +6,7 @@ trainer_config = DistillTrainerConfig(
     output_dir=f"{output_path}/distillation",
     wandb_project="omega_genome",
     epochs=100,
-    batch_size=8,
+    batch_size=32,
     lr=1e-4,
     max_len=1024,
 )
