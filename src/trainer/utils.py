@@ -1,7 +1,9 @@
 import os
 import torch
+import numpy as np
 
 from tqdm import tqdm
+from sklearn.metrics import matthews_corrcoef
 
 
 def get_best_checkpoint(parent_dir, task_name):
@@ -29,7 +31,9 @@ def precompute_teacher_logits(
     # Debug flag to print structure once
     debug_printed = False
 
-    for i in tqdm(range(0, len(sequences), batch_size), total=len(sequences) // batch_size):
+    for i in tqdm(
+        range(0, len(sequences), batch_size), total=len(sequences) // batch_size
+    ):
         batch = sequences[i : i + batch_size]
         tok = tokenizer(
             batch,
@@ -58,7 +62,9 @@ def precompute_teacher_logits(
                             print(f"Debug - Num hidden layers: {len(hs)}")
                             print(f"Debug - Last hidden state shape: {hs[-1].shape}")
                         else:
-                            print(f"Debug - Hidden states shape (single tensor): {hs.shape}")
+                            print(
+                                f"Debug - Hidden states shape (single tensor): {hs.shape}"
+                            )
                     debug_printed = True
 
                 # Extract features
@@ -81,10 +87,14 @@ def precompute_teacher_logits(
                         actual_batch_size = out.logits.shape[0]
                         if actual_batch_size == 1:
                             # Single sequence: pool across sequence dimension
-                            hidden = last_hidden.mean(dim=0, keepdim=True)  # [1, hidden_size]
+                            hidden = last_hidden.mean(
+                                dim=0, keepdim=True
+                            )  # [1, hidden_size]
                         else:
                             # Multiple sequences but concatenated - need to split and pool
-                            seq_len_per_sample = last_hidden.shape[0] // actual_batch_size
+                            seq_len_per_sample = (
+                                last_hidden.shape[0] // actual_batch_size
+                            )
                             hidden_list = []
                             for b in range(actual_batch_size):
                                 start_idx = b * seq_len_per_sample
@@ -93,15 +103,21 @@ def precompute_teacher_logits(
                                 # Pool this sequence
                                 pooled = seq_hidden.mean(dim=0)  # [hidden_size]
                                 hidden_list.append(pooled)
-                            hidden = torch.stack(hidden_list)  # [batch_size, hidden_size]
+                            hidden = torch.stack(
+                                hidden_list
+                            )  # [batch_size, hidden_size]
                     else:
-                        raise ValueError(f"Unexpected hidden state shape: {last_hidden.shape}")
+                        raise ValueError(
+                            f"Unexpected hidden state shape: {last_hidden.shape}"
+                        )
                 else:
                     # Fallback: use pooler_output or logits
                     if hasattr(out, "pooler_output") and out.pooler_output is not None:
                         hidden = out.pooler_output
                     else:
-                        print("Warning: Cannot extract hidden states, using logits as features")
+                        print(
+                            "Warning: Cannot extract hidden states, using logits as features"
+                        )
                         hidden = out.logits
 
                 features_list.append(hidden.cpu())
@@ -109,3 +125,43 @@ def precompute_teacher_logits(
     logits = torch.cat(logits_list, dim=0).numpy()
     features = torch.cat(features_list, dim=0).numpy() if needs_features else None
     return logits, features
+
+
+@torch.no_grad()
+def evaluate_teacher_mcc(teacher_model, teacher_tokenizer, test_dataloader, device):
+    """
+    Evaluate teacher model on test set and return MCC score.
+
+    Args:
+        teacher_model: The teacher model to evaluate
+        teacher_tokenizer: Tokenizer for the teacher model
+        test_dataloader: DataLoader containing test data
+        device: Device to run evaluation on
+
+    Returns:
+        float: Matthews Correlation Coefficient
+    """
+    teacher_model.eval()
+    teacher_model.to(device)
+
+    all_preds = []
+    all_labels = []
+
+    print("Evaluating teacher model...")
+    with torch.no_grad():
+        for batch in tqdm(test_dataloader, desc="Teacher evaluation"):
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            labels = batch["labels"].to(device)
+
+            outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
+            preds = torch.argmax(outputs.logits, dim=-1)
+
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    all_preds = np.array(all_preds)
+    all_labels = np.array(all_labels)
+
+    mcc = matthews_corrcoef(all_labels, all_preds)
+    return float(mcc)
