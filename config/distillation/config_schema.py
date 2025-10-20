@@ -37,9 +37,7 @@ class DistillationExperimentConfig:
     ]
     teacher_config: GLMConfig = field(default_factory=GLMConfig)
     student_config: BPNetClassifierConfig = field(default_factory=BPNetClassifierConfig)
-    distillation_config: DistillationModelConfig = field(
-        default_factory=DistillationModelConfig
-    )
+    distillation_config: DistillationModelConfig = field(default_factory=DistillationModelConfig)
     trainer_config: DistillTrainerConfig = field(default_factory=DistillTrainerConfig)
     dataset_config: DatasetConfig = field(default_factory=DatasetConfig)
     slurm_config: SlurmConfig = field(default_factory=SlurmConfig)

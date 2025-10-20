@@ -73,3 +73,8 @@ exclude = [
     "node_modules",
     "venv",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.1",
+]

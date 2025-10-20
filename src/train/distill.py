@@ -48,9 +48,9 @@ def evaluate_and_log_teacher(
     Returns:
         float: Teacher test MCC score
     """
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Evaluating Teacher Model on Test Set")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     # Create test dataset for teacher
     from torch.utils.data import Dataset
@@ -107,7 +107,7 @@ def evaluate_and_log_teacher(
     )
 
     print(f"Teacher Test MCC: {teacher_mcc:.4f}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # Save to file
     teacher_eval_file = os.path.join(run_dir, "teacher_evaluation.json")
@@ -122,9 +122,7 @@ def evaluate_and_log_teacher(
         json.dump(teacher_eval_data, f, indent=2)
 
     # Also append to a summary CSV for easy comparison across experiments
-    summary_csv = os.path.join(
-        config.trainer_config.output_dir, "teacher_scores_summary.csv"
-    )
+    summary_csv = os.path.join(config.trainer_config.output_dir, "teacher_scores_summary.csv")
     file_exists = os.path.exists(summary_csv)
 
     with open(summary_csv, "a", newline="") as f:
@@ -161,15 +159,13 @@ def evaluate_and_log_teacher(
 
 @slurm_fn
 def distill(config: DistillationExperimentConfig, task_name: str):
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"=== Starting Distillation: {task_name} ===")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
     print(f"Teacher: {config.teacher_config.model_name_or_path}")
-    print(
-        f"Student: {config.student_config.model_type}-{config.student_config.model_size}"
-    )
+    print(f"Student: {config.student_config.model_type}-{config.student_config.model_size}")
     print(f"Method: {config.distillation_config.distill_method}")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
     set_seed(config.random_state)
 
@@ -185,9 +181,7 @@ def distill(config: DistillationExperimentConfig, task_name: str):
     else:
         from ..trainer.utils import get_best_checkpoint as orig_get_best_checkpoint
 
-        teacher_ckpt = orig_get_best_checkpoint(
-            config.trainer_config.output_dir, task_name
-        )
+        teacher_ckpt = orig_get_best_checkpoint(config.trainer_config.output_dir, task_name)
         score = -1.0
 
     if teacher_ckpt is None:

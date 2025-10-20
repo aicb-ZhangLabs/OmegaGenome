@@ -58,12 +58,20 @@ class DistillationModel(nn.Module):
         }
 
     def get_student_knowledge(self, inputs: Dict[str, torch.Tensor]):
-        """get the knowledge from the student"""
+        """get the knowledge from the student
+
+        :param inputs: the inputs from the prepare_batch function
+        :return: the logits and features from the student
+        """
         s_logits, s_feats = self.student_model(inputs["ids"], return_feats=True)
         return s_logits, s_feats
 
     def get_teacher_knowledge(self, inputs: Dict[str, torch.Tensor]):
-        """get the knowledge from the teacher"""
+        """get the knowledge from the teacher
+
+        :param inputs: the inputs from the prepare_batch function
+        :return: the logits and features from the teacher
+        """
         tlog = inputs["tlog"]
         tfeats = inputs["tfeats"]
         return tlog, tfeats

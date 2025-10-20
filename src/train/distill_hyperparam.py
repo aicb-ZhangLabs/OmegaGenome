@@ -57,9 +57,9 @@ def main(config: DistillationHyperparamExperimentConfig):
     )
 
     total_experiments = len(kl_combinations) * len(other_combinations)
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Hyperparameter Search Configuration")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Tasks: {config.task_names}")
     print(f"Total experiments to run: {total_experiments}")
     print(f"  - CE weights: {config.weight_ces}")
@@ -67,7 +67,7 @@ def main(config: DistillationHyperparamExperimentConfig):
     print(f"  - MSE weights: {config.weight_mses}")
     print(f"  - Temperatures: {config.temperatures}")
     print(f"  - Z-scores: {config.zscores}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # Node cycling for load balancing (2:1 ratio - voyager:laniakea)
     # voyager is ~2x faster, so we assign it 2x more jobs
@@ -83,9 +83,7 @@ def main(config: DistillationHyperparamExperimentConfig):
             current_node = node_cycle[cycle_idx % len(node_cycle)]
             cycle_idx += 1
 
-            print(
-                f"\n[Experiment {experiment_count}/{total_experiments}] -> Node: {current_node}"
-            )
+            print(f"\n[Experiment {experiment_count}/{total_experiments}] -> Node: {current_node}")
             print(
                 f"  CE={weight_ce}, KL={weight_kl}, MSE={weight_mse}, T={temperature}, zscore={zscore}"
             )
@@ -113,18 +111,16 @@ def main(config: DistillationHyperparamExperimentConfig):
             # Run distillation for all tasks with this hyperparameter combination
             distill_main(new_experiment_config)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Hyperparameter search completed!")
     print(f"Total experiments run: {experiment_count}")
     print(
-        f"Node distribution: Voyager={cycle_idx//3*2 + min(cycle_idx%3, 2)}, Laniakea={cycle_idx//3 + (1 if cycle_idx%3==2 else 0)}"
+        f"Node distribution: Voyager={cycle_idx // 3 * 2 + min(cycle_idx % 3, 2)}, Laniakea={cycle_idx // 3 + (1 if cycle_idx % 3 == 2 else 0)}"
     )
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
 
 if __name__ == "__main__":
     # Use tyro to select from available hyperparam configs
-    config = tyro.extras.overridable_config_cli(
-        hyperparam_configs, sort_subcommands=True
-    )
+    config = tyro.extras.overridable_config_cli(hyperparam_configs, sort_subcommands=True)
     main(config)
