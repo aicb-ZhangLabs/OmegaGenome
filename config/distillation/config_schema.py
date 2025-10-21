@@ -8,6 +8,7 @@ from src.data.dataset import (
 )
 from src.trainer.distill_trainer import DistillTrainerConfig
 from nntool.slurm import SlurmConfig
+from typing import Optional
 
 
 @dataclass
@@ -37,7 +38,9 @@ class DistillationExperimentConfig:
     ]
     teacher_config: GLMConfig = field(default_factory=GLMConfig)
     student_config: BPNetClassifierConfig = field(default_factory=BPNetClassifierConfig)
-    distillation_config: DistillationModelConfig = field(default_factory=DistillationModelConfig)
+    distillation_config: DistillationModelConfig = field(
+        default_factory=DistillationModelConfig
+    )
     trainer_config: DistillTrainerConfig = field(default_factory=DistillTrainerConfig)
     dataset_config: DatasetConfig = field(default_factory=DatasetConfig)
     slurm_config: SlurmConfig = field(default_factory=SlurmConfig)
@@ -46,6 +49,9 @@ class DistillationExperimentConfig:
     # Extended for NT support
     teacher_parent_dir: str = ""  # Path to teacher checkpoints
     model_type: str = "glm"  # "glm" or "nt" to determine checkpoint structure
+    # Resume support
+    resume_checkpoint: Optional[str] = None
+    resume_epoch: int = 0
 
 
 @dataclass

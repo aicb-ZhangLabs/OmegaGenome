@@ -31,7 +31,9 @@ def precompute_teacher_logits(
     # Debug flag to print structure once
     debug_printed = False
 
-    for i in tqdm(range(0, len(sequences), batch_size), total=len(sequences) // batch_size):
+    for i in tqdm(
+        range(0, len(sequences), batch_size), total=len(sequences) // batch_size
+    ):
         batch = sequences[i : i + batch_size]
         tok = tokenizer(
             batch,
@@ -60,7 +62,9 @@ def precompute_teacher_logits(
                             print(f"Debug - Num hidden layers: {len(hs)}")
                             print(f"Debug - Last hidden state shape: {hs[-1].shape}")
                         else:
-                            print(f"Debug - Hidden states shape (single tensor): {hs.shape}")
+                            print(
+                                f"Debug - Hidden states shape (single tensor): {hs.shape}"
+                            )
                     debug_printed = True
 
                 # Extract features
@@ -83,10 +87,14 @@ def precompute_teacher_logits(
                         actual_batch_size = out.logits.shape[0]
                         if actual_batch_size == 1:
                             # Single sequence: pool across sequence dimension
-                            hidden = last_hidden.mean(dim=0, keepdim=True)  # [1, hidden_size]
+                            hidden = last_hidden.mean(
+                                dim=0, keepdim=True
+                            )  # [1, hidden_size]
                         else:
                             # Multiple sequences but concatenated - need to split and pool
-                            seq_len_per_sample = last_hidden.shape[0] // actual_batch_size
+                            seq_len_per_sample = (
+                                last_hidden.shape[0] // actual_batch_size
+                            )
                             hidden_list = []
                             for b in range(actual_batch_size):
                                 start_idx = b * seq_len_per_sample
@@ -95,15 +103,21 @@ def precompute_teacher_logits(
                                 # Pool this sequence
                                 pooled = seq_hidden.mean(dim=0)  # [hidden_size]
                                 hidden_list.append(pooled)
-                            hidden = torch.stack(hidden_list)  # [batch_size, hidden_size]
+                            hidden = torch.stack(
+                                hidden_list
+                            )  # [batch_size, hidden_size]
                     else:
-                        raise ValueError(f"Unexpected hidden state shape: {last_hidden.shape}")
+                        raise ValueError(
+                            f"Unexpected hidden state shape: {last_hidden.shape}"
+                        )
                 else:
                     # Fallback: use pooler_output or logits
                     if hasattr(out, "pooler_output") and out.pooler_output is not None:
                         hidden = out.pooler_output
                     else:
-                        print("Warning: Cannot extract hidden states, using logits as features")
+                        print(
+                            "Warning: Cannot extract hidden states, using logits as features"
+                        )
                         hidden = out.logits
 
                 features_list.append(hidden.cpu())
@@ -151,3 +165,333 @@ def evaluate_teacher_mcc(teacher_model, teacher_tokenizer, test_dataloader, devi
 
     mcc = matthews_corrcoef(all_labels, all_preds)
     return float(mcc)
+
+
+"""
+Experiment tracker for resuming interrupted hyperparameter searches.
+
+This module tracks which experiments have completed by checking for marker files
+in the output directory, allowing automatic resume of interrupted searches.
+"""
+import os
+import json
+import glob
+from typing import Set, Tuple, List, Dict
+from datetime import datetime
+from dataclasses import asdict
+
+
+class ExperimentTracker:
+    """Tracks completed experiments to enable resume functionality."""
+
+    def __init__(
+        self,
+        output_dir: str,
+        completion_marker: str = "final_summary.json",
+        start_timestamp: str = None,
+    ):
+        """
+        Args:
+            output_dir: Root output directory
+            completion_marker: Filename that indicates completion
+            start_timestamp: Only check experiments after this timestamp (format: "20251020_220000")
+                            None = check all experiments
+        """
+        self.output_dir = output_dir
+        self.completion_marker = completion_marker
+        self.start_timestamp = start_timestamp
+
+    def _is_after_start_timestamp(self, timestamp_str: str) -> bool:
+        """Check if timestamp is after start_timestamp filter."""
+        if self.start_timestamp is None:
+            return True
+        try:
+            # Format: "20251020_144435"
+            return timestamp_str >= self.start_timestamp
+        except:
+            return True
+
+    # def __init__(self, output_dir: str, completion_marker: str = "final_summary.json"):
+    #     """
+    #     Initialize tracker.
+
+    #     Args:
+    #         output_dir: Root output directory (e.g., outputs/nt_distillation/hyperparam)
+    #         completion_marker: Filename that indicates a completed experiment
+    #     """
+    #     self.output_dir = output_dir
+    #     self.completion_marker = completion_marker
+
+    def _get_hyperparam_str(self, config_dict: dict) -> str:
+        """
+        Create hyperparameter string from config dict.
+        Should match create_run_hyperparams_str() from distill_trainer.py
+        """
+        sorted_keys = sorted(config_dict.keys())
+        return "_".join([f"{k}{config_dict[k]}" for k in sorted_keys])
+
+    def is_experiment_completed(self, task_name: str, hyperparam_config: dict) -> bool:
+        """
+        Check if an experiment (task + hyperparameters) has completed.
+
+        Searches for completed runs by looking for the completion marker file:
+        {output_dir}/{task_name}/*/*/*/{hyperparam_str}/{completion_marker}
+
+        Args:
+            task_name: Task name (e.g., "promoter_all")
+            hyperparam_config: Dict with hyperparameter values
+
+        Returns:
+            True if at least one completed run exists
+        """
+        hyperparam_str = self._get_hyperparam_str(hyperparam_config)
+
+        # Pattern: {output_dir}/{task_name}/*/*/*/{hyperparam_str}/{completion_marker}
+        # Structure: {task}/{timestamp}/{uuid}/{hyperparam_str}/
+        pattern = os.path.join(
+            self.output_dir,
+            task_name,
+            "*",  # timestamp
+            "*",  # uuid
+            hyperparam_str,
+            self.completion_marker,
+        )
+
+        matches = glob.glob(pattern)
+        return len(matches) > 0
+
+    def get_completed_experiments(self) -> Set[Tuple[str, str]]:
+        """
+        Scan output directory for all completed experiments.
+
+        Returns:
+            Set of (task_name, hyperparam_str) tuples for completed experiments
+        """
+        completed = set()
+
+        if not os.path.exists(self.output_dir):
+            return completed
+
+        # Find all completion marker files
+        pattern = os.path.join(
+            self.output_dir,
+            "*",  # task_name
+            "*",  # timestamp
+            "*",  # uuid
+            "*",  # hyperparam_str
+            self.completion_marker,
+        )
+
+        for marker_path in glob.glob(pattern):
+            # Extract task_name and hyperparam_str from path
+            # Path format: .../task_name/timestamp/uuid/hyperparam_str/final_summary.json
+            parts = marker_path.split(os.sep)
+
+            # Find indices
+            try:
+                output_dir_parts = self.output_dir.split(os.sep)
+                output_dir_depth = len(output_dir_parts)
+
+                # After output_dir: task_name/timestamp/uuid/hyperparam_str/marker
+                task_name = parts[output_dir_depth]
+                timestamp = parts[output_dir_depth + 1]  # Extract timestamp
+                hyperparam_str = parts[output_dir_depth + 3]
+                # Filter by timestamp
+                if not self._is_after_start_timestamp(timestamp):
+                    continue
+                completed.add((task_name, hyperparam_str))
+            except (IndexError, ValueError):
+                continue
+
+        return completed
+
+    def generate_experiment_plan(
+        self,
+        all_experiments: List[Dict],
+    ) -> Tuple[List[Dict], List[Dict], Dict]:
+        """
+        Generate execution plan by checking which experiments are completed.
+
+        Args:
+            all_experiments: List of experiment dicts, each containing:
+                - task_name: str
+                - hyperparam_config: dict (with weight_ce, weight_kl, etc.)
+                - experiment_count: int
+
+        Returns:
+            Tuple of (incomplete_experiments, completed_experiments, summary_dict)
+        """
+        completed_set = self.get_completed_experiments()
+
+        incomplete = []
+        completed = []
+
+        for exp in all_experiments:
+            task_name = exp["task_name"]
+            hyperparam_config = exp["hyperparam_config"]
+            hyperparam_str = self._get_hyperparam_str(hyperparam_config)
+
+            if (task_name, hyperparam_str) in completed_set:
+                completed.append(exp)
+            else:
+                incomplete.append(exp)
+
+        summary = {
+            "total_experiments": len(all_experiments),
+            "completed": len(completed),
+            "incomplete": len(incomplete),
+            "completion_rate": (
+                f"{len(completed)/len(all_experiments)*100:.1f}%"
+                if all_experiments
+                else "0%"
+            ),
+        }
+
+        return incomplete, completed, summary
+
+    def print_summary_report(
+        self,
+        incomplete: List[Dict],
+        completed: List[Dict],
+        summary: Dict,
+        save_to_file: bool = True,
+    ):
+        """
+        Print and optionally save a summary report of experiment status.
+
+        Args:
+            incomplete: List of incomplete experiments
+            completed: List of completed experiments
+            summary: Summary statistics dict
+            save_to_file: Whether to save report to file
+        """
+        report_lines = []
+
+        def add_line(line=""):
+            report_lines.append(line)
+            print(line)
+
+        add_line("=" * 80)
+        add_line("EXPERIMENT RESUME REPORT")
+        add_line("=" * 80)
+        add_line(f"Output directory: {self.output_dir}")
+        add_line(f"Timestamp: {datetime.now().isoformat()}")
+        add_line()
+        add_line("SUMMARY:")
+        add_line(f"  Total experiments: {summary['total_experiments']}")
+        add_line(f"  Completed: {summary['completed']} ({summary['completion_rate']})")
+        add_line(f"  Incomplete: {summary['incomplete']}")
+        add_line("=" * 80)
+
+        if completed:
+            add_line()
+            add_line(f"COMPLETED EXPERIMENTS ({len(completed)}):")
+            add_line("-" * 80)
+
+            # Group by task
+            by_task = {}
+            for exp in completed:
+                task = exp["task_name"]
+                if task not in by_task:
+                    by_task[task] = []
+                by_task[task].append(exp["hyperparam_config"])
+
+            for task, configs in sorted(by_task.items()):
+                add_line(f"  {task}: {len(configs)} hyperparameter combinations")
+
+        if incomplete:
+            add_line()
+            add_line(f"INCOMPLETE EXPERIMENTS TO RUN ({len(incomplete)}):")
+            add_line("-" * 80)
+
+            # Group by task
+            by_task = {}
+            for exp in incomplete:
+                task = exp["task_name"]
+                if task not in by_task:
+                    by_task[task] = []
+                by_task[task].append(exp["hyperparam_config"])
+
+            for task, configs in sorted(by_task.items()):
+                add_line(f"  {task}: {len(configs)} hyperparameter combinations")
+                for i, config in enumerate(configs[:3], 1):  # Show first 3
+                    params = ", ".join([f"{k}={v}" for k, v in sorted(config.items())])
+                    add_line(f"    {i}. {params}")
+                if len(configs) > 3:
+                    add_line(f"    ... and {len(configs) - 3} more")
+
+        add_line("=" * 80)
+
+        # Save to file
+        if save_to_file:
+            os.makedirs(self.output_dir, exist_ok=True)
+            report_file = os.path.join(
+                self.output_dir,
+                f"resume_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+            )
+            with open(report_file, "w") as f:
+                f.write("\n".join(report_lines))
+            print(f"\nReport saved to: {report_file}")
+
+            # Also save detailed JSON
+            json_file = os.path.join(
+                self.output_dir,
+                f"resume_plan_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+            )
+            with open(json_file, "w") as f:
+                json.dump(
+                    {
+                        "summary": summary,
+                        "completed": completed,
+                        "incomplete": incomplete,
+                    },
+                    f,
+                    indent=2,
+                )
+            print(f"Detailed plan saved to: {json_file}")
+
+    def get_experiment_status(self, task_name: str, hyperparam_config: dict) -> dict:
+        """
+        Get detailed status: completed, partial (has checkpoints), or not started.
+
+        Returns:
+            {
+                "status": "completed" | "partial" | "not_started",
+                "latest_checkpoint": path or None,
+                "latest_epoch": int or None
+            }
+        """
+        hyperparam_str = self._get_hyperparam_str(hyperparam_config)
+
+        # Check for completed
+        if self.is_experiment_completed(task_name, hyperparam_config):
+            return {
+                "status": "completed",
+                "latest_checkpoint": None,
+                "latest_epoch": None,
+            }
+
+        # Check for partial progress
+        pattern = os.path.join(
+            self.output_dir, task_name, "*", "*", hyperparam_str, "epoch_*_valmcc_*"
+        )
+        checkpoints = glob.glob(pattern)
+
+        if not checkpoints:
+            return {
+                "status": "not_started",
+                "latest_checkpoint": None,
+                "latest_epoch": None,
+            }
+
+        # Find latest checkpoint
+        latest_ckpt = max(
+            checkpoints, key=lambda p: int(p.split("epoch_")[1].split("_")[0])
+        )
+        latest_epoch = int(latest_ckpt.split("epoch_")[1].split("_")[0])
+
+        return {
+            "status": "partial",
+            "latest_checkpoint": latest_ckpt,
+            "latest_epoch": latest_epoch,
+        }

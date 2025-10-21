@@ -122,7 +122,9 @@ def evaluate_and_log_teacher(
         json.dump(teacher_eval_data, f, indent=2)
 
     # Also append to a summary CSV for easy comparison across experiments
-    summary_csv = os.path.join(config.trainer_config.output_dir, "teacher_scores_summary.csv")
+    summary_csv = os.path.join(
+        config.trainer_config.output_dir, "teacher_scores_summary.csv"
+    )
     file_exists = os.path.exists(summary_csv)
 
     with open(summary_csv, "a", newline="") as f:
@@ -158,12 +160,19 @@ def evaluate_and_log_teacher(
 
 
 @slurm_fn
-def distill(config: DistillationExperimentConfig, task_name: str):
+def distill(
+    config: DistillationExperimentConfig,
+    task_name: str,
+    resume_checkpoint: str = None,
+    resume_epoch: int = 0,
+):
     print(f"\n{'=' * 80}")
     print(f"=== Starting Distillation: {task_name} ===")
     print(f"{'=' * 80}")
     print(f"Teacher: {config.teacher_config.model_name_or_path}")
-    print(f"Student: {config.student_config.model_type}-{config.student_config.model_size}")
+    print(
+        f"Student: {config.student_config.model_type}-{config.student_config.model_size}"
+    )
     print(f"Method: {config.distillation_config.distill_method}")
     print(f"{'=' * 80}\n")
 
@@ -181,7 +190,9 @@ def distill(config: DistillationExperimentConfig, task_name: str):
     else:
         from ..trainer.utils import get_best_checkpoint as orig_get_best_checkpoint
 
-        teacher_ckpt = orig_get_best_checkpoint(config.trainer_config.output_dir, task_name)
+        teacher_ckpt = orig_get_best_checkpoint(
+            config.trainer_config.output_dir, task_name
+        )
         score = -1.0
 
     if teacher_ckpt is None:
@@ -286,6 +297,8 @@ def distill(config: DistillationExperimentConfig, task_name: str):
         X_test,
         y_test,
         run_dir,
+        resume_from_checkpoint=config.resume_checkpoint,  # Read from config
+        resume_from_epoch=config.resume_epoch,  # Read from config
     )
 
     wandb.finish()
