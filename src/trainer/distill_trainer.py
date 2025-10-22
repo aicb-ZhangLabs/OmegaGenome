@@ -13,7 +13,7 @@ from dataclasses import dataclass, asdict
 from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score, matthews_corrcoef
 from transformers import PreTrainedTokenizer
-from typing import List
+from typing import List, Optional
 
 from ..model.distillation import DistillationModel, DistillationModelConfig
 from .utils import precompute_teacher_logits
@@ -132,7 +132,7 @@ def train_distill_task(
     X_test: List[str],
     y_test: List[int],
     run_dir: str,
-    resume_from_checkpoint: str = None,  # NEW parameter
+    resume_from_checkpoint: Optional[str] = None,  # NEW parameter
     resume_from_epoch: int = 0,  # NEW parameter
 ):
     # move models to device

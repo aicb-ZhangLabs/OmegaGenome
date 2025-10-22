@@ -11,7 +11,7 @@ from ..trainer import (
 from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import nt_different_size_model_config
 from ...slurm import basic_distillation_slurm
-from ...env import project_path
+from ...env import output_path
 from .nt import NT_PARENT_PATH
 
 # Base configuration
@@ -41,7 +41,7 @@ nt_bpnet_tiny = replace(
     ),
     trainer_config=replace(
         nt_bpnet_original.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/different_size/bpnet/tiny/",
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/tiny/",
     ),
 )
 
@@ -53,7 +53,7 @@ nt_bpnet_small = replace(
     ),
     trainer_config=replace(
         nt_bpnet_original.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/different_size/bpnet/small/",
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/small/",
     ),
 )
 
@@ -65,7 +65,7 @@ nt_bpnet_medium = replace(
     ),
     trainer_config=replace(
         nt_bpnet_original.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/different_size/bpnet/medium/",
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/medium/",
     ),
 )
 
@@ -77,7 +77,7 @@ nt_bpnet_large = replace(
     ),
     trainer_config=replace(
         nt_bpnet_original.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/different_size/bpnet/large/",
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/large/",
         # batch_size=8,  # Smaller batch size for large model
     ),
 )
@@ -91,7 +91,7 @@ nt_bilstm_small = replace(
     ),
     trainer_config=replace(
         nt_bpnet_original.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/different_size/bilstm/small/",
+        output_dir=f"{output_path}/nt_distillation/different_size/bilstm/small/",
         wandb_project="OmegaGenome-NT-Architectures",
     ),
 )
@@ -104,7 +104,7 @@ nt_bilstm_medium = replace(
     ),
     trainer_config=replace(
         nt_bilstm_small.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/different_size/bilstm/medium/",
+        output_dir=f"{output_path}/nt_distillation/different_size/bilstm/medium/",
     ),
 )
 
@@ -116,7 +116,7 @@ nt_bilstm_large = replace(
     ),
     trainer_config=replace(
         nt_bilstm_small.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/different_size/bilstm/large/",
+        output_dir=f"{output_path}/nt_distillation/different_size/bilstm/large/",
     ),
 )
 
@@ -128,7 +128,7 @@ nt_cnn_small = replace(
     ),
     trainer_config=replace(
         nt_bilstm_small.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/different_size/cnn/small/",
+        output_dir=f"{output_path}/nt_distillation/different_size/cnn/small/",
     ),
 )
 
@@ -140,7 +140,7 @@ nt_cnn_medium = replace(
     ),
     trainer_config=replace(
         nt_cnn_small.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/different_size/cnn/medium/",
+        output_dir=f"{output_path}/nt_distillation/different_size/cnn/medium/",
     ),
 )
 
@@ -152,7 +152,7 @@ nt_cnn_large = replace(
     ),
     trainer_config=replace(
         nt_cnn_small.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/different_size/cnn/large/",
+        output_dir=f"{output_path}/nt_distillation/different_size/cnn/large/",
         # batch_size=8,
     ),
 )
