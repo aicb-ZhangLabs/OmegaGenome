@@ -132,6 +132,8 @@ def train_distill_task(
     X_test: List[str],
     y_test: List[int],
     run_dir: str,
+    resume_from_checkpoint: str = None,  # NEW parameter
+    resume_from_epoch: int = 0,  # NEW parameter
 ):
     # move models to device
     model.to(config.device)
@@ -173,7 +175,14 @@ def train_distill_task(
     training_history = []
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.lr)
-    for epoch in range(1, config.epochs + 1):
+    start_epoch = 1
+    if resume_from_checkpoint and os.path.exists(resume_from_checkpoint):
+        print(f"Resuming from checkpoint: {resume_from_checkpoint}")
+        checkpoint_path = os.path.join(resume_from_checkpoint, "student.pt")
+        model.load_state_dict(torch.load(checkpoint_path, map_location=config.device))
+        start_epoch = resume_from_epoch + 1
+        print(f"Resuming from epoch {start_epoch}")
+    for epoch in range(start_epoch, config.epochs + 1):
         model.train()
         total_loss = 0.0
 
@@ -278,8 +287,10 @@ def train_distill_task(
         "best_val_mcc": float(best_val_mcc),
         "final_test_mcc": float(test_metrics["mcc"]),
         "final_test_f1": float(test_metrics["f1"]),
-        "best_test_mcc": float(best_test_metrics["mcc"]) if best_test_metrics is not None else None,
-        "best_test_f1": float(best_test_metrics["f1"]) if best_test_metrics is not None else None,
+        "best_test_mcc": (
+            float(best_test_metrics["mcc"]) if best_test_metrics is not None else None
+        ),
+        "best_test_f1": (float(best_test_metrics["f1"]) if best_test_metrics is not None else None),
         "total_epochs": config.epochs,
         "hyperparameters": {
             "weight_ce": distillation_config.weight_ce,
@@ -307,13 +318,13 @@ def train_distill_task(
         w.writerow(
             [
                 "best_test_mcc",
-                f"{best_test_metrics['mcc']:.4f}" if best_test_metrics is not None else None,
+                (f"{best_test_metrics['mcc']:.4f}" if best_test_metrics is not None else None),
             ]
         )
         w.writerow(
             [
                 "best_test_f1",
-                f"{best_test_metrics['f1']:.4f}" if best_test_metrics is not None else None,
+                (f"{best_test_metrics['f1']:.4f}" if best_test_metrics is not None else None),
             ]
         )
 
