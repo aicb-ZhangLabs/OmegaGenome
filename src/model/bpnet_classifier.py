@@ -123,14 +123,10 @@ class BPNetClassifier(nn.Module):
                 nn.Conv1d(4, 32, 15, padding="same"),
                 nn.ReLU(),
                 SimpleResidual(
-                    nn.Sequential(
-                        nn.Conv1d(32, 32, 3, padding="same", dilation=2), nn.ReLU()
-                    )
+                    nn.Sequential(nn.Conv1d(32, 32, 3, padding="same", dilation=2), nn.ReLU())
                 ),
                 SimpleResidual(
-                    nn.Sequential(
-                        nn.Conv1d(32, 32, 3, padding="same", dilation=4), nn.ReLU()
-                    )
+                    nn.Sequential(nn.Conv1d(32, 32, 3, padding="same", dilation=4), nn.ReLU())
                 ),
             )
         elif model_size == "large":
@@ -140,9 +136,7 @@ class BPNetClassifier(nn.Module):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
-                            nn.Conv1d(
-                                256, 256, 3, padding="same", dilation=2 ** min(i, 8)
-                            ),
+                            nn.Conv1d(256, 256, 3, padding="same", dilation=2 ** min(i, 8)),
                             nn.ReLU(),
                         )
                     )
@@ -155,9 +149,7 @@ class BPNetClassifier(nn.Module):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
-                            nn.Conv1d(
-                                128, 128, 3, padding="same", dilation=2 ** min(i, 6)
-                            ),
+                            nn.Conv1d(128, 128, 3, padding="same", dilation=2 ** min(i, 6)),
                             nn.ReLU(),
                         )
                     )
@@ -186,9 +178,7 @@ class BPNetClassifier(nn.Module):
                     nn.ReLU(),
                     nn.Linear(C * 2, self.config.teacher_hidden_size),
                 )
-                self.classifier = nn.Linear(
-                    self.config.teacher_hidden_size, self.config.num_labels
-                )
+                self.classifier = nn.Linear(self.config.teacher_hidden_size, self.config.num_labels)
             else:
                 raise ValueError(
                     f"Invalid teacher projection: {self.config.teacher_projection_opt}"
@@ -222,10 +212,9 @@ class BPNetClassifier(nn.Module):
             return logits, pooled
         return logits
 
-    def aligned_feats(
-        self, sfeats: torch.Tensor, tfeats: Optional[torch.Tensor] = None
-    ):
-        """align the features from the student and the teacher
+    def aligned_feats(self, sfeats: torch.Tensor, tfeats: Optional[torch.Tensor] = None):
+        """
+        align the features from the student and the teacher
         :param sfeats: the features from the student
         :param tfeats: the features from the teacher
         :return: the aligned features
