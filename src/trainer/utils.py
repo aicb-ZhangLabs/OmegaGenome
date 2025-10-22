@@ -211,17 +211,6 @@ class ExperimentTracker:
         except:
             return True
 
-    # def __init__(self, output_dir: str, completion_marker: str = "final_summary.json"):
-    #     """
-    #     Initialize tracker.
-
-    #     Args:
-    #         output_dir: Root output directory (e.g., outputs/nt_distillation/hyperparam)
-    #         completion_marker: Filename that indicates a completed experiment
-    #     """
-    #     self.output_dir = output_dir
-    #     self.completion_marker = completion_marker
-
     def _get_hyperparam_str(self, config_dict: dict) -> str:
         """
         Create hyperparameter string from config dict.

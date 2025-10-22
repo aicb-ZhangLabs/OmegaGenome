@@ -1,10 +1,26 @@
 from dataclasses import replace
 from ..config_schema import DistillationExperimentConfig
 from ..glm import GLMConfig, nt_2b5
-from ..bpnet import BPNetClassifierConfig, bpnet_classifier_config
-from ..trainer import DistillTrainerConfig, trainer_config, debug_trainer_config
+from ..bpnet import (
+    BPNetClassifierConfig,
+    bpnet_classifier_config,
+    original_bpnet_classifier_config,
+)
+from ..trainer import (
+    DistillTrainerConfig,
+    trainer_config,
+    debug_trainer_config,
+    nt_trainer_config,
+)
 from ..data import DatasetConfig, nucletide_transformer_revised_benchmark
-from ..distillation_model import DistillationModelConfig, distillation_model_config
+from ..distillation_model import (
+    DistillationModelConfig,
+    distillation_model_config,
+    vanilla_distillation_model_config,
+    logits_standardization_model_config,
+    dkd_model_config,
+    original_bpnet_classifier_config,
+)
 from ...slurm import SlurmConfig
 from ...env import project_path
 from ...slurm import SlurmConfig, basic_distillation_slurm
@@ -25,26 +41,9 @@ nt_base_config = DistillationExperimentConfig(
     teacher_config=nt_2b5,
     teacher_parent_dir=NT_PARENT_PATH,
     model_type="nt",  # Specify NT model type
-    student_config=BPNetClassifierConfig(
-        num_labels=2,
-        model_type="bpnet",
-        model_size="original",  # Default to original
-    ),
-    distillation_config=DistillationModelConfig(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    trainer_config=DistillTrainerConfig(
-        output_dir=f"{project_path}/outputs/nt_distillation/vanilla_original",
-        wandb_project="OmegaGenome-NT",
-        epochs=200,
-        batch_size=16,
-        lr=1e-4,
-        max_len=1000,
-    ),
+    student_config=original_bpnet_classifier_config,
+    distillation_config=vanilla_distillation_model_config,
+    trainer_config=nt_trainer_config,
     dataset_config=nucletide_transformer_revised_benchmark,
     slurm_config=basic_distillation_slurm,
 )
@@ -52,13 +51,7 @@ nt_base_config = DistillationExperimentConfig(
 # Different distillation methods
 nt_logit_standard = replace(
     nt_base_config,
-    distillation_config=DistillationModelConfig(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.2,
-        temperature=4.0,
-        distill_method="logit_standard",
-    ),
+    distillation_config=logits_standardization_model_config,
     trainer_config=replace(
         nt_base_config.trainer_config,
         output_dir=f"{project_path}/outputs/nt_distillation/logit_standard",
@@ -67,15 +60,7 @@ nt_logit_standard = replace(
 
 nt_dkd = replace(
     nt_base_config,
-    distillation_config=DistillationModelConfig(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,  # DKD doesn't use feature matching
-        temperature=4.0,
-        distill_method="dkd",
-        dkd_alpha=1.0,
-        dkd_beta=8.0,
-    ),
+    distillation_config=dkd_model_config,
     trainer_config=replace(
         nt_base_config.trainer_config,
         output_dir=f"{project_path}/outputs/nt_distillation/dkd",
@@ -84,13 +69,7 @@ nt_dkd = replace(
 
 nt_dist = replace(
     nt_base_config,
-    distillation_config=DistillationModelConfig(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=4.0,
-        distill_method="dist",
-    ),
+    distillation_config=original_bpnet_classifier_config,
     trainer_config=replace(
         nt_base_config.trainer_config,
         output_dir=f"{project_path}/outputs/nt_distillation/dist",
