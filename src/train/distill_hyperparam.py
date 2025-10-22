@@ -127,7 +127,7 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
     # ===== PRINT CONFIGURATION =====
 
     print(f"\n{'=' * 60}")
-    print(f"Hyperparameter Search Configuration")
+    print("Hyperparameter Search Configuration")
     print(f"{'=' * 60}")
     print(f"Tasks: {config.task_names}")
     print(f"Total experiments: {len(experiments_to_run)}")
@@ -137,10 +137,10 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
     print(f"  - Temperatures: {config.temperatures}")
     print(f"  - Z-scores: {config.zscores}")
     print(f"{'=' * 60}")
-    print(f"GPU Management (Per-User Limits on Shared Servers):")
-    print(f"  - Voyager: You can use max 2 GPUs concurrently")
-    print(f"  - Laniakea: You can use max 4 GPUs concurrently")
-    print(f"  - Other users' jobs do NOT count toward your limits")
+    print("GPU Management (Per-User Limits on Shared Servers):")
+    print("  - Voyager: You can use max 2 GPUs concurrently")
+    print("  - Laniakea: You can use max 4 GPUs concurrently")
+    print("  - Other users' jobs do NOT count toward your limits")
     print(f"{'=' * 60}\n")
 
     # Node preference order (voyager is ~2x faster, so prefer it)
@@ -241,7 +241,7 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
             time.sleep(1)
 
     print(f"\n{'=' * 60}")
-    print(f"Hyperparameter search completed!")
+    print("Hyperparameter search completed!")
     print(f"Experiments run in this session: {len(experiments_to_run)}")
     print(f"{'=' * 60}\n")
 

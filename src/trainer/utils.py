@@ -5,6 +5,11 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import matthews_corrcoef
 
+import json
+import glob
+from typing import Set, Tuple, List, Dict
+from datetime import datetime
+
 
 def get_best_checkpoint(parent_dir, task_name):
     task_dir = os.path.join(parent_dir, task_name)
@@ -159,12 +164,6 @@ Experiment tracker for resuming interrupted hyperparameter searches.
 This module tracks which experiments have completed by checking for marker files
 in the output directory, allowing automatic resume of interrupted searches.
 """
-import os
-import json
-import glob
-from typing import Set, Tuple, List, Dict
-from datetime import datetime
-from dataclasses import asdict
 
 
 class ExperimentTracker:
@@ -191,11 +190,8 @@ class ExperimentTracker:
         """Check if timestamp is after start_timestamp filter."""
         if self.start_timestamp is None:
             return True
-        try:
-            # Format: "20251020_144435"
-            return timestamp_str >= self.start_timestamp
-        except:
-            return True
+        # Format: "20251020_144435"
+        return timestamp_str >= self.start_timestamp
 
     def _get_hyperparam_str(self, config_dict: dict) -> str:
         """

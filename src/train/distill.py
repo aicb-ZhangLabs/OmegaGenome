@@ -21,7 +21,6 @@ from ..model.distillation import DistillationModel
 from ..data.dataset import (
     get_num_labels,
     build_data_splits_from_huggingface,
-    SeqDataset,
 )
 from ..trainer.distill_trainer import (
     train_distill_task,
@@ -49,7 +48,7 @@ def evaluate_and_log_teacher(
         float: Teacher test MCC score
     """
     print(f"\n{'=' * 60}")
-    print(f"Evaluating Teacher Model on Test Set")
+    print("Evaluating Teacher Model on Test Set")
     print(f"{'=' * 60}")
 
     # Create test dataset for teacher

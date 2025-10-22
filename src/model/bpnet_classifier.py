@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Literal, Tuple
+from typing import Optional, Literal
 from dataclasses import dataclass
 from .nn.bpnet_pytorch import BPNet
 
@@ -159,11 +159,7 @@ class BPNetClassifier(nn.Module):
             # Default small or use original BPNet
             return BPNet()
         else:
-            try:
-                return BPNet()
-            except:
-                # Fallback if original BPNet not available
-                return SimpleCNN(64)
+            return BPNet()
 
     def _get_hidden_dim(self, model_size: str) -> int:
         """Get hidden dimension based on model size"""

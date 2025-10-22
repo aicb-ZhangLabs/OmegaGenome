@@ -51,8 +51,8 @@ def build_glm(config: GLMConfig):
 
         if not config.base_model_path:
             raise ValueError(
-                f"LoRA adapter detected but base_model_path is not set. "
-                f"Please specify base_model_path in GLMConfig."
+                "LoRA adapter detected but base_model_path is not set. "
+                "Please specify base_model_path in GLMConfig."
             )
 
         print(f"Loading base model: {config.base_model_path}")
@@ -96,7 +96,6 @@ def build_glm(config: GLMConfig):
 
 def get_best_checkpoint(parent_path: str, task_name: str, model_type: str = "default"):
     """Find best checkpoint for a task - supports both GLM and NT directory structures"""
-    import os
     import re
 
     if "NT" in model_type or "nucleotide" in parent_path.lower():

@@ -1,18 +1,16 @@
 from dataclasses import replace
 from ..config_schema import DistillationExperimentConfig
-from ..glm import GLMConfig, nt_2b5
+from ..glm import nt_2b5
 from ..bpnet import (
-    BPNetClassifierConfig,
     original_bpnet_classifier_config,
 )
 from ..trainer import (
-    DistillTrainerConfig,
     nt_different_size_trainer_config,
     nt_different_size_original_trainer_config,
 )
-from ..data import DatasetConfig, nucletide_transformer_revised_benchmark
-from ..distillation_model import DistillationModelConfig, nt_different_size_model_config
-from ...slurm import SlurmConfig, basic_distillation_slurm
+from ..data import nucletide_transformer_revised_benchmark
+from ..distillation_model import nt_different_size_model_config
+from ...slurm import basic_distillation_slurm
 from ...env import project_path
 from .nt import NT_PARENT_PATH
 
