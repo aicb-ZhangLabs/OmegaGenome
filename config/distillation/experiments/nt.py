@@ -13,7 +13,7 @@ from ..distillation_model import (
     logits_standardization_model_config,
     dkd_model_config,
 )
-from ...env import project_path
+from ...env import project_path, output_path
 from ...slurm import basic_distillation_slurm
 
 # NT parent path for checkpoints
@@ -45,7 +45,7 @@ nt_logit_standard = replace(
     distillation_config=logits_standardization_model_config,
     trainer_config=replace(
         nt_base_config.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/logit_standard",
+        output_dir=f"{output_path}/nt_distillation/logit_standard",
     ),
 )
 
@@ -54,7 +54,7 @@ nt_dkd = replace(
     distillation_config=dkd_model_config,
     trainer_config=replace(
         nt_base_config.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/dkd",
+        output_dir=f"{output_path}/nt_distillation/dkd",
     ),
 )
 
@@ -63,7 +63,7 @@ nt_dist = replace(
     distillation_config=original_bpnet_classifier_config,
     trainer_config=replace(
         nt_base_config.trainer_config,
-        output_dir=f"{project_path}/outputs/nt_distillation/dist",
+        output_dir=f"{output_path}/nt_distillation/dist",
     ),
 )
 

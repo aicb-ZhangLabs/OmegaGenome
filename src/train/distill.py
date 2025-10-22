@@ -160,8 +160,6 @@ def evaluate_and_log_teacher(
 def distill(
     config: DistillationExperimentConfig,
     task_name: str,
-    resume_checkpoint: str = None,
-    resume_epoch: int = 0,
 ):
     print(f"\n{'=' * 80}")
     print(f"=== Starting Distillation: {task_name} ===")
