@@ -40,16 +40,8 @@ class DistillationModel(nn.Module):
 
     def prepare_batch(self, batch: List[torch.Tensor]):
         ids, labs = batch[0].to(self.device), batch[1].to(self.device)
-        tlog = (
-            batch[2].to(self.device)
-            if len(batch) > 2 and self.config.weight_kl > 0
-            else None
-        )
-        tfeats = (
-            batch[3].to(self.device)
-            if len(batch) > 3 and self.config.weight_mse > 0
-            else None
-        )
+        tlog = batch[2].to(self.device) if len(batch) > 2 and self.config.weight_kl > 0 else None
+        tfeats = batch[3].to(self.device) if len(batch) > 3 and self.config.weight_mse > 0 else None
         return {
             "ids": ids,
             "labs": labs,
@@ -76,9 +68,7 @@ class DistillationModel(nn.Module):
         tfeats = inputs["tfeats"]
         return tlog, tfeats
 
-    def forward(
-        self, batch: List[torch.Tensor]
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    def forward(self, batch: List[torch.Tensor]) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         inputs = self.prepare_batch(batch)
         loss, metrics = self.distillation_loss(inputs)
         return loss, metrics
@@ -166,9 +156,7 @@ class DistillationModel(nn.Module):
             reduction="batchmean",
         ) * (temp**2)
 
-    def _dkd_loss(
-        self, s_logits: torch.Tensor, t_logits: torch.Tensor, labels: torch.Tensor
-    ):
+    def _dkd_loss(self, s_logits: torch.Tensor, t_logits: torch.Tensor, labels: torch.Tensor):
         """Decoupled Knowledge Distillation Loss"""
         temp = self.config.temperature
         alpha = self.config.dkd_alpha
@@ -182,9 +170,9 @@ class DistillationModel(nn.Module):
 
         s_target = (s_probs * mask_target).sum(dim=1, keepdim=True)
         t_target = (t_probs * mask_target).sum(dim=1, keepdim=True)
-        tckd_loss = F.kl_div(
-            torch.log(s_target + 1e-8), t_target, reduction="batchmean"
-        ) * (temp**2)
+        tckd_loss = F.kl_div(torch.log(s_target + 1e-8), t_target, reduction="batchmean") * (
+            temp**2
+        )
 
         # Non-target class KD
         s_logits_non_target = s_logits.masked_fill(mask_target, -1e9)

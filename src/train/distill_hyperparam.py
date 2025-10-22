@@ -86,13 +86,6 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
             for weight_kl, temperature, zscore in kl_combinations:
                 experiment_count += 1
 
-                # hyperparam_config = {
-                #     "weight_ce": weight_ce,
-                #     "weight_kl": weight_kl,
-                #     "weight_mse": weight_mse,
-                #     "temperature": temperature,
-                #     "zscore": zscore,
-                # }
                 full_distill_config = replace(
                     config.distillation_config,
                     weight_ce=weight_ce,
@@ -113,26 +106,22 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
     # ===== CHECK COMPLETED EXPERIMENTS =====
 
     if resume:
-        incomplete, completed, summary = tracker.generate_experiment_plan(
-            all_experiments
-        )
+        incomplete, completed, summary = tracker.generate_experiment_plan(all_experiments)
         tracker.print_summary_report(incomplete, completed, summary, save_to_file=True)
 
         if not incomplete:
             print("\n🎉 All experiments already completed! Nothing to run.")
             return
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"RESUME MODE: Running {len(incomplete)} incomplete experiments")
-        print(f"{'='*80}\n")
+        print(f"{'=' * 80}\n")
 
         experiments_to_run = incomplete
     else:
-        print(f"\n{'='*80}")
-        print(
-            f"FULL MODE: Running all {len(all_experiments)} experiments (ignoring completed)"
-        )
-        print(f"{'='*80}\n")
+        print(f"\n{'=' * 80}")
+        print(f"FULL MODE: Running all {len(all_experiments)} experiments (ignoring completed)")
+        print(f"{'=' * 80}\n")
         experiments_to_run = all_experiments
 
     # ===== PRINT CONFIGURATION =====
@@ -170,15 +159,7 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
         zscore = hyperparam_config["zscore"]
         # Check if partial progress exists
         status = tracker.get_experiment_status(task_name, hyperparam_config)
-        # if status["status"] == "partial":
-        #     print(
-        #         f"📥 Found partial progress: epoch {status['latest_epoch']}, resuming..."
-        #     )
-        #     resume_checkpoint = status["latest_checkpoint"]
-        #     resume_epoch = status["latest_epoch"]
-        # else:
-        #     resume_checkpoint = None
-        #     resume_epoch = 0
+
         # Create configs
         new_distill_config = replace(config.distillation_config)  # , ...)
         new_slurm_config = replace(config.slurm_config)
@@ -197,12 +178,12 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
             resume_epoch=status["latest_epoch"] if status["status"] == "partial" else 0,
         )
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"[Experiment {idx}/{len(experiments_to_run)}] Task: {task_name}")
         print(
             f"  CE={weight_ce}, KL={weight_kl}, MSE={weight_mse}, T={temperature}, zscore={zscore}"
         )
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         # Wait for an available node with GPU capacity
         available_node = gpu_manager.wait_for_available_node(
@@ -273,15 +254,11 @@ if __name__ == "__main__":
     if "--no-resume" in sys.argv:
         sys.argv.remove("--no-resume")
         resume_mode = False
-        print(
-            "⚠️  RESUME MODE DISABLED: Will run all experiments, ignoring completed ones\n"
-        )
+        print("⚠️  RESUME MODE DISABLED: Will run all experiments, ignoring completed ones\n")
     else:
         print("✓ RESUME MODE ENABLED: Will skip completed experiments\n")
         print("  (Use --no-resume flag to run all experiments)\n")
 
     # Use tyro to select from available hyperparam configs
-    config = tyro.extras.overridable_config_cli(
-        hyperparam_configs, sort_subcommands=True
-    )
+    config = tyro.extras.overridable_config_cli(hyperparam_configs, sort_subcommands=True)
     main(config, resume=resume_mode)

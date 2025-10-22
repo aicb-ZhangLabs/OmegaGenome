@@ -114,10 +114,10 @@ class SlurmGPUManager:
             preferred_nodes = list(self.node_limits.keys())
 
         elapsed = 0
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Waiting for available GPU on nodes: {preferred_nodes}")
         print(f"Checking every {check_interval}s (max wait: {max_wait}s)")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         while elapsed < max_wait:
             node = self.get_available_node(preferred_nodes)
