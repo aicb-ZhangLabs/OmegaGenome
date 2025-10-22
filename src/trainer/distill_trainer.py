@@ -182,7 +182,7 @@ def train_distill_task(
         model.load_state_dict(torch.load(checkpoint_path, map_location=config.device))
         start_epoch = resume_from_epoch + 1
         print(f"Resuming from epoch {start_epoch}")
-    for epoch in range(1, config.epochs + 1):
+    for epoch in range(start_epoch, config.epochs + 1):
         model.train()
         total_loss = 0.0
 
