@@ -4,8 +4,39 @@
 
 ### Environment
 
-- Install `uv` and then run `uv sync`.
+- Install `uv`.
 - Set up the `env.toml` file. A template is provided in `env_sample.toml`.
+
+Now, we have the following virtual enviroments:
+
+**default**
+
+This enviroment supports `DNA BERT v2`, `NT`.
+
+To switch into this env, run
+```bash
+uv sync --extra default
+```
+
+**aido_dna**
+
+This enviroment supports `AIDO.DNA`.
+
+To switch into this env, run
+```bash
+uv sync --extra aido_dna
+```
+
+**caduceus**
+
+This enviroment supports `caduceus`.
+
+To switch into this env, run
+```bash
+uv sync --extra caduceus
+```
+
+To install a package to a specific enviroment, you should run `uv add [package_name] --optional [enviroment_name]`. For example, `uv add modelgenerator --optional aido_dna`.
 
 ### Data Folder and Output Folder Setup
 
