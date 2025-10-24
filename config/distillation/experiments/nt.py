@@ -60,7 +60,7 @@ nt_dkd = replace(
 
 nt_dist = replace(
     nt_base_config,
-    distillation_config=original_bpnet_classifier_config,
+    distillation_config=vanilla_distillation_model_config,
     trainer_config=replace(
         nt_base_config.trainer_config,
         output_dir=f"{output_path}/nt_distillation/dist",
