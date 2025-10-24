@@ -9,6 +9,7 @@ from ..trainer import (
 )
 from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import (
+    dist_model_config,
     vanilla_distillation_model_config,
     logits_standardization_model_config,
     dkd_model_config,
@@ -60,7 +61,7 @@ nt_dkd = replace(
 
 nt_dist = replace(
     nt_base_config,
-    distillation_config=vanilla_distillation_model_config,
+    distillation_config=dist_model_config,
     trainer_config=replace(
         nt_base_config.trainer_config,
         output_dir=f"{output_path}/nt_distillation/dist",
