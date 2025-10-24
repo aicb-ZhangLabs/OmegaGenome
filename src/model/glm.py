@@ -11,7 +11,7 @@ class GLMConfig:
     num_labels: int = 2
     ckpt_path: Optional[str] = None
     output_hidden_states: bool = True  # For feature extraction
-    trust_remote_code: bool = False  # For NT models
+    trust_remote_code: bool = True
 
     # LoRA-specific fields
     base_model_path: Optional[str] = None  # Base model for LoRA adapters
