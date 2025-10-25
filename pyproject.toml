@@ -5,18 +5,38 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "accelerate==1.10.1",
-    "datasets>=4.2.0",
-    "einops>=0.8.1",
     "ipython>=9.6.0",
     "nntool==1.8.3",
     "numpy==1.26.4",
-    "peft>=0.17.1",
     "pydantic==2.10.6",
     "scikit-learn>=1.7.2",
+    "tyro>=0.9.33",
+]
+
+[project.optional-dependencies]
+default = [
     "torch==2.6.0",
     "transformers==4.57.1",
-    "tyro>=0.9.33",
+    "peft>=0.17.1",
+    "accelerate==1.10.1",
+    "datasets>=4.2.0",
+    "einops>=0.8.1",
+]
+aido_dna = [
+    "torch==2.6.0",
+    "modelgenerator>=0.1.2",
+]
+caduceus = [
+    "torch==2.6.0",
+]
+
+[tool.uv]
+conflicts = [
+    [
+      { extra = "default" },
+      { extra = "aido_dna" },
+      { extra = "caduceus" },
+    ],
 ]
 
 [tool.uv.sources]
