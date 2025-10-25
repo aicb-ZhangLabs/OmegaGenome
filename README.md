@@ -39,7 +39,7 @@ UV_PROJECT_ENVIRONMENT=.venv_caduceus uv sync --extra caduceus
 To install or uninstall a package in a specific enviroment, please make sure you activate the enviroment first
 
 ```bash
-#  e.g.
+#  e.g. this is important when you are running the code as well
 source .venv_aido_dna/bin/activate
 ```
 
