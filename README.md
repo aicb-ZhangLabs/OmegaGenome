@@ -24,7 +24,7 @@ This enviroment supports `AIDO.DNA`.
 
 To switch into this env, run
 ```bash
-uv sync --extra aido_dna
+UV_PROJECT_ENVIRONMENT=.venv_aido_dna uv sync --extra aido_dna
 ```
 
 **caduceus**
@@ -33,10 +33,17 @@ This enviroment supports `caduceus`.
 
 To switch into this env, run
 ```bash
-uv sync --extra caduceus
+UV_PROJECT_ENVIRONMENT=.venv_caduceus uv sync --extra caduceus
 ```
 
-To install a package to a specific enviroment, you should run `uv add [package_name] --optional [enviroment_name]`. For example, `uv add modelgenerator --optional aido_dna`.
+To install or uninstall a package in a specific enviroment, please make sure you activate the enviroment first
+
+```bash
+#  e.g.
+source .venv_aido_dna/bin/activate
+```
+
+then you should run `uv add [package_name] --optional [enviroment_name] --active`. For example, `uv add modelgenerator --optional aido_dna --active`.
 
 ### Data Folder and Output Folder Setup
 
