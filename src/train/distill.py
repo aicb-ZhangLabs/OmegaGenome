@@ -27,8 +27,251 @@ from ..trainer.distill_trainer import (
     create_run_directory,
     create_run_hyperparams_str,
 )
-from ..trainer.utils import evaluate_teacher_mcc
+from ..trainer.utils import (
+    evaluate_teacher_mcc,
+    load_caduceus_model,
+    find_best_caduceus_checkpoint,
+    CaduceusFeatureExtractor,
+)
 from torch.utils.data import DataLoader
+
+import torch
+import numpy as np
+from typing import Optional, Dict, Any
+
+
+def load_teacher_model(config, task_name, device):
+    """
+    Load teacher model based on the model type specified in config.
+
+    Args:
+        config: DistillationExperimentConfig
+        task_name: Current task name
+        device: Device to load model on
+
+    Returns:
+        tuple: (teacher_model, tokenizer, base_model)
+    """
+    model_type = getattr(
+        config, "model_type", "glm"
+    )  # Default to 'glm' for backward compatibility
+
+    if model_type == "caduceus":
+        # Load Caduceus model
+        checkpoint_path, best_score, best_ckpt_file = find_best_caduceus_checkpoint(
+            task_name, config.teacher_parent_dir
+        )
+
+        if not checkpoint_path:
+            raise ValueError(f"No Caduceus checkpoint found for task {task_name}")
+
+        num_labels = 2  # Default, can be adjusted based on task
+        if task_name in ["enhancers_types", "splice_sites_all"]:
+            num_labels = 3
+
+        return load_caduceus_model(checkpoint_path, num_labels, device, best_ckpt_file)
+
+    elif model_type == "nt":
+        # Load NT model (existing logic)
+        from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+        # Find NT checkpoint
+        checkpoint_path = find_nt_checkpoint(task_name, config.teacher_parent_dir)
+
+        tokenizer = AutoTokenizer.from_pretrained(
+            config.teacher_config.model_name_or_path,
+            trust_remote_code=config.teacher_config.trust_remote_code,
+        )
+
+        model = AutoModelForSequenceClassification.from_pretrained(
+            checkpoint_path,
+            num_labels=config.teacher_config.num_labels,
+            trust_remote_code=config.teacher_config.trust_remote_code,
+            output_hidden_states=True,
+        ).to(device)
+
+        # Wrap in feature extractor if needed
+        wrapped_model = model  # NT models might not need wrapping
+
+        return wrapped_model, tokenizer, model
+
+    else:  # Default 'glm' or 'dna_bert_v2'
+        # Load DNABert2 or other GLM models (existing logic)
+        from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+        checkpoint_path = find_glm_checkpoint(task_name, config.teacher_parent_dir)
+
+        tokenizer = AutoTokenizer.from_pretrained(
+            config.teacher_config.model_name_or_path
+        )
+
+        model = AutoModelForSequenceClassification.from_pretrained(
+            checkpoint_path, num_labels=config.teacher_config.num_labels
+        ).to(device)
+
+        return model, tokenizer, model
+
+
+def find_nt_checkpoint(task_name, parent_dir):
+    """Find NT checkpoint for a task (placeholder - implement based on your structure)."""
+    import os
+
+    task_dir = os.path.join(parent_dir, f"{task_name}_nt_finetuned")
+    if os.path.exists(task_dir):
+        return task_dir
+    return None
+
+
+def find_glm_checkpoint(task_name, parent_dir):
+    """Find GLM/DNABert2 checkpoint for a task (placeholder - implement based on your structure)."""
+    import os
+
+    task_dir = os.path.join(parent_dir, f"{task_name}_finetuned")
+    if os.path.exists(task_dir):
+        return task_dir
+    return None
+
+
+class CaduceusCompatibleDataset(torch.utils.data.Dataset):
+    """
+    Dataset that provides compatibility between different model types.
+    Handles both tokenized inputs (for Caduceus/NT) and one-hot encoding (for BPNet).
+    """
+
+    def __init__(
+        self,
+        sequences,
+        labels,
+        tokenizer,
+        max_len,
+        teacher_logits=None,
+        teacher_features=None,
+        teacher_multi_features=None,
+        provide_onehot=True,
+    ):
+        self.sequences = sequences
+        self.labels = labels
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+        self.teacher_logits = teacher_logits
+        self.teacher_features = teacher_features
+        self.teacher_multi_features = teacher_multi_features
+        self.provide_onehot = provide_onehot
+
+        # Nucleotide to index mapping for one-hot encoding
+        self.char2idx = {"A": 0, "C": 1, "G": 2, "T": 3}
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        seq = self.sequences[idx]
+        label = self.labels[idx]
+
+        # Tokenize sequence
+        enc = self.tokenizer(
+            seq,
+            padding="max_length",
+            truncation=True,
+            max_length=self.max_len,
+            return_tensors="pt",
+        )
+
+        item = {
+            "input_ids": enc["input_ids"].squeeze(0),
+            "attention_mask": enc.get(
+                "attention_mask", torch.ones_like(enc["input_ids"])
+            ).squeeze(0),
+            "labels": torch.tensor(label, dtype=torch.long),
+        }
+
+        # Add one-hot encoding for BPNet if requested
+        if self.provide_onehot:
+            seq_upper = seq.upper()[: self.max_len]
+            seq_array = np.zeros((4, self.max_len), dtype=np.float32)
+            for i, base in enumerate(seq_upper):
+                if base in self.char2idx:
+                    seq_array[self.char2idx[base], i] = 1.0
+            item["sequence_onehot"] = torch.tensor(seq_array, dtype=torch.float)
+
+        # Add teacher outputs if available
+        if self.teacher_logits is not None:
+            item["teacher_logits"] = torch.tensor(
+                self.teacher_logits[idx], dtype=torch.float
+            )
+        if self.teacher_features is not None:
+            item["teacher_features"] = torch.tensor(
+                self.teacher_features[idx], dtype=torch.float
+            )
+        if self.teacher_multi_features is not None:
+            item["teacher_multi_features"] = [
+                torch.tensor(feat[idx], dtype=torch.float)
+                for feat in self.teacher_multi_features
+            ]
+
+        return item
+
+
+def custom_collate_fn(batch):
+    """
+    Custom collate function that handles both tokenized and one-hot encoded sequences.
+    Compatible with all model types (Caduceus, NT, DNABert2, BPNet).
+    """
+    # Prepare output dictionary
+    collated = {}
+
+    # Handle different types of inputs
+    keys_to_stack = [
+        "input_ids",
+        "attention_mask",
+        "labels",
+        "sequence_onehot",
+        "teacher_logits",
+        "teacher_features",
+    ]
+
+    for key in keys_to_stack:
+        if key in batch[0]:
+            collated[key] = torch.stack([item[key] for item in batch])
+
+    # Handle multi-features (list of tensors)
+    if "teacher_multi_features" in batch[0]:
+        num_features = len(batch[0]["teacher_multi_features"])
+        collated["teacher_multi_features"] = [
+            torch.stack([item["teacher_multi_features"][i] for item in batch])
+            for i in range(num_features)
+        ]
+
+    return collated
+
+
+# Integration point for existing distill_trainer.py
+def get_model_specific_config(experiment_config):
+    """
+    Get model-specific configuration adjustments.
+    This function can be called in distill_trainer.py to adjust settings based on model type.
+    """
+    model_type = getattr(experiment_config, "model_type", "glm")
+
+    config_adjustments = {
+        "caduceus": {
+            "num_workers": 8,  # Caduceus benefits from more workers
+            "gradient_accumulation_steps": 1,
+            "warmup_ratio": 0.1,
+        },
+        "nt": {
+            "num_workers": 4,
+            "gradient_accumulation_steps": 2,  # NT is larger, may need gradient accumulation
+            "warmup_ratio": 0.05,
+        },
+        "glm": {
+            "num_workers": 4,
+            "gradient_accumulation_steps": 1,
+            "warmup_ratio": 0.1,
+        },
+    }
+
+    return config_adjustments.get(model_type, config_adjustments["glm"])
 
 
 def evaluate_and_log_teacher(
@@ -121,7 +364,9 @@ def evaluate_and_log_teacher(
         json.dump(teacher_eval_data, f, indent=2)
 
     # Also append to a summary CSV for easy comparison across experiments
-    summary_csv = os.path.join(config.trainer_config.output_dir, "teacher_scores_summary.csv")
+    summary_csv = os.path.join(
+        config.trainer_config.output_dir, "teacher_scores_summary.csv"
+    )
     file_exists = os.path.exists(summary_csv)
 
     with open(summary_csv, "a", newline="") as f:
@@ -165,7 +410,9 @@ def distill(
     print(f"=== Starting Distillation: {task_name} ===")
     print(f"{'=' * 80}")
     print(f"Teacher: {config.teacher_config.model_name_or_path}")
-    print(f"Student: {config.student_config.model_type}-{config.student_config.model_size}")
+    print(
+        f"Student: {config.student_config.model_type}-{config.student_config.model_size}"
+    )
     print(f"Method: {config.distillation_config.distill_method}")
     print(f"{'=' * 80}\n")
 
@@ -183,7 +430,9 @@ def distill(
     else:
         from ..trainer.utils import get_best_checkpoint as orig_get_best_checkpoint
 
-        teacher_ckpt = orig_get_best_checkpoint(config.trainer_config.output_dir, task_name)
+        teacher_ckpt = orig_get_best_checkpoint(
+            config.trainer_config.output_dir, task_name
+        )
         score = -1.0
 
     if teacher_ckpt is None:
