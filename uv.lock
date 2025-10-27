@@ -51,8 +51,8 @@ dependencies = [
     { name = "psutil" },
     { name = "pyyaml" },
     { name = "safetensors" },
-    { name = "torch", version = "2.6.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
-    { name = "torch", version = "2.6.0+cu118", source = { registry = "https://download.pytorch.org/whl/cu118" }, marker = "(sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "torch", version = "2.6.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "torch", version = "2.6.0+cu118", source = { registry = "https://download.pytorch.org/whl/cu118" }, marker = "sys_platform == 'linux' or sys_platform == 'win32' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b1/72/ff3961c19ee395c3d30ac630ee77bfb0e1b46b87edc504d4f83bb4a89705/accelerate-1.10.1.tar.gz", hash = "sha256:3dea89e433420e4bfac0369cae7e36dcd6a56adfcfd38cdda145c6225eab5df8", size = 392446, upload-time = "2025-08-25T13:57:06.21Z" }
 wheels = [
@@ -208,7 +208,7 @@ version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "frozenlist" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/61/62/06741b579156360248d1ec624842ad0edf697050bbaf7c3e46394e106ad1/aiosignal-1.4.0.tar.gz", hash = "sha256:f47eecd9468083c2029cc99945502cb7708b082c232f9aca65da147157b251c7", size = 25007, upload-time = "2025-07-03T22:54:43.528Z" }
 wheels = [
@@ -257,7 +257,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "idna" },
     { name = "sniffio" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c6/78/7d432127c41b50bccba979505f272c16cbcadcc33645d5fa3a738110ae75/anyio-4.11.0.tar.gz", hash = "sha256:82a8d0b81e318cc5ce71a5f1f8b5c4e63619620b63141ef8c995fa0db95a57c4", size = 219094, upload-time = "2025-09-23T09:19:12.58Z" }
 wheels = [
@@ -746,7 +746,7 @@ dependencies = [
     { name = "dill" },
     { name = "filelock" },
     { name = "fsspec", version = "2025.3.2", source = { registry = "https://pypi.org/simple" }, extra = ["http"], marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
-    { name = "fsspec", version = "2025.9.0", source = { registry = "https://pypi.org/simple" }, extra = ["http"], marker = "(extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default')" },
+    { name = "fsspec", version = "2025.9.0", source = { registry = "https://pypi.org/simple" }, extra = ["http"], marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
     { name = "httpx" },
     { name = "huggingface-hub" },
     { name = "multiprocess" },
@@ -1143,12 +1143,22 @@ name = "fsspec"
 version = "2025.9.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux'",
-    "python_full_version < '3.12' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and sys_platform == 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'win32'",
-    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
-    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/de/e0/bab50af11c2d75c9c4a2a26a5254573c0bd97cea152254401510950486fa/fsspec-2025.9.0.tar.gz", hash = "sha256:19fd429483d25d28b65ec68f9f4adc16c17ea2c7c7bf54ec61360d478fb19c19", size = 304847, upload-time = "2025-09-02T19:10:49.215Z" }
 wheels = [
@@ -1157,7 +1167,7 @@ wheels = [
 
 [package.optional-dependencies]
 http = [
-    { name = "aiohttp", marker = "(extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default')" },
+    { name = "aiohttp", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
 ]
 
 [[package]]
@@ -1337,8 +1347,8 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "filelock" },
     { name = "fsspec", version = "2025.3.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
-    { name = "fsspec", version = "2025.9.0", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default')" },
-    { name = "hf-xet", marker = "platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'" },
+    { name = "fsspec", version = "2025.9.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "hf-xet", marker = "platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
     { name = "packaging" },
     { name = "pyyaml" },
     { name = "requests" },
@@ -2341,7 +2351,7 @@ name = "nvidia-cudnn-cu11"
 version = "9.1.0.70"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu11", marker = "sys_platform == 'linux'" },
+    { name = "nvidia-cublas-cu11", marker = "sys_platform == 'linux' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/00/3b/0b776f04e364cd99e4cf152c2a9eadb5934c67c9a91429da55169a9447fd/nvidia_cudnn_cu11-9.1.0.70-py3-none-manylinux2014_x86_64.whl", hash = "sha256:e6135ac63fe9d5b0b89cfb35c3fc1c1349f2b995becadf2e9dc21bca89d9633d", size = 663919573, upload-time = "2024-04-22T15:20:24.839Z" },
@@ -2375,7 +2385,7 @@ name = "nvidia-cusolver-cu11"
 version = "11.4.1.48"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu11", marker = "sys_platform == 'linux'" },
+    { name = "nvidia-cublas-cu11", marker = "sys_platform == 'linux' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/55/ee/939ff0104991dd7bdabb4c9767994c612ba0e1c9a55672a1ddd42f5e5b16/nvidia_cusolver_cu11-11.4.1.48-py3-none-manylinux1_x86_64.whl", hash = "sha256:ca538f545645b7e6629140786d3127fe067b3d5a085bd794cde5bfe877c8926f", size = 128240842, upload-time = "2022-10-03T23:30:24.348Z" },
@@ -2419,11 +2429,17 @@ name = "omega-genome"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "datasets" },
+    { name = "einops" },
     { name = "ipython" },
     { name = "nntool" },
     { name = "numpy" },
+    { name = "peft", version = "0.13.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "peft", version = "0.17.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
     { name = "pydantic" },
     { name = "scikit-learn" },
+    { name = "transformers", version = "4.38.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "transformers", version = "4.57.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
     { name = "tyro" },
 ]
 
@@ -2455,13 +2471,16 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", marker = "extra == 'default'", specifier = "==1.10.1" },
+    { name = "datasets", specifier = ">=4.2.0" },
     { name = "datasets", marker = "extra == 'default'", specifier = ">=4.2.0" },
+    { name = "einops", specifier = ">=0.8.1" },
     { name = "einops", marker = "extra == 'default'", specifier = ">=0.8.1" },
     { name = "ipython", specifier = ">=9.6.0" },
     { name = "modelgenerator", marker = "extra == 'aido-dna'", specifier = ">=0.1.2" },
     { name = "nntool", marker = "sys_platform != 'linux'", specifier = "==1.8.3" },
     { name = "nntool", marker = "sys_platform == 'linux'", specifier = "==1.8.3", index = "https://jhliu17.github.io/nntool/wheel/" },
     { name = "numpy", specifier = "==1.26.4" },
+    { name = "peft", specifier = ">=0.13.2" },
     { name = "peft", marker = "extra == 'default'", specifier = ">=0.17.1" },
     { name = "pydantic", specifier = "==2.10.6" },
     { name = "scikit-learn", specifier = ">=1.7.2" },
@@ -2471,6 +2490,7 @@ requires-dist = [
     { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32' and extra == 'aido-dna'", specifier = "==2.6.0" },
     { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32' and extra == 'caduceus'", specifier = "==2.6.0" },
     { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32' and extra == 'default'", specifier = "==2.6.0" },
+    { name = "transformers", specifier = ">=4.38.0" },
     { name = "transformers", marker = "extra == 'default'", specifier = "==4.57.1" },
     { name = "tyro", specifier = ">=0.9.33" },
 ]
@@ -2605,17 +2625,17 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "accelerate" },
-    { name = "huggingface-hub" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "psutil" },
-    { name = "pyyaml" },
-    { name = "safetensors" },
+    { name = "accelerate", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "huggingface-hub", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "numpy", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "packaging", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "psutil", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "pyyaml", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "safetensors", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
     { name = "torch", version = "2.6.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
     { name = "torch", version = "2.6.0+cu118", source = { registry = "https://download.pytorch.org/whl/cu118" }, marker = "(sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
-    { name = "tqdm" },
-    { name = "transformers", version = "4.38.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "tqdm", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "transformers", version = "4.38.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/97/e1/aab80b861b4c18e85482940d504b3a7ee525bdf6ed93a1a2871881a180f1/peft-0.13.2.tar.gz", hash = "sha256:0e0cbd40ebdf5fe4ea79f255880d02f96712d18899509369a2cc5768ad46d672", size = 350390, upload-time = "2024-10-11T11:42:21.874Z" }
 wheels = [
@@ -2627,25 +2647,35 @@ name = "peft"
 version = "0.17.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux'",
-    "python_full_version < '3.12' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and sys_platform == 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'win32'",
-    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
-    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
 ]
 dependencies = [
-    { name = "accelerate" },
-    { name = "huggingface-hub" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "psutil" },
-    { name = "pyyaml" },
-    { name = "safetensors" },
-    { name = "torch", version = "2.6.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default')" },
-    { name = "torch", version = "2.6.0+cu118", source = { registry = "https://download.pytorch.org/whl/cu118" }, marker = "(sys_platform == 'linux' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default')" },
-    { name = "tqdm" },
-    { name = "transformers", version = "4.57.1", source = { registry = "https://pypi.org/simple" } },
+    { name = "accelerate", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "huggingface-hub", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "numpy", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "packaging", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "psutil", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "pyyaml", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "safetensors", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "torch", version = "2.6.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "torch", version = "2.6.0+cu118", source = { registry = "https://download.pytorch.org/whl/cu118" }, marker = "(sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna') or (sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default')" },
+    { name = "tqdm", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "transformers", version = "4.57.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/70/b8/2e79377efaa1e5f0d70a497db7914ffd355846e760ffa2f7883ab0f600fb/peft-0.17.1.tar.gz", hash = "sha256:e6002b42517976c290b3b8bbb9829a33dd5d470676b2dec7cb4df8501b77eb9f", size = 568192, upload-time = "2025-08-21T09:25:22.703Z" }
 wheels = [
@@ -4142,7 +4172,7 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "huggingface-hub" },
+    { name = "huggingface-hub", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c0/44/625db94e91c6196b6574359fa70bfe28e8eabf57a1b894f8f0ec69727fd1/tokenizers-0.15.2.tar.gz", hash = "sha256:e6e9c6e019dd5484be5beafc775ae6c925f4c69a3487040ed09b45e13df2cb91", size = 320256, upload-time = "2024-02-12T02:28:50.62Z" }
 wheels = [
@@ -4187,15 +4217,25 @@ name = "tokenizers"
 version = "0.22.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux'",
-    "python_full_version < '3.12' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and sys_platform == 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'win32'",
-    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
-    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
 ]
 dependencies = [
-    { name = "huggingface-hub" },
+    { name = "huggingface-hub", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1c/46/fb6854cec3278fbfa4a75b50232c77622bc517ac886156e6afbfa4d8fc6e/tokenizers-0.22.1.tar.gz", hash = "sha256:61de6522785310a309b3407bac22d99c4db5dba349935e99e4d15ea2226af2d9", size = 363123, upload-time = "2025-09-19T09:49:23.424Z" }
 wheels = [
@@ -4273,14 +4313,14 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "filelock", marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "filelock", marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
     { name = "fsspec", version = "2025.3.2", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
     { name = "fsspec", version = "2025.9.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
-    { name = "jinja2", marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
-    { name = "networkx", marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
-    { name = "setuptools", marker = "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32'" },
-    { name = "sympy", marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
-    { name = "typing-extensions", marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "jinja2", marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "networkx", marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "setuptools", marker = "(python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-caduceus') or (python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (python_full_version < '3.12' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (python_full_version < '3.12' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (python_full_version < '3.12' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "sympy", marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "typing-extensions", marker = "(sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and sys_platform != 'win32' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/78/a9/97cbbc97002fff0de394a2da2cdfa859481fdca36996d7bd845d50aa9d8d/torch-2.6.0-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:7979834102cd5b7a43cc64e87f2f3b14bd0e1458f06e9f88ffa386d07c7446e1", size = 766715424, upload-time = "2025-01-29T16:25:15.874Z" },
@@ -4302,32 +4342,44 @@ name = "torch"
 version = "2.6.0+cu118"
 source = { registry = "https://download.pytorch.org/whl/cu118" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux'",
-    "python_full_version < '3.12' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and sys_platform == 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
 ]
 dependencies = [
-    { name = "filelock", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "filelock", marker = "sys_platform == 'linux' or sys_platform == 'win32' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default')" },
     { name = "fsspec", version = "2025.3.2", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra == 'extra-12-omega-genome-aido-dna') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-aido-dna') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
-    { name = "fsspec", version = "2025.9.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'linux' and extra == 'extra-12-omega-genome-default') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform == 'win32' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
-    { name = "jinja2", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-    { name = "networkx", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-    { name = "nvidia-cublas-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "nvidia-cuda-cupti-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "nvidia-cuda-nvrtc-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "nvidia-cuda-runtime-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "nvidia-cudnn-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "nvidia-cufft-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "nvidia-curand-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "nvidia-cusolver-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "nvidia-cusparse-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "nvidia-nccl-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "nvidia-nvtx-cu11", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "setuptools", marker = "(python_full_version >= '3.12' and sys_platform == 'linux') or (python_full_version >= '3.12' and sys_platform == 'win32')" },
-    { name = "sympy", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-    { name = "triton", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "typing-extensions", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "fsspec", version = "2025.9.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna') or (sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default')" },
+    { name = "jinja2", marker = "sys_platform == 'linux' or sys_platform == 'win32' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default')" },
+    { name = "networkx", marker = "sys_platform == 'linux' or sys_platform == 'win32' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default')" },
+    { name = "nvidia-cublas-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "nvidia-cuda-cupti-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "nvidia-cuda-nvrtc-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "nvidia-cuda-runtime-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "nvidia-cudnn-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "nvidia-cufft-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "nvidia-curand-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "nvidia-cusolver-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "nvidia-cusparse-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "nvidia-nccl-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "nvidia-nvtx-cu11", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "setuptools", marker = "(python_full_version >= '3.12' and sys_platform == 'linux') or (python_full_version >= '3.12' and sys_platform == 'win32') or (python_full_version >= '3.12' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "sympy", marker = "sys_platform == 'linux' or sys_platform == 'win32' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default')" },
+    { name = "triton", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (platform_machine != 'x86_64' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (sys_platform != 'linux' and extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "typing-extensions", marker = "sys_platform == 'linux' or sys_platform == 'win32' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default') or (extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default')" },
 ]
 wheels = [
     { url = "https://download.pytorch.org/whl/cu118/torch-2.6.0%2Bcu118-cp311-cp311-linux_x86_64.whl", hash = "sha256:3e73419aab6dbcd888a3cc6a00d1f52f5950d918d7289ea6aeae751346613edc" },
@@ -4388,7 +4440,7 @@ name = "tqdm"
 version = "4.67.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus') or (extra == 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-default') or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737, upload-time = "2024-11-24T20:12:22.481Z" }
 wheels = [
@@ -4417,16 +4469,16 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "filelock" },
-    { name = "huggingface-hub" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pyyaml" },
-    { name = "regex" },
-    { name = "requests" },
-    { name = "safetensors" },
-    { name = "tokenizers", version = "0.15.2", source = { registry = "https://pypi.org/simple" } },
-    { name = "tqdm" },
+    { name = "filelock", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "huggingface-hub", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "numpy", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "packaging", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "pyyaml", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "regex", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "requests", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "safetensors", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "tokenizers", version = "0.15.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
+    { name = "tqdm", marker = "extra == 'extra-12-omega-genome-aido-dna' or (extra == 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/04/df/91aa79ff365058064cba248e4ca2aeeb4f5984001dc28aa909b36b39a132/transformers-4.38.0.tar.gz", hash = "sha256:aa98177980467cb0c73f34b19d70d0577ec021c7c00706fbaca46ac358fd083c", size = 7392324, upload-time = "2024-02-21T13:40:07.055Z" }
 wheels = [
@@ -4445,24 +4497,34 @@ name = "transformers"
 version = "4.57.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux'",
-    "python_full_version < '3.12' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and sys_platform == 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'win32'",
-    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
-    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra == 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-12-omega-genome-aido-dna' and extra == 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version >= '3.12' and sys_platform != 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
+    "python_full_version < '3.12' and sys_platform != 'linux' and extra != 'extra-12-omega-genome-aido-dna' and extra != 'extra-12-omega-genome-caduceus' and extra != 'extra-12-omega-genome-default'",
 ]
 dependencies = [
-    { name = "filelock" },
-    { name = "huggingface-hub" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pyyaml" },
-    { name = "regex" },
-    { name = "requests" },
-    { name = "safetensors" },
-    { name = "tokenizers", version = "0.22.1", source = { registry = "https://pypi.org/simple" } },
-    { name = "tqdm" },
+    { name = "filelock", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "huggingface-hub", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "numpy", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "packaging", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "pyyaml", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "regex", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "requests", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "safetensors", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "tokenizers", version = "0.22.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
+    { name = "tqdm", marker = "extra == 'extra-12-omega-genome-caduceus' or extra == 'extra-12-omega-genome-default' or extra != 'extra-12-omega-genome-aido-dna'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d6/68/a39307bcc4116a30b2106f2e689130a48de8bd8a1e635b5e1030e46fcd9e/transformers-4.57.1.tar.gz", hash = "sha256:f06c837959196c75039809636cd964b959f6604b75b8eeec6fdfc0440b89cc55", size = 10142511, upload-time = "2025-10-14T15:39:26.18Z" }
 wheels = [

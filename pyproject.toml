@@ -5,11 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "datasets>=4.2.0",
+    "einops>=0.8.1",
     "ipython>=9.6.0",
     "nntool==1.8.3",
     "numpy==1.26.4",
+    "peft>=0.13.2",
     "pydantic==2.10.6",
     "scikit-learn>=1.7.2",
+    "transformers>=4.38.0",
     "tyro>=0.9.33",
 ]
 
