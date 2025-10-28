@@ -68,20 +68,6 @@ caduceus_dist = replace(
     ),
 )
 
-# ReviewKD configuration
-caduceus_reviewkd = replace(
-    caduceus_base_config,
-    distillation_config=replace(
-        vanilla_distillation_model_config,
-        distill_method="reviewkd",
-        weight_mse=0.0,  # ReviewKD doesn't use MSE
-    ),
-    trainer_config=replace(
-        caduceus_base_config.trainer_config,
-        output_dir=f"{output_path}/caduceus_distillation/reviewkd",
-    ),
-)
-
 # Full task list configuration
 caduceus_all_tasks = replace(
     caduceus_base_config,
@@ -127,10 +113,6 @@ experiment_configs = {
     "caduceus_dist": (
         "Caduceus distillation with DIST method",
         caduceus_dist,
-    ),
-    "caduceus_reviewkd": (
-        "Caduceus distillation with ReviewKD",
-        caduceus_reviewkd,
     ),
     "caduceus_all_tasks": (
         "Caduceus distillation with all 18 tasks",
