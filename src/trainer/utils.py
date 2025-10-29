@@ -51,16 +51,29 @@ def precompute_teacher_logits(
             return_tensors="pt",
         )
         input_ids = tok.input_ids.to(device)
-        attention_mask = tok.attention_mask.to(device)
+
+        # FIX: Handle missing attention_mask
+        if hasattr(tok, "attention_mask") and tok.attention_mask is not None:
+            attention_mask = tok.attention_mask.to(device)
+        else:
+            attention_mask = torch.ones_like(input_ids)
+
         with torch.no_grad():
             out = model(input_ids=input_ids, attention_mask=attention_mask)
-            logits_list.append(out.logits.cpu())
+
+            # FIX: Handle both wrapped models (returns Tensor) and standard HF models
+            if isinstance(out, torch.Tensor):
+                logits = out
+            else:
+                logits = out.logits
+
+            logits_list.append(logits.cpu())
 
             if needs_features:
                 # Debug: print structure on first batch
                 if not debug_printed:
                     print(f"Debug - Batch size: {len(batch)}")
-                    print(f"Debug - Logits shape: {out.logits.shape}")
+                    print(f"Debug - Logits shape: {logits.shape}")
                     print(f"Debug - Output type: {type(out)}")
                     print(f"Debug - Has hidden_states: {hasattr(out, 'hidden_states')}")
                     if hasattr(out, "hidden_states") and out.hidden_states is not None:
@@ -92,7 +105,7 @@ def precompute_teacher_logits(
                         hidden = last_hidden[:, 0, :]  # CLS token
                     elif last_hidden.dim() == 2:
                         # DNA-BERT2 format: [seq_len, hidden_size]
-                        actual_batch_size = out.logits.shape[0]
+                        actual_batch_size = logits.shape[0]
                         if actual_batch_size == 1:
                             # Single sequence: pool across sequence dimension
                             hidden = last_hidden.mean(
@@ -126,7 +139,7 @@ def precompute_teacher_logits(
                         print(
                             "Warning: Cannot extract hidden states, using logits as features"
                         )
-                        hidden = out.logits
+                        hidden = logits
 
                 features_list.append(hidden.cpu())
 
@@ -163,7 +176,14 @@ def evaluate_teacher_mcc(teacher_model, teacher_tokenizer, test_dataloader, devi
             labels = batch["labels"].to(device)
 
             outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
-            preds = torch.argmax(outputs.logits, dim=-1)
+
+            # FIX: Handle both wrapped models (returns Tensor) and standard HF models (returns object with .logits)
+            if isinstance(outputs, torch.Tensor):
+                logits = outputs
+            else:
+                logits = outputs.logits
+
+            preds = torch.argmax(logits, dim=-1)
 
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())

@@ -169,11 +169,19 @@ def evaluate_and_log_teacher(
             return_tensors="pt",
         )
 
-        return {
+        # FIX: Handle missing attention_mask
+        result = {
             "input_ids": encoded["input_ids"],
-            "attention_mask": encoded["attention_mask"],
             "labels": torch.tensor(labels, dtype=torch.long),
         }
+
+        # Only add attention_mask if it exists, otherwise create default
+        if "attention_mask" in encoded:
+            result["attention_mask"] = encoded["attention_mask"]
+        else:
+            result["attention_mask"] = torch.ones_like(encoded["input_ids"])
+
+        return result
 
     test_loader = DataLoader(
         test_dataset,
