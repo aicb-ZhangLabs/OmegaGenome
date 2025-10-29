@@ -47,9 +47,7 @@ def get_teacher_model(config, task_name, teacher_ckpt):
 
     This replaces the direct build_glm call to support multiple model types.
     """
-    model_type = getattr(
-        config, "model_type", "glm"
-    )  # Default to 'glm' for backward compatibility
+    model_type = getattr(config, "model_type", "glm")  # Default to 'glm' for backward compatibility
 
     if model_type == "caduceus":
         # Import Caduceus utilities only when needed
@@ -110,9 +108,7 @@ def find_teacher_checkpoint(config, task_name):
                 config.teacher_parent_dir, task_name, model_type=model_type_str
             )
         else:
-            teacher_ckpt = orig_get_best_checkpoint(
-                config.trainer_config.output_dir, task_name
-            )
+            teacher_ckpt = orig_get_best_checkpoint(config.trainer_config.output_dir, task_name)
             return teacher_ckpt, -1.0
 
 
@@ -215,9 +211,7 @@ def evaluate_and_log_teacher(
         json.dump(teacher_eval_data, f, indent=2)
 
     # Also append to a summary CSV for easy comparison across experiments
-    summary_csv = os.path.join(
-        config.trainer_config.output_dir, "teacher_scores_summary.csv"
-    )
+    summary_csv = os.path.join(config.trainer_config.output_dir, "teacher_scores_summary.csv")
     file_exists = os.path.exists(summary_csv)
 
     with open(summary_csv, "a", newline="") as f:
@@ -265,9 +259,7 @@ def distill(
     model_type = getattr(config, "model_type", "glm")
     print(f"Model Type: {model_type.upper()}")
     print(f"Teacher: {config.teacher_config.model_name_or_path}")
-    print(
-        f"Student: {config.student_config.model_type}-{config.student_config.model_size}"
-    )
+    print(f"Student: {config.student_config.model_type}-{config.student_config.model_size}")
     print(f"Method: {config.distillation_config.distill_method}")
     print(f"{'=' * 80}\n")
 
@@ -289,9 +281,7 @@ def distill(
     # ===========================================================
     # MODIFIED SECTION: Use unified teacher model loading
     # ===========================================================
-    teacher_tokenizer, teacher_model = get_teacher_model(
-        config, task_name, teacher_ckpt
-    )
+    teacher_tokenizer, teacher_model = get_teacher_model(config, task_name, teacher_ckpt)
     teacher_model.eval()
 
     # ===========================================================

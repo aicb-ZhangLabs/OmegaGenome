@@ -1,17 +1,13 @@
-from dataclasses import replace
 from ..config_schema import DistillationHyperparamExperimentConfig
 from ..glm import caduceus
 from ..bpnet import original_bpnet_classifier_config
 from ..trainer import (
     caduceus_hyperparam_trainer_config,
-    caduceus_hyperparam_dkd_trainer_config,
 )
 from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import (
-    DistillationModelConfig,
     vanilla_distillation_model_config,
 )
-from ...env import output_path
 from ...slurm import basic_distillation_slurm
 from .caduceus import CADUCEUS_PARENT_PATH
 

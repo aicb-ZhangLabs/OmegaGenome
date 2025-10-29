@@ -39,9 +39,7 @@ def precompute_teacher_logits(
     # Debug flag to print structure once
     debug_printed = False
 
-    for i in tqdm(
-        range(0, len(sequences), batch_size), total=len(sequences) // batch_size
-    ):
+    for i in tqdm(range(0, len(sequences), batch_size), total=len(sequences) // batch_size):
         batch = sequences[i : i + batch_size]
         tok = tokenizer(
             batch,
@@ -83,9 +81,7 @@ def precompute_teacher_logits(
                             print(f"Debug - Num hidden layers: {len(hs)}")
                             print(f"Debug - Last hidden state shape: {hs[-1].shape}")
                         else:
-                            print(
-                                f"Debug - Hidden states shape (single tensor): {hs.shape}"
-                            )
+                            print(f"Debug - Hidden states shape (single tensor): {hs.shape}")
                     debug_printed = True
 
                 # Extract features
@@ -108,14 +104,10 @@ def precompute_teacher_logits(
                         actual_batch_size = logits.shape[0]
                         if actual_batch_size == 1:
                             # Single sequence: pool across sequence dimension
-                            hidden = last_hidden.mean(
-                                dim=0, keepdim=True
-                            )  # [1, hidden_size]
+                            hidden = last_hidden.mean(dim=0, keepdim=True)  # [1, hidden_size]
                         else:
                             # Multiple sequences but concatenated - need to split and pool
-                            seq_len_per_sample = (
-                                last_hidden.shape[0] // actual_batch_size
-                            )
+                            seq_len_per_sample = last_hidden.shape[0] // actual_batch_size
                             hidden_list = []
                             for b in range(actual_batch_size):
                                 start_idx = b * seq_len_per_sample
@@ -124,21 +116,15 @@ def precompute_teacher_logits(
                                 # Pool this sequence
                                 pooled = seq_hidden.mean(dim=0)  # [hidden_size]
                                 hidden_list.append(pooled)
-                            hidden = torch.stack(
-                                hidden_list
-                            )  # [batch_size, hidden_size]
+                            hidden = torch.stack(hidden_list)  # [batch_size, hidden_size]
                     else:
-                        raise ValueError(
-                            f"Unexpected hidden state shape: {last_hidden.shape}"
-                        )
+                        raise ValueError(f"Unexpected hidden state shape: {last_hidden.shape}")
                 else:
                     # Fallback: use pooler_output or logits
                     if hasattr(out, "pooler_output") and out.pooler_output is not None:
                         hidden = out.pooler_output
                     else:
-                        print(
-                            "Warning: Cannot extract hidden states, using logits as features"
-                        )
+                        print("Warning: Cannot extract hidden states, using logits as features")
                         hidden = logits
 
                 features_list.append(hidden.cpu())
@@ -349,9 +335,7 @@ class ExperimentTracker:
             "completed": len(completed),
             "incomplete": len(incomplete),
             "completion_rate": (
-                f"{len(completed) / len(all_experiments) * 100:.1f}%"
-                if all_experiments
-                else "0%"
+                f"{len(completed) / len(all_experiments) * 100:.1f}%" if all_experiments else "0%"
             ),
         }
 
@@ -493,9 +477,7 @@ class ExperimentTracker:
             }
 
         # Find latest checkpoint
-        latest_ckpt = max(
-            checkpoints, key=lambda p: int(p.split("epoch_")[1].split("_")[0])
-        )
+        latest_ckpt = max(checkpoints, key=lambda p: int(p.split("epoch_")[1].split("_")[0]))
         latest_epoch = int(latest_ckpt.split("epoch_")[1].split("_")[0])
 
         return {
@@ -584,9 +566,9 @@ def load_caduceus_model(checkpoint_path, num_labels, device, best_ckpt_file=None
     config = AutoConfig.from_pretrained(checkpoint_path, trust_remote_code=True)
 
     # Create model from config
-    base_model = AutoModelForSequenceClassification.from_config(
-        config, trust_remote_code=True
-    ).to(device)
+    base_model = AutoModelForSequenceClassification.from_config(config, trust_remote_code=True).to(
+        device
+    )
 
     # Load weights
     if best_ckpt_file:
@@ -624,9 +606,7 @@ def find_best_caduceus_checkpoint(task_name, checkpoint_root):
     task_dir = os.path.join(checkpoint_root, f"{task_name}_caduceus_finetuned")
 
     if not os.path.isdir(task_dir):
-        print(
-            f"Warning: Checkpoint directory not found for task '{task_name}' at {task_dir}"
-        )
+        print(f"Warning: Checkpoint directory not found for task '{task_name}' at {task_dir}")
         return None, -1.0, None
 
     best_score = -1.0
@@ -657,7 +637,5 @@ def find_best_caduceus_checkpoint(task_name, checkpoint_root):
             print(f"Found Caduceus model for '{task_name}' at {task_dir}")
             return task_dir, 0.0, None
 
-        print(
-            f"Warning: No valid Caduceus checkpoint found for task '{task_name}' in {task_dir}"
-        )
+        print(f"Warning: No valid Caduceus checkpoint found for task '{task_name}' in {task_dir}")
         return None, -1.0, None
