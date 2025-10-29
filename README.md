@@ -62,7 +62,7 @@ Example for linking NT finetuned models:
 ```
 ln -s \
 /extra/zhanglab0/INDV/pengchx3/NT/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2 \
-./data/finetuned_models/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2
+./data/finetuned_model/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2
 ```
 
 Example for linking dnabert-2 finetuned models:
