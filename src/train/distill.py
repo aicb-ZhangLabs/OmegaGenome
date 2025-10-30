@@ -5,7 +5,6 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import tyro
 import json
 import wandb
-import csv
 
 from datetime import datetime
 from dataclasses import replace, asdict
@@ -28,7 +27,6 @@ from ..trainer.distill_trainer import (
     create_run_hyperparams_str,
 )
 
-import torch
 
 from ..model.glm import (
     find_teacher_checkpoint,
@@ -50,9 +48,7 @@ def distill(
     model_type = getattr(config, "model_type", "glm")
     print(f"Model Type: {model_type.upper()}")
     print(f"Teacher: {config.teacher_config.model_name_or_path}")
-    print(
-        f"Student: {config.student_config.model_type}-{config.student_config.model_size}"
-    )
+    print(f"Student: {config.student_config.model_type}-{config.student_config.model_size}")
     print(f"Method: {config.distillation_config.distill_method}")
     print(f"{'=' * 80}\n")
 
@@ -74,9 +70,7 @@ def distill(
     # ===========================================================
     # MODIFIED SECTION: Use unified teacher model loading
     # ===========================================================
-    teacher_tokenizer, teacher_model = get_teacher_model(
-        config, task_name, teacher_ckpt
-    )
+    teacher_tokenizer, teacher_model = get_teacher_model(config, task_name, teacher_ckpt)
     teacher_model.eval()
 
     # ===========================================================

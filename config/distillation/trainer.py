@@ -79,6 +79,4 @@ caduceus_hyperparam_dkd_trainer_config = DistillTrainerConfig(
     batch_size=32,
     max_len=1024,
 )
-caduceus_debug_trainer_config = replace(
-    caduceus_trainer_config, epochs=2, eval_every_n_epochs=1
-)
+caduceus_debug_trainer_config = replace(caduceus_trainer_config, epochs=2, eval_every_n_epochs=1)
