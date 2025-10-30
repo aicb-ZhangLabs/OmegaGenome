@@ -36,11 +36,6 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 
 
-# ============================================================================
-# CADUCEUS SUPPORT - Minimal additions
-# ============================================================================
-
-
 def get_teacher_model(config, task_name, teacher_ckpt):
     """
     Unified teacher model loading that supports GLM/DNABert2, NT, and Caduceus.
@@ -110,11 +105,6 @@ def find_teacher_checkpoint(config, task_name):
         else:
             teacher_ckpt = orig_get_best_checkpoint(config.trainer_config.output_dir, task_name)
             return teacher_ckpt, -1.0
-
-
-# ============================================================================
-# ORIGINAL FUNCTIONS - Unchanged
-# ============================================================================
 
 
 def evaluate_and_log_teacher(
