@@ -4,9 +4,7 @@ from ..glm import caduceus
 from ..bpnet import (
     original_bpnet_classifier_config,
 )
-from ..trainer import (
-    caduceus_trainer_config,
-)
+from ..trainer import caduceus_trainer_config, caduceus_debug_trainer_config
 from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import (
     dist_model_config,
@@ -97,6 +95,19 @@ caduceus_all_tasks = replace(
     ),
 )
 
+caduceus_debug_config = DistillationExperimentConfig(
+    task_names=["promoter_all"],
+    dataset_config=nucletide_transformer_revised_benchmark,
+    teacher_config=caduceus,
+    model_type="caduceus",
+    teacher_parent_dir=CADUCEUS_PARENT_PATH,
+    student_config=original_bpnet_classifier_config,
+    distillation_config=vanilla_distillation_model_config,
+    trainer_config=caduceus_debug_trainer_config,
+    slurm_config=basic_distillation_slurm,
+)
+
+
 experiment_configs = {
     "caduceus_vanilla": (
         "Caduceus distillation with vanilla KD and original BPNet",
@@ -117,5 +128,9 @@ experiment_configs = {
     "caduceus_all_tasks": (
         "Caduceus distillation with all 18 tasks",
         caduceus_all_tasks,
+    ),
+    "caduceus_debug": (
+        "Debug Mode for caduceus distillation with vanilla KD and original BPNet",
+        caduceus_debug_config,
     ),
 }

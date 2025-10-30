@@ -4,9 +4,7 @@ from ..glm import nt_2b5
 from ..bpnet import (
     original_bpnet_classifier_config,
 )
-from ..trainer import (
-    nt_trainer_config,
-)
+from ..trainer import nt_trainer_config, nt_debug_trainer_config
 from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import (
     dist_model_config,
@@ -18,8 +16,8 @@ from ...env import project_path, output_path
 from ...slurm import basic_distillation_slurm
 
 # NT parent path for checkpoints
-NT_PARENT_PATH = f"{project_path}/data/finetuned_models/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label"
-
+# NT_PARENT_PATH = f"{project_path}/data/finetuned_models/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label"
+NT_PARENT_PATH = f"{project_path}/data/finetuned_models/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch20-10-17-revised-r32-fix-num-label"
 # Base NT experiment configuration
 nt_base_config = DistillationExperimentConfig(
     task_names=[
@@ -67,7 +65,17 @@ nt_dist = replace(
         output_dir=f"{output_path}/nt_distillation/dist",
     ),
 )
-
+nt_debug_config = DistillationExperimentConfig(
+    task_names=["promoter_all"],
+    dataset_config=nucletide_transformer_revised_benchmark,
+    teacher_config=nt_2b5,
+    model_type="NT",
+    teacher_parent_dir=NT_PARENT_PATH,
+    student_config=original_bpnet_classifier_config,
+    distillation_config=vanilla_distillation_model_config,
+    trainer_config=nt_debug_trainer_config,
+    slurm_config=basic_distillation_slurm,
+)
 experiment_configs = {
     "nt_vanilla": (
         "NT distillation with vanilla KD and original BPNet",
@@ -84,5 +92,9 @@ experiment_configs = {
     "nt_dist": (
         "NT distillation with DIST method",
         nt_dist,
+    ),
+    "nt_debug": (
+        "Debug Mode for NT distillation with vanilla KD and original BPNet",
+        nt_debug_config,
     ),
 }

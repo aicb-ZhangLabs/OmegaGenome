@@ -53,7 +53,7 @@ nt_different_size_original_trainer_config = DistillTrainerConfig(
     batch_size=16,
     max_len=1000,
 )
-
+nt_debug_trainer_config = replace(nt_trainer_config, epochs=2, eval_every_n_epochs=1)
 # Caduceus trainer configurations
 caduceus_trainer_config = DistillTrainerConfig(
     output_dir=f"{output_path}/caduceus_distillation/vanilla_original",
@@ -78,4 +78,7 @@ caduceus_hyperparam_dkd_trainer_config = DistillTrainerConfig(
     epochs=200,
     batch_size=32,
     max_len=1024,
+)
+caduceus_debug_trainer_config = replace(
+    caduceus_trainer_config, epochs=2, eval_every_n_epochs=1
 )
