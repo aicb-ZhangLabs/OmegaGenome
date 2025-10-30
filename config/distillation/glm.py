@@ -16,7 +16,7 @@ nt_2b5 = GLMConfig(
 
 # Caduceus teacher configuration
 caduceus = GLMConfig(
-    model_name_or_path="kuleshov-group/caduceus-ph_seqlen-131k_d_model-256_n_layer-16",
+    model_name_or_path="kuleshov-group/caduceus-ps_seqlen-131k_d_model-256_n_layer-16",
     num_labels=2,
     trust_remote_code=True,
     output_hidden_states=True,
