@@ -141,6 +141,9 @@ def get_teacher_model(config, task_name, teacher_ckpt):
     Unified teacher model loading that supports GLM/DNABert2, NT, and Caduceus.
 
     This replaces the direct build_glm call to support multiple model types.
+
+    Returns:
+        tuple: (tokenizer, teacher_model, teacher_hidden)
     """
     model_type = getattr(config, "model_type", "glm")  # Default to 'glm' for backward compatibility
 
@@ -166,14 +169,26 @@ def get_teacher_model(config, task_name, teacher_ckpt):
             teacher_ckpt, num_labels, config.trainer_config.device, best_ckpt_file
         )
 
+        # Extract teacher hidden size
+        if hasattr(wrapped_model, "hidden_dim") and wrapped_model.hidden_dim:
+            teacher_hidden = wrapped_model.hidden_dim
+        else:
+            teacher_hidden = 256  # Default for Caduceus
+
         # Return in format compatible with existing code
-        # wrapped_model has the feature extraction capabilities
-        return tokenizer, wrapped_model
+        return tokenizer, wrapped_model, teacher_hidden
 
     else:  # Default GLM/NT path - unchanged
         teacher_config = replace(config.teacher_config, ckpt_path=teacher_ckpt)
         teacher_tokenizer, teacher_model = build_glm(teacher_config)
-        return teacher_tokenizer, teacher_model
+
+        # Extract teacher hidden size
+        if hasattr(teacher_model, "config"):
+            teacher_hidden = teacher_model.config.hidden_size
+        else:
+            teacher_hidden = 768  # Default fallback
+
+        return teacher_tokenizer, teacher_model, teacher_hidden
 
 
 def find_teacher_checkpoint(config, task_name):

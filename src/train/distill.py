@@ -70,7 +70,10 @@ def distill(
     # ===========================================================
     # MODIFIED SECTION: Use unified teacher model loading
     # ===========================================================
-    teacher_tokenizer, teacher_model = get_teacher_model(config, task_name, teacher_ckpt)
+    teacher_tokenizer, teacher_model, teacher_hidden = get_teacher_model(
+        config, task_name, teacher_ckpt
+    )
+
     teacher_model.eval()
 
     # ===========================================================
@@ -78,14 +81,6 @@ def distill(
     # ===========================================================
     # Build student model
     num_labels = get_num_labels(task_name)
-
-    # Handle different teacher model types for hidden size
-    if hasattr(teacher_model, "config"):
-        teacher_hidden = teacher_model.config.hidden_size
-    elif hasattr(teacher_model, "hidden_dim"):  # For wrapped Caduceus models
-        teacher_hidden = teacher_model.hidden_dim if teacher_model.hidden_dim else 256
-    else:
-        teacher_hidden = 768  # Default fallback
 
     student_config = replace(
         config.student_config,
