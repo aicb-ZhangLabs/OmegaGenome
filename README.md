@@ -58,7 +58,27 @@ mkdir -p /extra/zhanglab0/INDV/[YOUR_USER_NAME]/OmegaGenome/output
 ln -s /extra/zhanglab0/INDV/[YOUR_USER_NAME]/OmegaGenome/data data
 ln -s /extra/zhanglab0/INDV/[YOUR_USER_NAME]/OmegaGenome/output output
 ```
-
+Example for linking NT finetuned models:
+```
+ln -s \
+/extra/zhanglab0/INDV/pengchx3/NT/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2 \
+./data/finetuned_models/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2
+```
+```
+ln -sfnT /extra/zhanglab0/INDV/pengchx3/NT/2b5-multi-species_nucleotide-transformer-finetune-results-lora-ep
+och20-10-17-revised-r32-fix-num-label  ./data/finetuned_models/2b5-multi-species_nucleotide-transformer-finetu
+ne-results-lora-epoch20-10-17-revised-r32-fix-num-label
+```
+Example for linking dnabert-2 finetuned models:
+```
+ln -sfn /extra/zhanglab0/INDV/pengchx3/dnabert2_output_shared ./data/finetuned_models/dnabert2_output_shared
+```
+Example for linking caduceus finetuned models
+```
+mkdir -p "/extra/zhanglab0/INDV/pengchx3/OmegaGenome_different_version/OmegaGenome/data/finetuned_model" \
+&& ln -sfnT "/extra/zhanglab0/INDV/pengchx3/caduceus/checkpoints-8-7-bz8" \
+            "./data/finetuned_models/caduceus_finetune_results"
+```
 ## Training
 
 ### Finetuning

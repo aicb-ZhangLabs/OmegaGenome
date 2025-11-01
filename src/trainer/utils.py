@@ -10,8 +10,11 @@ import glob
 from typing import Set, Tuple, List, Dict
 from datetime import datetime
 
+import torch.nn as nn
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoConfig
 
-def get_best_checkpoint(parent_dir, task_name):
+
+def orig_get_best_checkpoint(parent_dir, task_name):
     task_dir = os.path.join(parent_dir, task_name)
     if not os.path.isdir(task_dir):
         return None
@@ -46,16 +49,29 @@ def precompute_teacher_logits(
             return_tensors="pt",
         )
         input_ids = tok.input_ids.to(device)
-        attention_mask = tok.attention_mask.to(device)
+
+        # FIX: Handle missing attention_mask
+        if hasattr(tok, "attention_mask") and tok.attention_mask is not None:
+            attention_mask = tok.attention_mask.to(device)
+        else:
+            attention_mask = torch.ones_like(input_ids)
+
         with torch.no_grad():
             out = model(input_ids=input_ids, attention_mask=attention_mask)
-            logits_list.append(out.logits.cpu())
+
+            # FIX: Handle both wrapped models (returns Tensor) and standard HF models
+            if isinstance(out, torch.Tensor):
+                logits = out
+            else:
+                logits = out.logits
+
+            logits_list.append(logits.cpu())
 
             if needs_features:
                 # Debug: print structure on first batch
                 if not debug_printed:
                     print(f"Debug - Batch size: {len(batch)}")
-                    print(f"Debug - Logits shape: {out.logits.shape}")
+                    print(f"Debug - Logits shape: {logits.shape}")
                     print(f"Debug - Output type: {type(out)}")
                     print(f"Debug - Has hidden_states: {hasattr(out, 'hidden_states')}")
                     if hasattr(out, "hidden_states") and out.hidden_states is not None:
@@ -85,7 +101,7 @@ def precompute_teacher_logits(
                         hidden = last_hidden[:, 0, :]  # CLS token
                     elif last_hidden.dim() == 2:
                         # DNA-BERT2 format: [seq_len, hidden_size]
-                        actual_batch_size = out.logits.shape[0]
+                        actual_batch_size = logits.shape[0]
                         if actual_batch_size == 1:
                             # Single sequence: pool across sequence dimension
                             hidden = last_hidden.mean(dim=0, keepdim=True)  # [1, hidden_size]
@@ -109,7 +125,7 @@ def precompute_teacher_logits(
                         hidden = out.pooler_output
                     else:
                         print("Warning: Cannot extract hidden states, using logits as features")
-                        hidden = out.logits
+                        hidden = logits
 
                 features_list.append(hidden.cpu())
 
@@ -146,7 +162,14 @@ def evaluate_teacher_mcc(teacher_model, teacher_tokenizer, test_dataloader, devi
             labels = batch["labels"].to(device)
 
             outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
-            preds = torch.argmax(outputs.logits, dim=-1)
+
+            # FIX: Handle both wrapped models (returns Tensor) and standard HF models (returns object with .logits)
+            if isinstance(outputs, torch.Tensor):
+                logits = outputs
+            else:
+                logits = outputs.logits
+
+            preds = torch.argmax(logits, dim=-1)
 
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
@@ -462,3 +485,157 @@ class ExperimentTracker:
             "latest_checkpoint": latest_ckpt,
             "latest_epoch": latest_epoch,
         }
+
+
+"""
+Caduceus model wrapper for distillation.
+This module provides compatibility between Caduceus models and the OmegaGenome distillation framework.
+"""
+
+
+class CaduceusFeatureExtractor(nn.Module):
+    """Wraps Caduceus model to extract features for distillation."""
+
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        self.hidden_dim = None  # Will be set dynamically
+
+    def forward(
+        self,
+        input_ids,
+        attention_mask=None,
+        return_features=False,
+        return_multi_features=False,
+    ):
+        outputs = self.model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            output_hidden_states=True,
+        )
+        logits = outputs.logits
+
+        if return_multi_features:
+            # Extract features from multiple layers for ReviewKD
+            hidden_states = outputs.hidden_states
+            last_hidden = hidden_states[-1]
+            pooled = last_hidden.mean(dim=1)
+
+            # Set hidden_dim dynamically if not set
+            if self.hidden_dim is None:
+                self.hidden_dim = pooled.shape[-1]
+
+            # Take last few layers for multi-stage distillation
+            multi_features = [
+                pooled,  # Last layer pooled
+                hidden_states[-2].mean(dim=1) if len(hidden_states) > 1 else pooled,
+            ]
+            return logits, multi_features
+
+        elif return_features:
+            # Extract final hidden state and pool
+            last_hidden = outputs.hidden_states[-1]
+            pooled = last_hidden.mean(dim=1)
+
+            # Set hidden_dim dynamically if not set
+            if self.hidden_dim is None:
+                self.hidden_dim = pooled.shape[-1]
+
+            return logits, pooled
+
+        return logits
+
+
+def load_caduceus_model(checkpoint_path, num_labels, device, best_ckpt_file=None):
+    """
+    Load a Caduceus model from checkpoint.
+
+    Args:
+        checkpoint_path: Path to the model checkpoint directory
+        num_labels: Number of classification labels
+        device: Device to load the model on
+        best_ckpt_file: Optional path to a specific checkpoint file
+
+    Returns:
+        tuple: (wrapped_model, tokenizer, base_model)
+    """
+    # Load tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint_path, trust_remote_code=True)
+
+    # Load model configuration
+    config = AutoConfig.from_pretrained(checkpoint_path, trust_remote_code=True)
+
+    # Create model from config
+    base_model = AutoModelForSequenceClassification.from_config(config, trust_remote_code=True).to(
+        device
+    )
+
+    # Load weights
+    if best_ckpt_file:
+        # Use the specific best checkpoint file
+        state_dict = torch.load(best_ckpt_file, map_location=device)
+    else:
+        # Fallback to default file if no specific checkpoint found
+        state_dict = torch.load(
+            os.path.join(checkpoint_path, "pytorch_model.bin"), map_location=device
+        )
+
+    base_model.load_state_dict(state_dict, strict=True)
+
+    # Wrap in feature extractor for distillation
+    wrapped_model = CaduceusFeatureExtractor(base_model)
+
+    return wrapped_model, tokenizer, base_model
+
+
+def find_best_caduceus_checkpoint(task_name, checkpoint_root):
+    """
+    Searches for the best Caduceus checkpoint for a given task.
+    Expected directory structure: {checkpoint_root}/{task_name}_caduceus_finetuned/
+
+    Args:
+        task_name: Name of the task
+        checkpoint_root: Root directory containing task checkpoints
+
+    Returns:
+        tuple: (checkpoint_dir, best_score, best_checkpoint_file)
+    """
+    import os
+    import re
+
+    task_dir = os.path.join(checkpoint_root, f"{task_name}_caduceus_finetuned")
+
+    if not os.path.isdir(task_dir):
+        print(f"Warning: Checkpoint directory not found for task '{task_name}' at {task_dir}")
+        return None, -1.0, None
+
+    best_score = -1.0
+    best_ckpt_path = None
+
+    # Pattern for checkpoint files: epoch{X}_valmcc_{Y}.pt
+    pattern = re.compile(r"epoch(\d+)_valmcc_(-?[0-9\.]+)\.pt")
+
+    for filename in os.listdir(task_dir):
+        match = pattern.match(filename)
+        if match:
+            try:
+                mcc_score = float(match.group(2))
+                if mcc_score > best_score:
+                    best_score = mcc_score
+                    best_ckpt_path = os.path.join(task_dir, filename)
+            except (ValueError, IndexError):
+                continue
+
+    if best_ckpt_path:
+        print(
+            f"Found best Caduceus checkpoint for '{task_name}': {os.path.basename(best_ckpt_path)} (Val MCC: {best_score:.4f})"
+        )
+        return task_dir, best_score, best_ckpt_path
+    else:
+        # Check if there's a pre-trained model without specific checkpoint files
+        if os.path.exists(os.path.join(task_dir, "config.json")):
+            print(f"Found Caduceus model for '{task_name}' at {task_dir}")
+            return task_dir, 0.0, None
+
+        print(f"Warning: No valid Caduceus checkpoint found for task '{task_name}' in {task_dir}")
+        return None, -1.0, None

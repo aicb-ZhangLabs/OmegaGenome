@@ -31,15 +31,14 @@ dkd_model_config = DistillationModelConfig(
     dkd_alpha=1.0,
     dkd_beta=8.0,
 )
-dist_model_config = (
-    DistillationModelConfig(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=4.0,
-        distill_method="dist",
-    ),
+dist_model_config = DistillationModelConfig(
+    weight_ce=0.5,
+    weight_kl=0.5,
+    weight_mse=0.0,
+    temperature=4.0,
+    distill_method="dist",
 )
+
 
 nt_different_size_model_config = DistillationModelConfig(
     weight_ce=0.5,
