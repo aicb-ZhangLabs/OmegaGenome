@@ -8,6 +8,9 @@ from ..distillation_model import distillation_model_config
 from ...slurm import basic_distillation_slurm
 from ...env import project_path
 
+DNABERT2_PARENT_PATH = (
+    f"{project_path}/data/finetuned_models/dnabert2_output_shared/output"
+)
 experiment_configs = {
     "dna_bert_v2": (
         "doing distillation",

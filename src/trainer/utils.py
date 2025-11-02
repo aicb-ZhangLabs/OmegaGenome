@@ -1,14 +1,13 @@
 import os
 import torch
 import numpy as np
-
-from tqdm import tqdm
-from sklearn.metrics import matthews_corrcoef
-
+import hashlib
 import json
 import glob
-from typing import Set, Tuple, List, Dict
-from datetime import datetime
+from tqdm import tqdm
+from sklearn.metrics import matthews_corrcoef
+from pathlib import Path
+from typing import Tuple, Optional
 
 import torch.nn as nn
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoConfig
@@ -28,10 +27,247 @@ def orig_get_best_checkpoint(parent_dir, task_name):
     return os.path.join(task_dir, best)
 
 
+def _extract_teacher_model_name(teacher_parent_dir: str) -> str:
+    """
+    Extract teacher model name from teacher_parent_dir path.
+
+    Examples:
+        "/path/to/data/finetuned_models/2b5-multi-species_nt-lora" -> "2b5-multi-species_nt-lora"
+        "/path/to/data/finetuned_models/caduceus_finetune_results" -> "caduceus_finetune_results"
+    """
+    # Get the last component after 'finetuned_models'
+    path_parts = Path(teacher_parent_dir).parts
+
+    # Find 'finetuned_models' in the path
+    if "finetuned_models" in path_parts:
+        idx = path_parts.index("finetuned_models")
+        if idx + 1 < len(path_parts):
+            return path_parts[idx + 1]
+
+    # Fallback: use the last directory name
+    return Path(teacher_parent_dir).name
+
+
+def _get_cache_dir(project_path: str, teacher_parent_dir: str, task_name: str) -> Path:
+    """
+    Get cache directory path for a specific teacher model and task.
+
+    Args:
+        project_path: Root project path
+        teacher_parent_dir: Path to teacher model checkpoints
+        task_name: Task name (e.g., "H2AFZ")
+
+    Returns:
+        Path to cache directory: {project_path}/data/cache/{teacher_model_name}/{task_name}/
+    """
+    teacher_model_name = _extract_teacher_model_name(teacher_parent_dir)
+    cache_dir = Path(project_path) / "data" / "cache" / teacher_model_name / task_name
+    return cache_dir
+
+
+def _compute_cache_key(sequences: list, teacher_ckpt: str, max_length: int) -> str:
+    """
+    Compute a hash key for cache validation.
+
+    Args:
+        sequences: List of input sequences
+        teacher_ckpt: Path to teacher checkpoint
+        max_length: Maximum sequence length
+
+    Returns:
+        MD5 hash string
+    """
+    # Create a deterministic string from key parameters
+    key_str = f"{len(sequences)}_{teacher_ckpt}_{max_length}"
+    # Add first and last few sequences as sample
+    if len(sequences) > 0:
+        sample = (
+            sequences[0] if len(sequences) == 1 else f"{sequences[0]}_{sequences[-1]}"
+        )
+        key_str += f"_{sample}"
+
+    return hashlib.md5(key_str.encode()).hexdigest()
+
+
+def _save_cache(
+    cache_dir: Path,
+    logits: Optional[np.ndarray],
+    features: Optional[np.ndarray],
+    metadata: dict,
+):
+    """
+    Save precomputed logits and features to cache.
+
+    Args:
+        cache_dir: Directory to save cache files
+        logits: Teacher logits array
+        features: Teacher features array (optional)
+        metadata: Metadata dict containing cache info
+    """
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save arrays
+    if logits is not None:  # <--- FIX: Add check
+        np.save(cache_dir / "train_logits.npy", logits)
+    if features is not None:
+        np.save(cache_dir / "train_features.npy", features)
+
+    # Save metadata
+    with open(cache_dir / "metadata.json", "w") as f:
+        json.dump(metadata, f, indent=2)
+
+    print(f"✓ Cached teacher outputs to: {cache_dir}")
+
+
+def _load_cache(
+    cache_dir: Path, needs_features: bool
+) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[dict]]:
+    """
+    Load precomputed logits and features from cache.
+
+    Args:
+        cache_dir: Directory containing cache files
+        needs_features: Whether to load features
+
+    Returns:
+        Tuple of (logits, features, metadata) or (None, None, None) if cache invalid
+    """
+    logits_path = cache_dir / "train_logits.npy"
+    features_path = cache_dir / "train_features.npy"
+    metadata_path = cache_dir / "metadata.json"
+
+    # Check if required files exist
+    if not logits_path.exists() or not metadata_path.exists():
+        return None, None, None
+
+    if needs_features and not features_path.exists():
+        return None, None, None
+
+    try:
+        # Load metadata
+        with open(metadata_path, "r") as f:
+            metadata = json.load(f)
+
+        # Load arrays
+        logits = np.load(logits_path)
+        features = (
+            np.load(features_path)
+            if needs_features and features_path.exists()
+            else None
+        )
+
+        return logits, features, metadata
+
+    except Exception as e:
+        print(f"Warning: Failed to load cache from {cache_dir}: {e}")
+        return None, None, None
+
+
+def _validate_cache(
+    metadata: dict, sequences: list, teacher_ckpt: str, max_length: int
+) -> bool:
+    """
+    Validate that cached data matches current request.
+
+    Args:
+        metadata: Loaded metadata dict
+        sequences: Current input sequences
+        teacher_ckpt: Current teacher checkpoint path
+        max_length: Current max sequence length
+
+    Returns:
+        True if cache is valid
+    """
+    # Check number of samples
+    if metadata.get("num_samples") != len(sequences):
+        return False
+
+    # Check max_length
+    if metadata.get("max_length") != max_length:
+        return False
+
+    # Check cache key (validates sequences + checkpoint)
+    current_key = _compute_cache_key(sequences, teacher_ckpt, max_length)
+    if metadata.get("cache_key") != current_key:
+        return False
+
+    return True
+
+
 @torch.no_grad()
 def precompute_teacher_logits(
-    tokenizer, model, sequences, batch_size, device, max_length, needs_features=False
+    tokenizer,
+    model,
+    sequences,
+    batch_size,
+    device,
+    max_length,
+    needs_logits: bool = True,  # NEW: explicit flag for logits
+    needs_features: bool = False,
+    # NEW: Cache parameters
+    project_path: Optional[str] = "",
+    teacher_parent_dir: Optional[str] = "",
+    task_name: Optional[str] = "",
+    teacher_ckpt: Optional[str] = "",
+    use_cache: bool = True,
 ):
+    """
+    Precompute teacher logits and features with caching support.
+
+    NEW: Caching behavior:
+    - If use_cache=True and cache exists and is valid, load from cache
+    - Otherwise, compute and save to cache
+    - Cache location: {project_path}/data/cache/{teacher_model_name}/{task_name}/
+
+    Args:
+        tokenizer: Teacher model tokenizer
+        model: Teacher model
+        sequences: Input sequences
+        batch_size: Batch size for processing
+        device: Device to run on
+        max_length: Maximum sequence length
+        needs_logits: Whether to compute logits (for KL loss, weight_kl > 0)
+        needs_features: Whether to extract features (for MSE loss, weight_mse > 0)
+        project_path: Project root path (required for caching)
+        teacher_parent_dir: Teacher checkpoint parent directory (required for caching)
+        task_name: Task name (required for caching)
+        teacher_ckpt: Teacher checkpoint path (required for cache validation)
+        use_cache: Whether to use caching (default: True)
+
+    Returns:
+        Tuple of (logits, features) - either may be None if not requested
+    """
+    cache_dir: Optional[Path] = None
+    # ===== CACHING LOGIC =====
+    cache_enabled = use_cache and all(
+        [project_path, teacher_parent_dir, task_name, teacher_ckpt]
+    )
+
+    if cache_enabled:
+        # <--- FIX: Add asserts to narrow types from `str | None` to `str`
+        assert project_path is not None
+        assert teacher_parent_dir is not None
+        assert task_name is not None
+        assert teacher_ckpt is not None  # <--- This also fixes _validate_cache call
+        cache_dir = _get_cache_dir(project_path, teacher_parent_dir, task_name)
+
+        # Try to load from cache
+        cached_logits, cached_features, metadata = _load_cache(
+            cache_dir, needs_features
+        )
+
+        if cached_logits is not None and metadata is not None:
+            # Validate cache
+            if _validate_cache(metadata, sequences, teacher_ckpt, max_length):
+                print(f"✓ Loaded teacher outputs from cache: {cache_dir}")
+                print(f"  - Logits shape: {cached_logits.shape}")
+                if cached_features is not None:
+                    print(f"  - Features shape: {cached_features.shape}")
+                return cached_logits, cached_features
+            else:
+                print(f"⚠ Cache validation failed, recomputing...")
+
+    # ===== COMPUTATION (original logic) =====
     model.eval()
     logits_list = []
     features_list = []
@@ -39,7 +275,10 @@ def precompute_teacher_logits(
     # Debug flag to print structure once
     debug_printed = False
 
-    for i in tqdm(range(0, len(sequences), batch_size), total=len(sequences) // batch_size):
+    print(f"Computing teacher outputs for {len(sequences)} sequences...")
+    for i in tqdm(
+        range(0, len(sequences), batch_size), total=len(sequences) // batch_size
+    ):
         batch = sequences[i : i + batch_size]
         tok = tokenizer(
             batch,
@@ -50,7 +289,7 @@ def precompute_teacher_logits(
         )
         input_ids = tok.input_ids.to(device)
 
-        # FIX: Handle missing attention_mask
+        # Handle missing attention_mask
         if hasattr(tok, "attention_mask") and tok.attention_mask is not None:
             attention_mask = tok.attention_mask.to(device)
         else:
@@ -59,13 +298,14 @@ def precompute_teacher_logits(
         with torch.no_grad():
             out = model(input_ids=input_ids, attention_mask=attention_mask)
 
-            # FIX: Handle both wrapped models (returns Tensor) and standard HF models
+            # Handle both wrapped models (returns Tensor) and standard HF models
             if isinstance(out, torch.Tensor):
                 logits = out
             else:
                 logits = out.logits
 
-            logits_list.append(logits.cpu())
+            if needs_logits:
+                logits_list.append(logits.cpu())
 
             if needs_features:
                 # Debug: print structure on first batch
@@ -81,7 +321,9 @@ def precompute_teacher_logits(
                             print(f"Debug - Num hidden layers: {len(hs)}")
                             print(f"Debug - Last hidden state shape: {hs[-1].shape}")
                         else:
-                            print(f"Debug - Hidden states shape (single tensor): {hs.shape}")
+                            print(
+                                f"Debug - Hidden states shape (single tensor): {hs.shape}"
+                            )
                     debug_printed = True
 
                 # Extract features
@@ -104,10 +346,14 @@ def precompute_teacher_logits(
                         actual_batch_size = logits.shape[0]
                         if actual_batch_size == 1:
                             # Single sequence: pool across sequence dimension
-                            hidden = last_hidden.mean(dim=0, keepdim=True)  # [1, hidden_size]
+                            hidden = last_hidden.mean(
+                                dim=0, keepdim=True
+                            )  # [1, hidden_size]
                         else:
                             # Multiple sequences but concatenated - need to split and pool
-                            seq_len_per_sample = last_hidden.shape[0] // actual_batch_size
+                            seq_len_per_sample = (
+                                last_hidden.shape[0] // actual_batch_size
+                            )
                             hidden_list = []
                             for b in range(actual_batch_size):
                                 start_idx = b * seq_len_per_sample
@@ -116,21 +362,45 @@ def precompute_teacher_logits(
                                 # Pool this sequence
                                 pooled = seq_hidden.mean(dim=0)  # [hidden_size]
                                 hidden_list.append(pooled)
-                            hidden = torch.stack(hidden_list)  # [batch_size, hidden_size]
+                            hidden = torch.stack(
+                                hidden_list
+                            )  # [batch_size, hidden_size]
                     else:
-                        raise ValueError(f"Unexpected hidden state shape: {last_hidden.shape}")
+                        raise ValueError(
+                            f"Unexpected hidden state shape: {last_hidden.shape}"
+                        )
                 else:
                     # Fallback: use pooler_output or logits
                     if hasattr(out, "pooler_output") and out.pooler_output is not None:
                         hidden = out.pooler_output
                     else:
-                        print("Warning: Cannot extract hidden states, using logits as features")
+                        print(
+                            "Warning: Cannot extract hidden states, using logits as features"
+                        )
                         hidden = logits
 
                 features_list.append(hidden.cpu())
 
-    logits = torch.cat(logits_list, dim=0).numpy()
+    logits = torch.cat(logits_list, dim=0).numpy() if needs_logits else None
     features = torch.cat(features_list, dim=0).numpy() if needs_features else None
+
+    # ===== SAVE TO CACHE =====
+    if cache_enabled:
+        assert teacher_ckpt is not None, "teacher_ckpt must be set if cache is enabled"
+        assert cache_dir is not None, "cache_dir must be set if cache is enabled"
+        metadata = {
+            "num_samples": len(sequences),
+            "max_length": max_length,
+            "teacher_checkpoint": teacher_ckpt,
+            "cache_key": _compute_cache_key(sequences, teacher_ckpt, max_length),
+            "logits_computed": needs_logits,
+            "features_computed": needs_features,
+            "logits_shape": list(logits.shape) if logits is not None else None,
+            "features_shape": list(features.shape) if features is not None else None,
+            "timestamp": str(np.datetime64("now")),
+        }
+        _save_cache(cache_dir, logits, features, metadata)
+
     return logits, features
 
 
@@ -163,7 +433,7 @@ def evaluate_teacher_mcc(teacher_model, teacher_tokenizer, test_dataloader, devi
 
             outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
 
-            # FIX: Handle both wrapped models (returns Tensor) and standard HF models (returns object with .logits)
+            # Handle both wrapped models (returns Tensor) and standard HF models
             if isinstance(outputs, torch.Tensor):
                 logits = outputs
             else:
@@ -254,13 +524,15 @@ class ExperimentTracker:
         matches = glob.glob(pattern)
         return len(matches) > 0
 
-    def get_completed_experiments(self) -> Set[Tuple[str, str]]:
+    def get_completed_experiments(self):
         """
         Scan output directory for all completed experiments.
 
         Returns:
             Set of (task_name, hyperparam_str) tuples for completed experiments
         """
+        import glob
+
         completed = set()
 
         if not os.path.exists(self.output_dir):
@@ -301,8 +573,8 @@ class ExperimentTracker:
 
     def generate_experiment_plan(
         self,
-        all_experiments: List[Dict],
-    ) -> Tuple[List[Dict], List[Dict], Dict]:
+        all_experiments: list,
+    ):
         """
         Generate execution plan by checking which experiments are completed.
 
@@ -335,7 +607,9 @@ class ExperimentTracker:
             "completed": len(completed),
             "incomplete": len(incomplete),
             "completion_rate": (
-                f"{len(completed) / len(all_experiments) * 100:.1f}%" if all_experiments else "0%"
+                f"{len(completed) / len(all_experiments) * 100:.1f}%"
+                if all_experiments
+                else "0%"
             ),
         }
 
@@ -343,9 +617,9 @@ class ExperimentTracker:
 
     def print_summary_report(
         self,
-        incomplete: List[Dict],
-        completed: List[Dict],
-        summary: Dict,
+        incomplete: list,
+        completed: list,
+        summary: dict,
         save_to_file: bool = True,
     ):
         """
@@ -357,6 +631,8 @@ class ExperimentTracker:
             summary: Summary statistics dict
             save_to_file: Whether to save report to file
         """
+        from datetime import datetime
+
         report_lines = []
 
         def add_line(line=""):
@@ -453,6 +729,7 @@ class ExperimentTracker:
                 "latest_epoch": int or None
             }
         """
+
         hyperparam_str = self._get_hyperparam_str(hyperparam_config)
 
         # Check for completed
@@ -477,7 +754,9 @@ class ExperimentTracker:
             }
 
         # Find latest checkpoint
-        latest_ckpt = max(checkpoints, key=lambda p: int(p.split("epoch_")[1].split("_")[0]))
+        latest_ckpt = max(
+            checkpoints, key=lambda p: int(p.split("epoch_")[1].split("_")[0])
+        )
         latest_epoch = int(latest_ckpt.split("epoch_")[1].split("_")[0])
 
         return {
@@ -566,9 +845,9 @@ def load_caduceus_model(checkpoint_path, num_labels, device, best_ckpt_file=None
     config = AutoConfig.from_pretrained(checkpoint_path, trust_remote_code=True)
 
     # Create model from config
-    base_model = AutoModelForSequenceClassification.from_config(config, trust_remote_code=True).to(
-        device
-    )
+    base_model = AutoModelForSequenceClassification.from_config(
+        config, trust_remote_code=True
+    ).to(device)
 
     # Load weights
     if best_ckpt_file:
@@ -600,13 +879,14 @@ def find_best_caduceus_checkpoint(task_name, checkpoint_root):
     Returns:
         tuple: (checkpoint_dir, best_score, best_checkpoint_file)
     """
-    import os
     import re
 
     task_dir = os.path.join(checkpoint_root, f"{task_name}_caduceus_finetuned")
 
     if not os.path.isdir(task_dir):
-        print(f"Warning: Checkpoint directory not found for task '{task_name}' at {task_dir}")
+        print(
+            f"Warning: Checkpoint directory not found for task '{task_name}' at {task_dir}"
+        )
         return None, -1.0, None
 
     best_score = -1.0
@@ -637,5 +917,7 @@ def find_best_caduceus_checkpoint(task_name, checkpoint_root):
             print(f"Found Caduceus model for '{task_name}' at {task_dir}")
             return task_dir, 0.0, None
 
-        print(f"Warning: No valid Caduceus checkpoint found for task '{task_name}' in {task_dir}")
+        print(
+            f"Warning: No valid Caduceus checkpoint found for task '{task_name}' in {task_dir}"
+        )
         return None, -1.0, None

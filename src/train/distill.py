@@ -48,7 +48,9 @@ def distill(
     model_type = getattr(config, "model_type", "glm")
     print(f"Model Type: {model_type.upper()}")
     print(f"Teacher: {config.teacher_config.model_name_or_path}")
-    print(f"Student: {config.student_config.model_type}-{config.student_config.model_size}")
+    print(
+        f"Student: {config.student_config.model_type}-{config.student_config.model_size}"
+    )
     print(f"Method: {config.distillation_config.distill_method}")
     print(f"{'=' * 80}\n")
 
@@ -58,7 +60,7 @@ def distill(
     # MODIFIED SECTION: Use unified checkpoint finding
     # ===========================================================
     teacher_ckpt, score = find_teacher_checkpoint(config, task_name)
-
+    num_labels = get_num_labels(task_name)
     if teacher_ckpt is None:
         print(f"[!] No teacher checkpoint found for {task_name}, skipping.")
         return
@@ -80,7 +82,6 @@ def distill(
     # ORIGINAL CODE: Student model and distillation setup
     # ===========================================================
     # Build student model
-    num_labels = get_num_labels(task_name)
 
     student_config = replace(
         config.student_config,
@@ -156,6 +157,7 @@ def distill(
 
     # Train
     train_distill_task(
+        config,
         config.trainer_config,
         config.distillation_config,
         task_name,
