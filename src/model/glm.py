@@ -37,7 +37,9 @@ class GLMConfig:
         if self.is_lora is None:
             import os
 
-            adapter_config_path = os.path.join(self.model_name_or_path, "adapter_config.json")
+            adapter_config_path = os.path.join(
+                self.model_name_or_path, "adapter_config.json"
+            )
             self.is_lora = os.path.exists(adapter_config_path)
 
             # If LoRA and base_model_path not provided, try to read from adapter_config
@@ -51,14 +53,16 @@ class GLMConfig:
                     if self.base_model_path:
                         print(f"Auto-detected base model: {self.base_model_path}")
                 except Exception as e:
-                    print(f"Warning: Could not read base model from adapter_config.json: {e}")
+                    print(
+                        f"Warning: Could not read base model from adapter_config.json: {e}"
+                    )
 
 
 def build_glm(config: GLMConfig):
     """
     Build GLM model, handling both regular and LoRA fine-tuned models.
     """
-    model_path = config.model_name_or_path
+    model_path = config.ckpt_path if config.ckpt_path else config.model_name_or_path
 
     if config.is_lora:
         print(f"Loading LoRA adapter from: {model_path}")
@@ -114,7 +118,9 @@ def get_best_checkpoint(parent_path: str, task_name: str, model_type: str = "def
 
     if "NT" in model_type or "nucleotide" in parent_path.lower():
         # NT checkpoint structure: finetuned_models/{task}_finetuned/model-best*mcc_score*
-        task_dir = os.path.join(parent_path, "finetuned_models", f"{task_name}_finetuned")
+        task_dir = os.path.join(
+            parent_path, "finetuned_models", f"{task_name}_finetuned"
+        )
         if not os.path.isdir(task_dir):
             return None, -1.0
 
@@ -145,7 +151,9 @@ def get_teacher_model(config, task_name, teacher_ckpt):
     Returns:
         tuple: (tokenizer, teacher_model, teacher_hidden)
     """
-    model_type = getattr(config, "model_type", "glm")  # Default to 'glm' for backward compatibility
+    model_type = getattr(
+        config, "model_type", "glm"
+    )  # Default to 'glm' for backward compatibility
 
     if model_type == "caduceus":
         # Import Caduceus utilities only when needed
@@ -218,7 +226,9 @@ def find_teacher_checkpoint(config, task_name):
                 config.teacher_parent_dir, task_name, model_type=model_type_str
             )
         else:
-            teacher_ckpt = orig_get_best_checkpoint(config.trainer_config.output_dir, task_name)
+            teacher_ckpt = orig_get_best_checkpoint(
+                config.trainer_config.output_dir, task_name
+            )
             return teacher_ckpt, -1.0
 
 
@@ -316,7 +326,9 @@ def evaluate_and_log_teacher(
         json.dump(teacher_eval_data, f, indent=2)
 
     # Also append to a summary CSV for easy comparison across experiments
-    summary_csv = os.path.join(config.trainer_config.output_dir, "teacher_scores_summary.csv")
+    summary_csv = os.path.join(
+        config.trainer_config.output_dir, "teacher_scores_summary.csv"
+    )
     file_exists = os.path.exists(summary_csv)
 
     with open(summary_csv, "a", newline="") as f:

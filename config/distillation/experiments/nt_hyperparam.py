@@ -19,6 +19,9 @@ experiment_configs = {
         "NT distillation hyperparameter search",
         DistillationHyperparamExperimentConfig(
             task_names=[
+                "splice_sites_donors",
+                "splice_sites_acceptors",
+                "splice_sites_all",
                 "H3K27me3",
                 "H3K36me3",
                 "H4K20me1",
@@ -34,9 +37,6 @@ experiment_configs = {
                 "promoter_no_tata",
                 "enhancers",
                 "enhancers_types",
-                "splice_sites_all",
-                "splice_sites_acceptors",
-                "splice_sites_donors",
             ],
             dataset_config=nucletide_transformer_revised_benchmark,
             teacher_config=nt_2b5,
