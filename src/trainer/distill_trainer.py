@@ -14,7 +14,10 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score, matthews_corrcoef
 from transformers import PreTrainedTokenizer
 from typing import List, Optional
-from ...config.distillation.config_schema import DistillationExperimentConfig
+from config.distillation.config_schema import (
+    DistillationExperimentConfig,
+)
+from config.distillation.trainer import DistillTrainerConfig
 from ..model.distillation import DistillationModel, DistillationModelConfig
 from .utils import precompute_teacher_logits
 from ..data.dataset import (
@@ -103,20 +106,6 @@ def save_checkpoint(model, epoch, val_mcc, run_dir, is_best=False):
             f.write(f"Location: {epoch_dir}\n")
 
     return epoch_dir
-
-
-@dataclass
-class DistillTrainerConfig:
-    output_dir: str
-    wandb_project: str
-    epochs: int = 100
-    batch_size: int = 8
-    lr: float = 1e-4
-    max_len: int = 1024
-    log_batch_every: int = 50
-    eval_every_n_epochs: int = 5
-    num_workers: int = 4
-    device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def train_distill_task(

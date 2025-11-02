@@ -251,7 +251,39 @@ def evaluate_and_log_teacher(
     print(f"\n{'=' * 60}")
     print("Evaluating Teacher Model on Test Set")
     print(f"{'=' * 60}")
+    # --- START: CACHE CHECK ---
+    teacher_eval_file = os.path.join(run_dir, "teacher_evaluation.json")
 
+    if os.path.exists(teacher_eval_file):
+        try:
+            with open(teacher_eval_file, "r") as f:
+                teacher_eval_data = json.load(f)
+
+            # Check if the cached checkpoint matches the current one
+            if (
+                teacher_eval_data.get("teacher_checkpoint") == teacher_ckpt
+                and "teacher_test_mcc" in teacher_eval_data
+            ):
+                teacher_mcc = teacher_eval_data["teacher_test_mcc"]
+                print(f"✓ Found cached teacher evaluation: {teacher_eval_file}")
+                print(f"Cached Teacher Test MCC: {teacher_mcc:.4f}")
+                print(f"{'=' * 60}\n")
+
+                # Log to wandb (this is necessary as the original log is skipped)
+                wandb.log(
+                    {
+                        "teacher/test_mcc": teacher_mcc,
+                    }
+                )
+                return teacher_mcc
+            else:
+                print("Cached data is for a different checkpoint. Re-evaluating...")
+        except Exception as e:
+            print(
+                f"Warning: Could not read cached teacher evaluation file. Re-evaluating. Error: {e}"
+            )
+
+    # --- END: CACHE CHECK ---
     # Create test dataset for teacher
     class SimpleTextDataset(Dataset):
         def __init__(self, texts, labels):

@@ -6,9 +6,9 @@ from src.model.distillation import DistillationModelConfig
 from src.data.dataset import (
     DatasetConfig,
 )
-from src.trainer.distill_trainer import DistillTrainerConfig
 from nntool.slurm import SlurmConfig
 from typing import Optional
+from config.distillation.trainer import DistillTrainerConfig
 
 
 @dataclass
@@ -38,7 +38,9 @@ class DistillationExperimentConfig:
     ]
     teacher_config: GLMConfig = field(default_factory=GLMConfig)
     student_config: BPNetClassifierConfig = field(default_factory=BPNetClassifierConfig)
-    distillation_config: DistillationModelConfig = field(default_factory=DistillationModelConfig)
+    distillation_config: DistillationModelConfig = field(
+        default_factory=DistillationModelConfig
+    )
     trainer_config: DistillTrainerConfig = field(default_factory=DistillTrainerConfig)
     dataset_config: DatasetConfig = field(default_factory=DatasetConfig)
     slurm_config: SlurmConfig = field(default_factory=SlurmConfig)

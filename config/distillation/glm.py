@@ -12,6 +12,8 @@ nt_2b5 = GLMConfig(
     num_labels=2,
     trust_remote_code=True,
     output_hidden_states=True,
+    is_lora=True,
+    base_model_path="InstaDeepAI/nucleotide-transformer-2.5b-multi-species",
 )
 
 # Caduceus teacher configuration
