@@ -11,32 +11,59 @@ from typing import Dict, Optional
 class SlurmGPUManager:
     """Manages SLURM job submission with per-node GPU limits."""
 
-    def __init__(self, node_limits: Optional[Dict[str, int]] = None):
+    def __init__(
+        self,
+        node_limits: Optional[Dict[str, int]] = None,
+        node_capacity: Optional[Dict[str, int]] = None,
+    ):
         """
         Initialize manager with GPU limits per node.
 
         Args:
-            node_limits: Dict mapping node names to max concurrent GPU jobs.
-                        Default: {"voyager": 2, "laniakea": 4}
+            node_limits: Dict mapping node names to max concurrent GPU jobs for this user.
+                        Default: {"voyager": 3, "laniakea": 6}
+            node_capacity: Dict mapping node names to total GPU capacity.
+                        Default: {"voyager": 4, "laniakea": 8}
         """
-        self.node_limits = node_limits or {"voyager": 2, "laniakea": 4}
+        self.node_limits = node_limits or {"voyager": 3, "laniakea": 6}
+        self.node_capacity = node_capacity or {"voyager": 4, "laniakea": 8}
 
     def get_running_jobs_per_node(self) -> Dict[str, int]:
         """
-        Query SLURM to get number of running GPU jobs per node.
+        Query SLURM to get number of running GPU jobs per node for current user.
 
         Returns:
-            Dict mapping node names to number of running jobs
+            Dict mapping node names to number of running jobs for current user
+        """
+        user_jobs, _ = self._get_job_counts()
+        return user_jobs
+
+    def get_total_running_jobs_per_node(self) -> Dict[str, int]:
+        """
+        Query SLURM to get total number of running GPU jobs per node (all users).
+
+        Returns:
+            Dict mapping node names to total number of running jobs
+        """
+        _, total_jobs = self._get_job_counts()
+        return total_jobs
+
+    def _get_job_counts(self) -> tuple[Dict[str, int], Dict[str, int]]:
+        """
+        Single SLURM query to get both user and total job counts per node.
+
+        Returns:
+            Tuple of (user_jobs_dict, total_jobs_dict)
         """
         try:
-            # Query SLURM for running jobs with node info
+            current_user = subprocess.getoutput("whoami")
+
+            # Single query for all running jobs with user info
             cmd = [
                 "squeue",
-                "-u",
-                subprocess.getoutput("whoami"),
                 "-h",
                 "-o",
-                "%N",
+                "%N %u",  # Node and user
                 "-t",
                 "RUNNING",
             ]
@@ -44,24 +71,34 @@ class SlurmGPUManager:
 
             if result.returncode != 0:
                 print(f"Warning: squeue command failed: {result.stderr}")
-                return {}
+                return {}, {}
 
             # Count jobs per node
-            node_counts = {}
+            user_counts = {}
+            total_counts = {}
+
             for line in result.stdout.strip().split("\n"):
                 if not line:
                     continue
+                parts = line.split()
+                if len(parts) < 2:
+                    continue
+
+                node_str, user = parts[0], parts[1]
+
                 # Extract node name (handle formats like "voyager" or "laniakea[1-2]")
-                node_match = re.match(r"(\w+)", line)
+                node_match = re.match(r"(\w+)", node_str)
                 if node_match:
                     node = node_match.group(1)
-                    node_counts[node] = node_counts.get(node, 0) + 1
+                    total_counts[node] = total_counts.get(node, 0) + 1
+                    if user == current_user:
+                        user_counts[node] = user_counts.get(node, 0) + 1
 
-            return node_counts
+            return user_counts, total_counts
 
         except (subprocess.TimeoutExpired, Exception) as e:
             print(f"Warning: Failed to query SLURM status: {e}")
-            return {}
+            return {}, {}
 
     def get_available_node(self, preferred_nodes: list = None) -> Optional[str]:
         """
@@ -76,20 +113,31 @@ class SlurmGPUManager:
         if preferred_nodes is None:
             preferred_nodes = list(self.node_limits.keys())
 
-        running_jobs = self.get_running_jobs_per_node()
+        # Single SLURM query for both user and total jobs
+        user_running_jobs, total_running_jobs = self._get_job_counts()
 
         for node in preferred_nodes:
             if node not in self.node_limits:
                 continue
 
-            current_jobs = running_jobs.get(node, 0)
-            limit = self.node_limits[node]
+            user_jobs = user_running_jobs.get(node, 0)
+            user_limit = self.node_limits[node]
+            total_jobs = total_running_jobs.get(node, 0)
+            total_capacity = self.node_capacity.get(node, user_limit)
 
-            if current_jobs < limit:
-                print(f"✓ Node {node}: {current_jobs}/{limit} GPUs in use - Available")
+            # Check both user limit and total node capacity
+            if user_jobs < user_limit and total_jobs < total_capacity:
+                print(
+                    f"✓ Node {node}: User {user_jobs}/{user_limit}, Total {total_jobs}/{total_capacity} GPUs - Available"
+                )
                 return node
             else:
-                print(f"✗ Node {node}: {current_jobs}/{limit} GPUs in use - Full")
+                reason = []
+                if user_jobs >= user_limit:
+                    reason.append(f"user limit reached ({user_jobs}/{user_limit})")
+                if total_jobs >= total_capacity:
+                    reason.append(f"node full ({total_jobs}/{total_capacity})")
+                print(f"✗ Node {node}: {', '.join(reason)}")
 
         return None
 
@@ -139,9 +187,12 @@ class SlurmGPUManager:
 _gpu_manager = None
 
 
-def get_gpu_manager(node_limits: Optional[Dict[str, int]] = None) -> SlurmGPUManager:
+def get_gpu_manager(
+    node_limits: Optional[Dict[str, int]] = None,
+    node_capacity: Optional[Dict[str, int]] = None,
+) -> SlurmGPUManager:
     """Get or create the global GPU manager instance."""
     global _gpu_manager
     if _gpu_manager is None:
-        _gpu_manager = SlurmGPUManager(node_limits)
+        _gpu_manager = SlurmGPUManager(node_limits, node_capacity)
     return _gpu_manager
