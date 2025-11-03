@@ -467,6 +467,7 @@ class ExperimentTracker:
         output_dir: str,
         completion_marker: str = "final_summary.json",
         start_timestamp: str = None,
+        search_base_dir: str = None,  # <-- ADD THIS
     ):
         """
         Args:
@@ -478,6 +479,35 @@ class ExperimentTracker:
         self.output_dir = output_dir
         self.completion_marker = completion_marker
         self.start_timestamp = start_timestamp
+        self.base_output_dir = self._extract_base_output_dir(output_dir)
+        print(f"\n[ExperimentTracker] Initialized")
+        print(f"  Output dir: {output_dir}")
+        print(f"  Base output dir: {self.base_output_dir}")
+        print(f"  Start timestamp filter: {start_timestamp}")
+
+    def _extract_base_output_dir(self, output_dir: str) -> str:
+        """
+        Extract base output directory before date/time folders.
+        e.g., "/path/to/output/11022025/032144/nt_distillation/hyperparam" -> "/path/to/output"
+        """
+        parts = output_dir.split(os.sep)
+
+        # Find "output" in the path
+        try:
+            output_idx = None
+            for i, part in enumerate(parts):
+                if part == "output":
+                    output_idx = i
+                    break
+
+            if output_idx is not None:
+                # Return up to and including "output"
+                return os.sep.join(parts[: output_idx + 1])
+        except:
+            pass
+
+        # Fallback: return the output_dir itself
+        return output_dir
 
     def _is_after_start_timestamp(self, timestamp_str: str) -> bool:
         """Check if timestamp is after start_timestamp filter."""
@@ -498,78 +528,178 @@ class ExperimentTracker:
         """
         Check if an experiment (task + hyperparameters) has completed.
 
-        Searches for completed runs by looking for the completion marker file:
-        {output_dir}/{task_name}/*/*/*/{hyperparam_str}/{completion_marker}
-
-        Args:
-            task_name: Task name (e.g., "promoter_all")
-            hyperparam_config: Dict with hyperparameter values
-
-        Returns:
-            True if at least one completed run exists
+        Searches across all date/time sessions under base_output_dir.
         """
         hyperparam_str = self._get_hyperparam_str(hyperparam_config)
 
-        # Pattern: {output_dir}/{task_name}/*/*/*/{hyperparam_str}/{completion_marker}
-        # Structure: {task}/{timestamp}/{uuid}/{hyperparam_str}/
+        # Pattern: {base_output_dir}/*/*/*/{task_name}/*/*/*/{hyperparam_str}/{completion_marker}
+        # Structure: output/{date}/{time}/{experiment_type}/{task}/{exp_timestamp}/{uuid}/{hyperparam_str}/marker
         pattern = os.path.join(
-            self.output_dir,
+            self.base_output_dir,
+            "*",  # date (e.g., "11022025")
+            "*",  # time (e.g., "032144")
+            "*",  # experiment type (e.g., "nt_distillation")
+            "*",  # sub-type (e.g., "hyperparam")
             task_name,
-            "*",  # timestamp
+            "*",  # exp_timestamp
             "*",  # uuid
             hyperparam_str,
             self.completion_marker,
         )
 
         matches = glob.glob(pattern)
-        return len(matches) > 0
+
+        if matches:
+            print(
+                f"  [DEBUG] Found {len(matches)} matches for {task_name}/{hyperparam_str[:50]}..."
+            )
+
+            # Filter by timestamp if specified
+            if self.start_timestamp:
+                filtered_matches = []
+                for match_path in matches:
+                    parts = match_path.split(os.sep)
+                    try:
+                        # Find task_name index, exp_timestamp is right after it
+                        for i, part in enumerate(parts):
+                            if part == task_name and i + 1 < len(parts):
+                                timestamp = parts[i + 1]
+                                if self._is_after_start_timestamp(timestamp):
+                                    filtered_matches.append(match_path)
+                                    print(
+                                        f"    ✓ Match (timestamp {timestamp}): {match_path}"
+                                    )
+                                else:
+                                    print(
+                                        f"    ✗ Filtered out (timestamp {timestamp} < {self.start_timestamp})"
+                                    )
+                                break
+                    except (IndexError, ValueError):
+                        continue
+
+                return len(filtered_matches) > 0
+
+            return True
+
+        return False
 
     def get_completed_experiments(self):
         """
-        Scan output directory for all completed experiments.
+        Scan all sessions for completed experiments.
 
         Returns:
             Set of (task_name, hyperparam_str) tuples for completed experiments
         """
-        import glob
-
         completed = set()
 
-        if not os.path.exists(self.output_dir):
+        if not os.path.exists(self.base_output_dir):
+            print(
+                f"[WARNING] Base output directory does not exist: {self.base_output_dir}"
+            )
             return completed
 
-        # Find all completion marker files
+        # Pattern: {base_output_dir}/*/*/*/*/*/*/*/{completion_marker}
         pattern = os.path.join(
-            self.output_dir,
+            self.base_output_dir,
+            "*",  # date
+            "*",  # time
+            "*",  # experiment type
+            "*",  # sub-type
             "*",  # task_name
-            "*",  # timestamp
+            "*",  # exp_timestamp
             "*",  # uuid
             "*",  # hyperparam_str
             self.completion_marker,
         )
 
-        for marker_path in glob.glob(pattern):
-            # Extract task_name and hyperparam_str from path
-            # Path format: .../task_name/timestamp/uuid/hyperparam_str/final_summary.json
+        print(f"\n[ExperimentTracker] Scanning for completed experiments...")
+        print(f"  Pattern: {pattern}")
+
+        all_matches = glob.glob(pattern)
+        print(f"  Found {len(all_matches)} total completion markers")
+
+        for marker_path in all_matches:
             parts = marker_path.split(os.sep)
 
-            # Find indices
             try:
-                output_dir_parts = self.output_dir.split(os.sep)
-                output_dir_depth = len(output_dir_parts)
+                # Find "output" to calculate relative indices
+                output_idx = None
+                for i, part in enumerate(parts):
+                    if part == "output":
+                        output_idx = i
+                        break
 
-                # After output_dir: task_name/timestamp/uuid/hyperparam_str/marker
-                task_name = parts[output_dir_depth]
-                timestamp = parts[output_dir_depth + 1]  # Extract timestamp
-                hyperparam_str = parts[output_dir_depth + 3]
+                if output_idx is None:
+                    continue
+
+                # After output: date/time/experiment_type/sub_type/task/exp_timestamp/uuid/hyperparam_str/marker
+                task_name = parts[output_idx + 5]
+                timestamp = parts[output_idx + 6]
+                hyperparam_str = parts[output_idx + 8]
+
                 # Filter by timestamp
                 if not self._is_after_start_timestamp(timestamp):
+                    print(
+                        f"  ✗ Filtered: {task_name} (timestamp {timestamp} < {self.start_timestamp})"
+                    )
                     continue
+
                 completed.add((task_name, hyperparam_str))
-            except (IndexError, ValueError):
+                print(f"  ✓ Added: {task_name}/{hyperparam_str[:50]}...")
+
+            except (IndexError, ValueError) as e:
+                print(f"  [WARNING] Failed to parse path: {marker_path}")
+                print(f"    Error: {e}")
                 continue
 
+        print(
+            f"\n[ExperimentTracker] Scan complete: {len(completed)} unique experiments found"
+        )
         return completed
+
+    # def generate_experiment_plan(
+    #     self,
+    #     all_experiments: list,
+    # ):
+    #     """
+    #     Generate execution plan by checking which experiments are completed.
+
+    #     Args:
+    #         all_experiments: List of experiment dicts, each containing:
+    #             - task_name: str
+    #             - hyperparam_config: dict (with weight_ce, weight_kl, etc.)
+    #             - experiment_count: int
+
+    #     Returns:
+    #         Tuple of (incomplete_experiments, completed_experiments, summary_dict)
+    #     """
+    #     completed_set = self.get_completed_experiments()
+
+    #     incomplete = []
+    #     completed = []
+
+    #     for exp in all_experiments:
+    #         task_name = exp["task_name"]
+    #         hyperparam_config = exp["hyperparam_config"]
+    #         hyperparam_str = self._get_hyperparam_str(hyperparam_config)
+
+    #         if (task_name, hyperparam_str) in completed_set:
+    #             completed.append(exp)
+    #         else:
+    #             incomplete.append(exp)
+
+    #     summary = {
+    #         "total_experiments": len(all_experiments),
+    #         "completed": len(completed),
+    #         "incomplete": len(incomplete),
+    #         "completion_rate": (
+    #             f"{len(completed) / len(all_experiments) * 100:.1f}%"
+    #             if all_experiments
+    #             else "0%"
+    #         ),
+    #     }
+
+    #     return incomplete, completed, summary
 
     def generate_experiment_plan(
         self,
@@ -577,16 +707,12 @@ class ExperimentTracker:
     ):
         """
         Generate execution plan by checking which experiments are completed.
-
-        Args:
-            all_experiments: List of experiment dicts, each containing:
-                - task_name: str
-                - hyperparam_config: dict (with weight_ce, weight_kl, etc.)
-                - experiment_count: int
-
-        Returns:
-            Tuple of (incomplete_experiments, completed_experiments, summary_dict)
         """
+        print(f"\n{'=' * 80}")
+        print(f"[ExperimentTracker] Generating experiment plan...")
+        print(f"  Total experiments to check: {len(all_experiments)}")
+        print(f"{'=' * 80}")
+
         completed_set = self.get_completed_experiments()
 
         incomplete = []

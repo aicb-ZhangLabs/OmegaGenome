@@ -252,7 +252,7 @@ def evaluate_and_log_teacher(
     print("Evaluating Teacher Model on Test Set")
     print(f"{'=' * 60}")
     # --- START: CACHE CHECK ---
-    teacher_eval_file = os.path.join(run_dir, "teacher_evaluation.json")
+    teacher_eval_file = os.path.join(teacher_ckpt, "teacher_evaluation.json")
 
     if os.path.exists(teacher_eval_file):
         try:
@@ -346,7 +346,8 @@ def evaluate_and_log_teacher(
     print(f"{'=' * 60}\n")
 
     # Save to file
-    teacher_eval_file = os.path.join(run_dir, "teacher_evaluation.json")
+    teacher_eval_file_run = os.path.join(run_dir, "teacher_evaluation.json")
+    teacher_eval_file = os.path.join(teacher_ckpt, "teacher_evaluation.json")
     teacher_eval_data = {
         "task": task_name,
         "teacher_checkpoint": teacher_ckpt,
@@ -355,6 +356,8 @@ def evaluate_and_log_teacher(
     }
 
     with open(teacher_eval_file, "w") as f:
+        json.dump(teacher_eval_data, f, indent=2)
+    with open(teacher_eval_file_run, "w") as f:
         json.dump(teacher_eval_data, f, indent=2)
 
     # Also append to a summary CSV for easy comparison across experiments

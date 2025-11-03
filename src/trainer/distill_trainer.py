@@ -124,6 +124,7 @@ def train_distill_task(
     X_test: List[str],
     y_test: List[int],
     run_dir: str,
+    teacher_ckpt: str,  # <-- ADD THIS PARAMETER
     resume_from_checkpoint: Optional[str] = None,  # NEW parameter
     resume_from_epoch: int = 0,  # NEW parameter
 ):
@@ -163,7 +164,7 @@ def train_distill_task(
             project_path=project_path,
             teacher_parent_dir=experiment_config.teacher_parent_dir,
             task_name=task_name,
-            teacher_ckpt=experiment_config.teacher_config.ckpt_path,
+            teacher_ckpt=teacher_ckpt,
             use_cache=True,
         )
         print("Teacher outputs precomputed.")

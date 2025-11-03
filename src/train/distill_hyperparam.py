@@ -32,6 +32,14 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
         config: Hyperparameter experiment configuration
         resume: If True (default), skip already completed experiments
     """
+    from config.env import project_output_path
+
+    # Extract base path without date/time prefix
+    # e.g., "output/nt_distillation/hyperparam" from trainer config
+    base_search_dir = os.path.join(
+        project_output_path,  # <-- Use project_output_path instead of output_path
+        "nt_distillation/hyperparam",  # This matches the experiment type
+    )
     # Initialize GPU manager with node limits
     gpu_manager = get_gpu_manager(
         node_limits={
@@ -43,7 +51,9 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
 
     # Initialize experiment tracker for resume functionality
     tracker = ExperimentTracker(
-        output_dir=config.trainer_config.output_dir, start_timestamp="20251019_000000"
+        output_dir=config.trainer_config.output_dir,
+        start_timestamp="20251019_000000",
+        search_base_dir=base_search_dir,  # <-- ADD: Base directory to search across all runs
     )  # Only track experiments after this)
 
     # ===== BUILD ALL EXPERIMENTS =====
