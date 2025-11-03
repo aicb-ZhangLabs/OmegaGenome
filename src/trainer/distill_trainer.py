@@ -9,7 +9,7 @@ import shutil
 import uuid
 
 from datetime import datetime
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
 from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score, matthews_corrcoef
 from transformers import PreTrainedTokenizer
@@ -53,9 +53,7 @@ def evaluate(model, loader, device):
     }
 
 
-def create_run_directory(
-    parent_dir, task_name, config: DistillationModelConfig, dry_run=False
-):
+def create_run_directory(parent_dir, task_name, config: DistillationModelConfig, dry_run=False):
     """
     Creates a systematic directory structure:
     {parent_dir}/{task_name}/{uuid}/{date}_CE{ce}_KL{kl}_MSE{mse}_T{temp}/
@@ -171,22 +169,14 @@ def train_distill_task(
     else:
         print("Skipping teacher precomputation (weight_kl=0 and weight_mse=0)")
 
-    train_ds = SeqDataset(
-        X_train, y_train, config.max_len, train_tlogits, train_tfeatures
-    )
+    train_ds = SeqDataset(X_train, y_train, config.max_len, train_tlogits, train_tfeatures)
     val_ds = SeqDataset(X_val, y_val, config.max_len)
     test_ds = SeqDataset(X_test, y_test, config.max_len)
 
     # Create data loaders
-    train_loader = DataLoader(
-        train_ds, batch_size=config.batch_size, shuffle=True, num_workers=4
-    )
-    val_loader = DataLoader(
-        val_ds, batch_size=config.batch_size, shuffle=False, num_workers=4
-    )
-    test_loader = DataLoader(
-        test_ds, batch_size=config.batch_size, shuffle=False, num_workers=4
-    )
+    train_loader = DataLoader(train_ds, batch_size=config.batch_size, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_ds, batch_size=config.batch_size, shuffle=False, num_workers=4)
+    test_loader = DataLoader(test_ds, batch_size=config.batch_size, shuffle=False, num_workers=4)
 
     best_val_mcc = -1.0
     best_epoch = 0
@@ -235,9 +225,7 @@ def train_distill_task(
             best_epoch = epoch
 
         # Save checkpoint for this epoch
-        checkpoint_dir = save_checkpoint(
-            model, epoch, val_metrics["mcc"], run_dir, is_best=is_best
-        )
+        checkpoint_dir = save_checkpoint(model, epoch, val_metrics["mcc"], run_dir, is_best=is_best)
 
         # Record epoch info - ensure all values are JSON serializable
         epoch_info = {
@@ -315,9 +303,7 @@ def train_distill_task(
         "best_test_mcc": (
             float(best_test_metrics["mcc"]) if best_test_metrics is not None else None
         ),
-        "best_test_f1": (
-            float(best_test_metrics["f1"]) if best_test_metrics is not None else None
-        ),
+        "best_test_f1": (float(best_test_metrics["f1"]) if best_test_metrics is not None else None),
         "total_epochs": config.epochs,
         "hyperparameters": {
             "weight_ce": distillation_config.weight_ce,
@@ -345,21 +331,13 @@ def train_distill_task(
         w.writerow(
             [
                 "best_test_mcc",
-                (
-                    f"{best_test_metrics['mcc']:.4f}"
-                    if best_test_metrics is not None
-                    else None
-                ),
+                (f"{best_test_metrics['mcc']:.4f}" if best_test_metrics is not None else None),
             ]
         )
         w.writerow(
             [
                 "best_test_f1",
-                (
-                    f"{best_test_metrics['f1']:.4f}"
-                    if best_test_metrics is not None
-                    else None
-                ),
+                (f"{best_test_metrics['f1']:.4f}" if best_test_metrics is not None else None),
             ]
         )
 
@@ -369,14 +347,8 @@ def train_distill_task(
     print(f"Final test MCC: {test_metrics['mcc']:.4f}")
     print(f"Final test F1: {test_metrics['f1']:.4f}")
     print(
-        f"Best test MCC: {best_test_metrics['mcc']:.4f}"
-        if best_test_metrics is not None
-        else None
+        f"Best test MCC: {best_test_metrics['mcc']:.4f}" if best_test_metrics is not None else None
     )
-    print(
-        f"Best test F1: {best_test_metrics['f1']:.4f}"
-        if best_test_metrics is not None
-        else None
-    )
+    print(f"Best test F1: {best_test_metrics['f1']:.4f}" if best_test_metrics is not None else None)
     print(f"Results saved to: {run_dir}")
     print(f"{'=' * 60}\n")

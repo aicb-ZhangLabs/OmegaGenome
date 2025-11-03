@@ -81,9 +81,7 @@ def _compute_cache_key(sequences: list, teacher_ckpt: str, max_length: int) -> s
     key_str = f"{len(sequences)}_{teacher_ckpt}_{max_length}"
     # Add first and last few sequences as sample
     if len(sequences) > 0:
-        sample = (
-            sequences[0] if len(sequences) == 1 else f"{sequences[0]}_{sequences[-1]}"
-        )
+        sample = sequences[0] if len(sequences) == 1 else f"{sequences[0]}_{sequences[-1]}"
         key_str += f"_{sample}"
 
     return hashlib.md5(key_str.encode()).hexdigest()
@@ -150,11 +148,7 @@ def _load_cache(
 
         # Load arrays
         logits = np.load(logits_path)
-        features = (
-            np.load(features_path)
-            if needs_features and features_path.exists()
-            else None
-        )
+        features = np.load(features_path) if needs_features and features_path.exists() else None
 
         return logits, features, metadata
 
@@ -163,9 +157,7 @@ def _load_cache(
         return None, None, None
 
 
-def _validate_cache(
-    metadata: dict, sequences: list, teacher_ckpt: str, max_length: int
-) -> bool:
+def _validate_cache(metadata: dict, sequences: list, teacher_ckpt: str, max_length: int) -> bool:
     """
     Validate that cached data matches current request.
 
@@ -239,9 +231,7 @@ def precompute_teacher_logits(
     """
     cache_dir: Optional[Path] = None
     # ===== CACHING LOGIC =====
-    cache_enabled = use_cache and all(
-        [project_path, teacher_parent_dir, task_name, teacher_ckpt]
-    )
+    cache_enabled = use_cache and all([project_path, teacher_parent_dir, task_name, teacher_ckpt])
 
     if cache_enabled:
         # <--- FIX: Add asserts to narrow types from `str | None` to `str`
@@ -252,9 +242,7 @@ def precompute_teacher_logits(
         cache_dir = _get_cache_dir(project_path, teacher_parent_dir, task_name)
 
         # Try to load from cache
-        cached_logits, cached_features, metadata = _load_cache(
-            cache_dir, needs_features
-        )
+        cached_logits, cached_features, metadata = _load_cache(cache_dir, needs_features)
 
         if cached_logits is not None and metadata is not None:
             # Validate cache
@@ -265,7 +253,7 @@ def precompute_teacher_logits(
                     print(f"  - Features shape: {cached_features.shape}")
                 return cached_logits, cached_features
             else:
-                print(f"⚠ Cache validation failed, recomputing...")
+                print("⚠ Cache validation failed, recomputing...")
 
     # ===== COMPUTATION (original logic) =====
     model.eval()
@@ -276,9 +264,7 @@ def precompute_teacher_logits(
     debug_printed = False
 
     print(f"Computing teacher outputs for {len(sequences)} sequences...")
-    for i in tqdm(
-        range(0, len(sequences), batch_size), total=len(sequences) // batch_size
-    ):
+    for i in tqdm(range(0, len(sequences), batch_size), total=len(sequences) // batch_size):
         batch = sequences[i : i + batch_size]
         tok = tokenizer(
             batch,
@@ -321,9 +307,7 @@ def precompute_teacher_logits(
                             print(f"Debug - Num hidden layers: {len(hs)}")
                             print(f"Debug - Last hidden state shape: {hs[-1].shape}")
                         else:
-                            print(
-                                f"Debug - Hidden states shape (single tensor): {hs.shape}"
-                            )
+                            print(f"Debug - Hidden states shape (single tensor): {hs.shape}")
                     debug_printed = True
 
                 # Extract features
@@ -346,14 +330,10 @@ def precompute_teacher_logits(
                         actual_batch_size = logits.shape[0]
                         if actual_batch_size == 1:
                             # Single sequence: pool across sequence dimension
-                            hidden = last_hidden.mean(
-                                dim=0, keepdim=True
-                            )  # [1, hidden_size]
+                            hidden = last_hidden.mean(dim=0, keepdim=True)  # [1, hidden_size]
                         else:
                             # Multiple sequences but concatenated - need to split and pool
-                            seq_len_per_sample = (
-                                last_hidden.shape[0] // actual_batch_size
-                            )
+                            seq_len_per_sample = last_hidden.shape[0] // actual_batch_size
                             hidden_list = []
                             for b in range(actual_batch_size):
                                 start_idx = b * seq_len_per_sample
@@ -362,21 +342,15 @@ def precompute_teacher_logits(
                                 # Pool this sequence
                                 pooled = seq_hidden.mean(dim=0)  # [hidden_size]
                                 hidden_list.append(pooled)
-                            hidden = torch.stack(
-                                hidden_list
-                            )  # [batch_size, hidden_size]
+                            hidden = torch.stack(hidden_list)  # [batch_size, hidden_size]
                     else:
-                        raise ValueError(
-                            f"Unexpected hidden state shape: {last_hidden.shape}"
-                        )
+                        raise ValueError(f"Unexpected hidden state shape: {last_hidden.shape}")
                 else:
                     # Fallback: use pooler_output or logits
                     if hasattr(out, "pooler_output") and out.pooler_output is not None:
                         hidden = out.pooler_output
                     else:
-                        print(
-                            "Warning: Cannot extract hidden states, using logits as features"
-                        )
+                        print("Warning: Cannot extract hidden states, using logits as features")
                         hidden = logits
 
                 features_list.append(hidden.cpu())
@@ -480,7 +454,7 @@ class ExperimentTracker:
         self.completion_marker = completion_marker
         self.start_timestamp = start_timestamp
         self.base_output_dir = self._extract_base_output_dir(output_dir)
-        print(f"\n[ExperimentTracker] Initialized")
+        print("\n[ExperimentTracker] Initialized")
         print(f"  Output dir: {output_dir}")
         print(f"  Base output dir: {self.base_output_dir}")
         print(f"  Start timestamp filter: {start_timestamp}")
@@ -493,18 +467,16 @@ class ExperimentTracker:
         parts = output_dir.split(os.sep)
 
         # Find "output" in the path
-        try:
-            output_idx = None
-            for i, part in enumerate(parts):
-                if part == "output":
-                    output_idx = i
-                    break
 
-            if output_idx is not None:
-                # Return up to and including "output"
-                return os.sep.join(parts[: output_idx + 1])
-        except:
-            pass
+        output_idx = None
+        for i, part in enumerate(parts):
+            if part == "output":
+                output_idx = i
+                break
+
+        if output_idx is not None:
+            # Return up to and including "output"
+            return os.sep.join(parts[: output_idx + 1])
 
         # Fallback: return the output_dir itself
         return output_dir
@@ -566,9 +538,7 @@ class ExperimentTracker:
                                 timestamp = parts[i + 1]
                                 if self._is_after_start_timestamp(timestamp):
                                     filtered_matches.append(match_path)
-                                    print(
-                                        f"    ✓ Match (timestamp {timestamp}): {match_path}"
-                                    )
+                                    print(f"    ✓ Match (timestamp {timestamp}): {match_path}")
                                 else:
                                     print(
                                         f"    ✗ Filtered out (timestamp {timestamp} < {self.start_timestamp})"
@@ -593,9 +563,7 @@ class ExperimentTracker:
         completed = set()
 
         if not os.path.exists(self.base_output_dir):
-            print(
-                f"[WARNING] Base output directory does not exist: {self.base_output_dir}"
-            )
+            print(f"[WARNING] Base output directory does not exist: {self.base_output_dir}")
             return completed
 
         # Pattern: {base_output_dir}/*/*/*/*/*/*/*/{completion_marker}
@@ -612,7 +580,7 @@ class ExperimentTracker:
             self.completion_marker,
         )
 
-        print(f"\n[ExperimentTracker] Scanning for completed experiments...")
+        print("\n[ExperimentTracker] Scanning for completed experiments...")
         print(f"  Pattern: {pattern}")
 
         all_matches = glob.glob(pattern)
@@ -652,9 +620,7 @@ class ExperimentTracker:
                 print(f"    Error: {e}")
                 continue
 
-        print(
-            f"\n[ExperimentTracker] Scan complete: {len(completed)} unique experiments found"
-        )
+        print(f"\n[ExperimentTracker] Scan complete: {len(completed)} unique experiments found")
         return completed
 
     # def generate_experiment_plan(
@@ -709,7 +675,7 @@ class ExperimentTracker:
         Generate execution plan by checking which experiments are completed.
         """
         print(f"\n{'=' * 80}")
-        print(f"[ExperimentTracker] Generating experiment plan...")
+        print("[ExperimentTracker] Generating experiment plan...")
         print(f"  Total experiments to check: {len(all_experiments)}")
         print(f"{'=' * 80}")
 
@@ -733,9 +699,7 @@ class ExperimentTracker:
             "completed": len(completed),
             "incomplete": len(incomplete),
             "completion_rate": (
-                f"{len(completed) / len(all_experiments) * 100:.1f}%"
-                if all_experiments
-                else "0%"
+                f"{len(completed) / len(all_experiments) * 100:.1f}%" if all_experiments else "0%"
             ),
         }
 
@@ -880,9 +844,7 @@ class ExperimentTracker:
             }
 
         # Find latest checkpoint
-        latest_ckpt = max(
-            checkpoints, key=lambda p: int(p.split("epoch_")[1].split("_")[0])
-        )
+        latest_ckpt = max(checkpoints, key=lambda p: int(p.split("epoch_")[1].split("_")[0]))
         latest_epoch = int(latest_ckpt.split("epoch_")[1].split("_")[0])
 
         return {
@@ -971,9 +933,9 @@ def load_caduceus_model(checkpoint_path, num_labels, device, best_ckpt_file=None
     config = AutoConfig.from_pretrained(checkpoint_path, trust_remote_code=True)
 
     # Create model from config
-    base_model = AutoModelForSequenceClassification.from_config(
-        config, trust_remote_code=True
-    ).to(device)
+    base_model = AutoModelForSequenceClassification.from_config(config, trust_remote_code=True).to(
+        device
+    )
 
     # Load weights
     if best_ckpt_file:
@@ -1010,9 +972,7 @@ def find_best_caduceus_checkpoint(task_name, checkpoint_root):
     task_dir = os.path.join(checkpoint_root, f"{task_name}_caduceus_finetuned")
 
     if not os.path.isdir(task_dir):
-        print(
-            f"Warning: Checkpoint directory not found for task '{task_name}' at {task_dir}"
-        )
+        print(f"Warning: Checkpoint directory not found for task '{task_name}' at {task_dir}")
         return None, -1.0, None
 
     best_score = -1.0
@@ -1043,7 +1003,5 @@ def find_best_caduceus_checkpoint(task_name, checkpoint_root):
             print(f"Found Caduceus model for '{task_name}' at {task_dir}")
             return task_dir, 0.0, None
 
-        print(
-            f"Warning: No valid Caduceus checkpoint found for task '{task_name}' in {task_dir}"
-        )
+        print(f"Warning: No valid Caduceus checkpoint found for task '{task_name}' in {task_dir}")
         return None, -1.0, None

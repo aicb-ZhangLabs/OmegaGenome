@@ -48,9 +48,7 @@ def distill(
     model_type = getattr(config, "model_type", "glm")
     print(f"Model Type: {model_type.upper()}")
     print(f"Teacher: {config.teacher_config.model_name_or_path}")
-    print(
-        f"Student: {config.student_config.model_type}-{config.student_config.model_size}"
-    )
+    print(f"Student: {config.student_config.model_type}-{config.student_config.model_size}")
     print(f"Method: {config.distillation_config.distill_method}")
     print(f"{'=' * 80}\n")
 
