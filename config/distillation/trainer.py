@@ -1,7 +1,6 @@
 from dataclasses import replace
-from ..env import output_path
 from src.trainer.distill_trainer import DistillTrainerConfig
-
+from ..env import output_path
 
 trainer_config = DistillTrainerConfig(
     output_dir=f"{output_path}/distillation",
