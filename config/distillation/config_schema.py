@@ -6,9 +6,9 @@ from src.model.distillation import DistillationModelConfig
 from src.data.dataset import (
     DatasetConfig,
 )
+from src.trainer.distill_trainer import DistillTrainerConfig
 from nntool.slurm import SlurmConfig
 from typing import Optional
-from src.trainer.distill_trainer import DistillTrainerConfig
 
 
 @dataclass
