@@ -8,7 +8,7 @@ from src.data.dataset import (
 )
 from nntool.slurm import SlurmConfig
 from typing import Optional
-from config.distillation.trainer import DistillTrainerConfig
+from src.trainer.distill_trainer import DistillTrainerConfig
 
 
 @dataclass

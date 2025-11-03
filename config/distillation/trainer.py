@@ -1,21 +1,6 @@
 from dataclasses import replace
 from ..env import output_path
-import torch
-from dataclasses import dataclass
-
-
-@dataclass
-class DistillTrainerConfig:
-    output_dir: str
-    wandb_project: str
-    epochs: int = 100
-    batch_size: int = 8
-    lr: float = 1e-4
-    max_len: int = 1024
-    log_batch_every: int = 50
-    eval_every_n_epochs: int = 5
-    num_workers: int = 4
-    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+from src.trainer.distill_trainer import DistillTrainerConfig
 
 
 trainer_config = DistillTrainerConfig(

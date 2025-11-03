@@ -155,7 +155,6 @@ def distill(
 
     # Train
     train_distill_task(
-        config,
         config.trainer_config,
         config.distillation_config,
         task_name,
@@ -170,6 +169,7 @@ def distill(
         X_test,
         y_test,
         run_dir,
+        teacher_parent_dir=config.teacher_parent_dir,
         teacher_ckpt=teacher_ckpt,
         resume_from_checkpoint=config.resume_checkpoint,  # Read from config
         resume_from_epoch=config.resume_epoch,  # Read from config
