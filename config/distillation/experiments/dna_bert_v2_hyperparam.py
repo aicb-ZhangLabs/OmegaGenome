@@ -6,7 +6,7 @@ from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import distillation_model_config
 
 from ...slurm import basic_distillation_slurm
-from dna_bert_v2 import DNABERT2_PARENT_PATH
+from config.distillation.experiments.dna_bert_v2 import DNABERT2_PARENT_PATH
 
 experiment_configs = {
     "dna_bert_v2": (
