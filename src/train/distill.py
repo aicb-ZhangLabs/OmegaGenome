@@ -57,8 +57,10 @@ def distill(
     # ===========================================================
     # MODIFIED SECTION: Use unified checkpoint finding
     # ===========================================================
-    teacher_ckpt, score = find_teacher_checkpoint(config, task_name)
     num_labels = get_num_labels(task_name)
+    config = replace(config, teacher_config=replace(config.teacher_config, num_labels=num_labels))
+    teacher_ckpt, score = find_teacher_checkpoint(config, task_name)
+
     if teacher_ckpt is None:
         print(f"[!] No teacher checkpoint found for {task_name}, skipping.")
         return
