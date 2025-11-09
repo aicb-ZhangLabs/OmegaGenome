@@ -3,7 +3,6 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import tyro
-import json
 import wandb
 
 from datetime import datetime
@@ -75,12 +74,89 @@ def distill(
     teacher_tokenizer, teacher_model, teacher_hidden = get_teacher_model(
         config, task_name, teacher_ckpt
     )
-
+    print(f"Initial teacher_hidden from model: {teacher_hidden}")
     teacher_model.eval()
-
+    # Build data splits
+    X_train, y_train, X_val, y_val, X_test, y_test = build_data_splits_from_huggingface(
+        config.dataset_config
+    )
     # ===========================================================
     # ORIGINAL CODE: Student model and distillation setup
     # ===========================================================
+    # CRITICAL FIX: Determine actual teacher hidden size
+    # This handles cases where config.d_model != actual feature dimension
+    needs_features = config.distillation_config.weight_mse > 0
+
+    if needs_features:
+        from config.env import project_path
+        import json
+        import torch
+
+        # Import the helper functions
+        from src.trainer.utils import _get_cache_dir
+
+        actual_teacher_hidden = None
+
+        # Method 1: Try to read from existing cache metadata
+        cache_dir = _get_cache_dir(project_path, config.teacher_parent_dir, task_name)
+        metadata_path = cache_dir / "metadata.json"
+
+        if metadata_path.exists():
+            try:
+                with open(metadata_path, "r") as f:
+                    metadata = json.load(f)
+
+                if "features_shape" in metadata and metadata["features_shape"] is not None:
+                    actual_teacher_hidden = metadata["features_shape"][-1]  # Last dimension
+                    print(f"✓ Read feature dimension from cache metadata: {actual_teacher_hidden}")
+            except Exception as e:
+                print(f"Warning: Could not read cache metadata: {e}")
+
+        # Method 2: If no cache, do a quick single-sample forward pass
+        if actual_teacher_hidden is None:
+            print("No cache found, doing quick forward pass to determine feature dimension...")
+            try:
+                # Tokenize a single sample
+                sample_seq = X_train[0] if len(X_train) > 0 else "ATCGATCG"
+                tok = teacher_tokenizer(
+                    sample_seq,
+                    padding="max_length",
+                    truncation=True,
+                    max_length=config.trainer_config.max_len,
+                    return_tensors="pt",
+                )
+                input_ids = tok.input_ids.to(config.trainer_config.device)
+                attention_mask = (
+                    tok.attention_mask.to(config.trainer_config.device)
+                    if hasattr(tok, "attention_mask")
+                    else torch.ones_like(input_ids)
+                )
+
+                with torch.no_grad():
+                    _, sample_features = teacher_model(
+                        input_ids=input_ids,
+                        attention_mask=attention_mask,
+                        return_features=True,
+                    )
+                    actual_teacher_hidden = sample_features.shape[-1]
+                    print(
+                        f"✓ Determined feature dimension from forward pass: {actual_teacher_hidden}"
+                    )
+            except Exception as e:
+                print(f"Warning: Could not determine dimension from forward pass: {e}")
+
+        # Update teacher_hidden if we found the actual dimension
+        if actual_teacher_hidden is not None and actual_teacher_hidden != teacher_hidden:
+            print(
+                f"WARNING: Config says hidden_dim={teacher_hidden}, but actual features are {actual_teacher_hidden}-dimensional"
+            )
+            print(f"  Overriding to use actual dimension: {actual_teacher_hidden}")
+            teacher_hidden = actual_teacher_hidden
+        elif actual_teacher_hidden is not None:
+            print(f"✓ Config hidden_dim={teacher_hidden} matches actual features")
+
+    print(f"Final teacher_hidden for student model: {teacher_hidden}")
+
     # Build student model
 
     student_config = replace(
@@ -96,11 +172,6 @@ def distill(
         teacher_model,
         model,
         config.trainer_config.device,
-    )
-
-    # Build data splits
-    X_train, y_train, X_val, y_val, X_test, y_test = build_data_splits_from_huggingface(
-        config.dataset_config
     )
 
     # Create run directory

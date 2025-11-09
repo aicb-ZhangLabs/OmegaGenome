@@ -169,11 +169,39 @@ def get_teacher_model(config, task_name, teacher_ckpt):
             teacher_ckpt, num_labels, config.trainer_config.device, best_ckpt_file
         )
 
-        # Extract teacher hidden size
+        # # Extract teacher hidden size
+        # if hasattr(wrapped_model, "hidden_dim") and wrapped_model.hidden_dim:
+        #     teacher_hidden = wrapped_model.hidden_dim
+        # else:
+        #     teacher_hidden = 256  # Default for Caduceus
+        # Extract teacher hidden size with fallback to dummy forward pass
+        teacher_hidden = None
         if hasattr(wrapped_model, "hidden_dim") and wrapped_model.hidden_dim:
             teacher_hidden = wrapped_model.hidden_dim
-        else:
-            teacher_hidden = 256  # Default for Caduceus
+            print(f"Got teacher_hidden={teacher_hidden} from wrapped_model.hidden_dim")
+
+        # If still None, do a dummy forward pass to get the actual dimension
+        if teacher_hidden is None:
+            print(
+                "Warning: hidden_dim not set, doing dummy forward pass to determine feature dimension"
+            )
+            dummy_input = torch.zeros(1, 10, dtype=torch.long, device=config.trainer_config.device)
+            dummy_mask = torch.ones(1, 10, dtype=torch.long, device=config.trainer_config.device)
+
+            with torch.no_grad():
+                try:
+                    _, dummy_features = wrapped_model(
+                        dummy_input, attention_mask=dummy_mask, return_features=True
+                    )
+                    teacher_hidden = dummy_features.shape[-1]
+                    print(f"Determined teacher_hidden={teacher_hidden} from dummy forward pass")
+                except Exception as e:
+                    print(f"Error during dummy forward pass: {e}")
+                    teacher_hidden = 256  # Absolute fallback
+
+        if teacher_hidden is None:
+            teacher_hidden = 256  # Absolute fallback
+            print(f"Using fallback teacher_hidden={teacher_hidden}")
 
         # Return in format compatible with existing code
         return tokenizer, wrapped_model, teacher_hidden

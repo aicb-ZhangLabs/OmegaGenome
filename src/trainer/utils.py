@@ -259,6 +259,10 @@ def precompute_teacher_logits(
     model.eval()
     logits_list = []
     features_list = []
+    # Check if model is CaduceusFeatureExtractor
+    is_caduceus = (
+        hasattr(model, "__class__") and model.__class__.__name__ == "CaduceusFeatureExtractor"
+    )
 
     # Debug flag to print structure once
     debug_printed = False
@@ -282,6 +286,21 @@ def precompute_teacher_logits(
             attention_mask = torch.ones_like(input_ids)
 
         with torch.no_grad():
+            if is_caduceus:
+                if needs_features:
+                    logits, hidden = model(
+                        input_ids=input_ids,
+                        attention_mask=attention_mask,
+                        return_features=True,
+                    )
+                    if needs_logits:
+                        logits_list.append(logits.cpu())
+                    features_list.append(hidden.cpu())
+                else:
+                    logits = model(input_ids=input_ids, attention_mask=attention_mask)
+                    if needs_logits:
+                        logits_list.append(logits.cpu())
+                continue  # Skip the standard HF model handling below
             out = model(input_ids=input_ids, attention_mask=attention_mask)
 
             # Handle both wrapped models (returns Tensor) and standard HF models
@@ -822,7 +841,20 @@ class CaduceusFeatureExtractor(nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
-        self.hidden_dim = None  # Will be set dynamically
+        # Try to extract hidden_dim from model config
+        self.hidden_dim = None
+        if hasattr(model, "config"):
+            # Try common attribute names for hidden dimension
+            for attr in ["d_model", "hidden_size", "n_embd", "dim", "d_inner"]:
+                if hasattr(model.config, attr):
+                    self.hidden_dim = getattr(model.config, attr)
+                    print(f"Extracted hidden_dim={self.hidden_dim} from config.{attr}")
+                    break
+
+        if self.hidden_dim is None:
+            print(
+                "Warning: Could not extract hidden_dim from config, will be set during first forward pass"
+            )
 
     def forward(
         self,

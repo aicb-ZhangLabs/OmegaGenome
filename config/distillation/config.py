@@ -23,4 +23,5 @@ hyperparam_configs = {
     **dna_bert_v2_hyperparam.experiment_configs,
     **nt_hyperparam.experiment_configs,
     **caduceus_hyperparam.experiment_configs,
+    **nt_different_size.small_medium_large_bpnet_experiment_configs,
 }
