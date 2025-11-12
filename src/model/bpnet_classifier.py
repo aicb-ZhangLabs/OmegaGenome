@@ -31,6 +31,18 @@ class SimpleResidual(nn.Module):
         return x + self.fn(x)
 
 
+class VariableBPNet(nn.Module):
+    """Wrapper for variable-size BPNet backbones with feature_dim attribute"""
+
+    def __init__(self, layers, feature_dim):
+        super().__init__()
+        self.layers = layers
+        self.feature_dim = feature_dim
+
+    def forward(self, x):
+        return self.layers(x)
+
+
 class SimpleCNN(nn.Module):
     """Simple CNN backbone as alternative to BPNet"""
 
@@ -115,11 +127,14 @@ class BPNetClassifier(nn.Module):
         self.pool = nn.AdaptiveAvgPool1d(1)
         self._define_classifier(C)
 
+        # Print model parameters
+        self._print_model_info()
+
     def _create_bpnet_backbone(self, model_size: str):
-        """Create BPNet variant based on size"""
+        """Create BPNet variant based on size - returns VariableBPNet with correct feature_dim"""
         if model_size == "tiny":
-            # Tiny BPNet with fewer channels
-            return nn.Sequential(
+            # Tiny BPNet with fewer channels (32)
+            layers = nn.Sequential(
                 nn.Conv1d(4, 32, 15, padding="same"),
                 nn.ReLU(),
                 SimpleResidual(
@@ -129,21 +144,27 @@ class BPNetClassifier(nn.Module):
                     nn.Sequential(nn.Conv1d(32, 32, 3, padding="same", dilation=4), nn.ReLU())
                 ),
             )
-        elif model_size == "large":
-            # Large BPNet with more channels and layers
-            layers = [nn.Conv1d(4, 256, 25, padding="same"), nn.ReLU()]
-            for i in range(1, 10):
-                layers.append(
-                    SimpleResidual(
-                        nn.Sequential(
-                            nn.Conv1d(256, 256, 3, padding="same", dilation=2 ** min(i, 8)),
-                            nn.ReLU(),
-                        )
-                    )
-                )
-            return nn.Sequential(*layers)
+            return VariableBPNet(layers, feature_dim=32)
+
+        elif model_size == "small":
+            # Small BPNet with 64 channels (similar to original)
+            layers = nn.Sequential(
+                nn.Conv1d(4, 64, 21, padding="same"),
+                nn.ReLU(),
+                SimpleResidual(
+                    nn.Sequential(nn.Conv1d(64, 64, 3, padding="same", dilation=2), nn.ReLU())
+                ),
+                SimpleResidual(
+                    nn.Sequential(nn.Conv1d(64, 64, 3, padding="same", dilation=4), nn.ReLU())
+                ),
+                SimpleResidual(
+                    nn.Sequential(nn.Conv1d(64, 64, 3, padding="same", dilation=8), nn.ReLU())
+                ),
+            )
+            return VariableBPNet(layers, feature_dim=64)
+
         elif model_size == "medium":
-            # Medium BPNet
+            # Medium BPNet with 128 channels
             layers = [nn.Conv1d(4, 128, 21, padding="same"), nn.ReLU()]
             for i in range(1, 7):
                 layers.append(
@@ -154,12 +175,24 @@ class BPNetClassifier(nn.Module):
                         )
                     )
                 )
-            return nn.Sequential(*layers)
-        elif model_size == "original":
-            # Default small or use original BPNet
-            return BPNet()
+            return VariableBPNet(nn.Sequential(*layers), feature_dim=128)
+
+        elif model_size == "large":
+            # Large BPNet with 256 channels and more layers
+            layers = [nn.Conv1d(4, 256, 25, padding="same"), nn.ReLU()]
+            for i in range(1, 10):
+                layers.append(
+                    SimpleResidual(
+                        nn.Sequential(
+                            nn.Conv1d(256, 256, 3, padding="same", dilation=2 ** min(i, 8)),
+                            nn.ReLU(),
+                        )
+                    )
+                )
+            return VariableBPNet(nn.Sequential(*layers), feature_dim=256)
         else:
-            return BPNet()
+            # Default to small
+            return self._create_bpnet_backbone("small")
 
     def _get_hidden_dim(self, model_size: str) -> int:
         """Get hidden dimension based on model size"""
@@ -187,6 +220,24 @@ class BPNetClassifier(nn.Module):
             self.teacher_proj = None
             self.classifier = nn.Linear(C, self.config.num_labels)
 
+    def _print_model_info(self):
+        """Print model architecture and parameter count"""
+        total_params = sum(p.numel() for p in self.parameters())
+        trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+        print(f"\n{'=' * 60}")
+        print(
+            f"BPNet Classifier - {self.config.model_type.upper()} ({self.config.model_size.upper()})"
+        )
+        print(f"{'=' * 60}")
+        print(f"Total parameters:      {total_params:,} ({total_params / 1e6:.2f}M)")
+        print(f"Trainable parameters:  {trainable_params:,} ({trainable_params / 1e6:.2f}M)")
+        print(
+            f"Feature dimension:     {self.backbone.feature_dim if hasattr(self.backbone, 'feature_dim') else 'N/A'}"
+        )
+        print(f"Number of labels:      {self.config.num_labels}")
+        print(f"{'=' * 60}\n")
+
     def forward(self, input_ids, return_feats: bool = False):
         """Forward pass with optional feature return"""
         one_hot = F.one_hot(input_ids, num_classes=4).float()
@@ -196,6 +247,8 @@ class BPNetClassifier(nn.Module):
         if isinstance(self.backbone, BPNet):
             out = self.backbone(x)
             feats = out["x"]
+        elif isinstance(self.backbone, VariableBPNet):
+            feats = self.backbone(x)
         else:
             feats = self.backbone(x)
 

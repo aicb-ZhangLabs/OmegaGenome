@@ -39,6 +39,8 @@ def distill(
     config: DistillationExperimentConfig,
     task_name: str,
 ):
+    import json
+
     print(f"\n{'=' * 80}")
     print(f"=== Starting Distillation: {task_name} ===")
     print(f"{'=' * 80}")

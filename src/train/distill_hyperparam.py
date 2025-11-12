@@ -40,11 +40,16 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
         project_output_path,  # <-- Use project_output_path instead of output_path
         "nt_distillation/hyperparam",  # This matches the experiment type
     )
+    max_gpu = {}
+    max_gpu["voyager"] = 2
+    max_gpu["laniakea"] = 7
     # Initialize GPU manager with node limits
     gpu_manager = get_gpu_manager(
         node_limits={
-            "voyager": 3,  # Max 2 concurrent GPU jobs YOU can run (shared server)
-            "laniakea": 7,  # Max 4 concurrent GPU jobs YOU can run (shared server)
+            "voyager": max_gpu["voyager"],  # Max 2 concurrent GPU jobs YOU can run (shared server)
+            "laniakea": max_gpu[
+                "laniakea"
+            ],  # Max 4 concurrent GPU jobs YOU can run (shared server)
         },
         node_capacity={"voyager": 4, "laniakea": 8},
     )
@@ -149,8 +154,8 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
     print(f"  - Z-scores: {config.zscores}")
     print(f"{'=' * 60}")
     print("GPU Management (Per-User Limits on Shared Servers):")
-    print("  - Voyager: You can use max 2 GPUs concurrently")
-    print("  - Laniakea: You can use max 4 GPUs concurrently")
+    print(f"  - Voyager: You can use max {max_gpu['voyager']} GPUs concurrently")
+    print(f"  - Laniakea: You can use max {max_gpu['laniakea']} GPUs concurrently")
     print("  - Other users' jobs do NOT count toward your limits")
     print(f"{'=' * 60}\n")
 
