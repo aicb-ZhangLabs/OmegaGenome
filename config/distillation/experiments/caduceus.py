@@ -22,11 +22,11 @@ CADUCEUS_PARENT_PATH = f"{project_path}/data/finetuned_models/caduceus_finetune_
 caduceus_base_config = DistillationExperimentConfig(
     task_names=[
         "H3K4me2",
-        "H3K4me3",
-        "H3K9ac",
-        "H3K9me3",
-        "promoter_all",
-        "promoter_tata",
+        # "H3K4me3",
+        # "H3K9ac",
+        # "H3K9me3",
+        # "promoter_all",
+        # "promoter_tata",
     ],
     teacher_config=caduceus,
     teacher_parent_dir=CADUCEUS_PARENT_PATH,

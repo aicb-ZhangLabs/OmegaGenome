@@ -21,12 +21,22 @@ NT_PARENT_PATH = f"{project_path}/data/finetuned_models/2b5-multi-species_nucleo
 # Base NT experiment configuration
 nt_base_config = DistillationExperimentConfig(
     task_names=[
-        "H3K4me2",
         "H3K4me3",
+        "enhancers_types",
+        "enhancers",
         "H3K9ac",
         "H3K9me3",
         "promoter_all",
         "promoter_tata",
+        "promoter_no_tata",
+        #############
+        # "splice_sites_all"
+        # "H3K4me2",
+        # "H3K4me3",
+        # "H3K9ac",
+        # "H3K9me3",
+        # "promoter_all",
+        # "promoter_tata",
     ],
     teacher_config=nt_2b5,
     teacher_parent_dir=NT_PARENT_PATH,

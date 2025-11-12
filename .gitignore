@@ -13,6 +13,9 @@ wheels/
 # Environment variables
 data
 output
+output_original
+output_caduceus_hyperparam
+output_bpnet_medium
 env.toml
 wandb/
 !src/data

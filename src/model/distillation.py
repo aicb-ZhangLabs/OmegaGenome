@@ -38,6 +38,25 @@ class DistillationModel(nn.Module):
         self.student_model = student_model
         self.device = device
 
+    # ADD HELPER: _get_gt_mask
+    def _get_gt_mask(self, logits, target):
+        target = target.reshape(-1)
+        mask = torch.zeros_like(logits).scatter_(1, target.unsqueeze(1), 1).bool()
+        return mask
+
+    # ADD HELPER: _get_other_mask
+    def _get_other_mask(self, logits, target):
+        target = target.reshape(-1)
+        mask = torch.ones_like(logits).scatter_(1, target.unsqueeze(1), 0).bool()
+        return mask
+
+    # ADD HELPER: _cat_mask
+    def _cat_mask(self, t, mask1, mask2):
+        t1 = (t * mask1).sum(dim=1, keepdims=True)
+        t2 = (t * mask2).sum(1, keepdims=True)
+        rt = torch.cat([t1, t2], dim=1)
+        return rt
+
     def prepare_batch(self, batch: List[torch.Tensor]):
         ids, labs = batch[0].to(self.device), batch[1].to(self.device)
         tlog = batch[2].to(self.device) if len(batch) > 2 and self.config.weight_kl > 0 else None
@@ -157,26 +176,31 @@ class DistillationModel(nn.Module):
         ) * (temp**2)
 
     def _dkd_loss(self, s_logits: torch.Tensor, t_logits: torch.Tensor, labels: torch.Tensor):
-        """Decoupled Knowledge Distillation Loss"""
+        """Decoupled Knowledge Distillation Loss (Corrected)"""
         temp = self.config.temperature
         alpha = self.config.dkd_alpha
         beta = self.config.dkd_beta
 
-        mask_target = F.one_hot(labels, num_classes=s_logits.shape[1]).bool()
+        gt_mask = self._get_gt_mask(s_logits, labels)
+        other_mask = self._get_other_mask(s_logits, labels)
 
-        # Target class KD
+        # Target class KD (TCKD)
         s_probs = F.softmax(s_logits / temp, dim=1)
         t_probs = F.softmax(t_logits / temp, dim=1)
 
-        s_target = (s_probs * mask_target).sum(dim=1, keepdim=True)
-        t_target = (t_probs * mask_target).sum(dim=1, keepdim=True)
-        tckd_loss = F.kl_div(torch.log(s_target + 1e-8), t_target, reduction="batchmean") * (
-            temp**2
-        )
+        s_cat = self._cat_mask(s_probs, gt_mask, other_mask)
+        t_cat = self._cat_mask(t_probs, gt_mask, other_mask)
 
-        # Non-target class KD
-        s_logits_non_target = s_logits.masked_fill(mask_target, -1e9)
-        t_logits_non_target = t_logits.masked_fill(mask_target, -1e9)
+        # Add epsilon to prevent log(0)
+        log_s_cat = torch.log(s_cat + 1e-8)
+
+        tckd_loss = F.kl_div(log_s_cat, t_cat, reduction="batchmean") * (temp**2)
+
+        # Non-target class KD (NCKD)
+        # Your original NCKD logic was correct.
+        s_logits_non_target = s_logits.masked_fill(gt_mask, -1e9)
+        t_logits_non_target = t_logits.masked_fill(gt_mask, -1e9)
+
         nckd_loss = F.kl_div(
             F.log_softmax(s_logits_non_target / temp, dim=1),
             F.softmax(t_logits_non_target / temp, dim=1),

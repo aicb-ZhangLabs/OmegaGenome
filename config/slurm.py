@@ -4,6 +4,9 @@ from .env import env, output_path
 exclude_code_folders = [
     "wandb",
     "output",
+    "output_original",
+    "output_caduceus_hyperparam",
+    "output_bpnet_medium",
     "outputs",
     "data",
     "datasets",
