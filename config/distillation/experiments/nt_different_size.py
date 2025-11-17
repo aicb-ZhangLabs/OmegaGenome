@@ -88,11 +88,11 @@ nt_bpnet_small = replace(
 nt_bpnet_small_hyperparam = replace(
     base_hyperparam_config,
     student_config=replace(
-        nt_bpnet_original.student_config,
+        base_hyperparam_config.student_config,
         model_size="small",
     ),
     trainer_config=replace(
-        nt_bpnet_original.trainer_config,
+        base_hyperparam_config.trainer_config,
         output_dir=f"{output_path}/nt_distillation/different_size/bpnet/small/hyperparam/",
     ),
 )
@@ -110,11 +110,11 @@ nt_bpnet_medium = replace(
 nt_bpnet_medium_hyperparam = replace(
     base_hyperparam_config,
     student_config=replace(
-        nt_bpnet_original.student_config,
+        base_hyperparam_config.student_config,
         model_size="medium",
     ),
     trainer_config=replace(
-        nt_bpnet_original.trainer_config,
+        base_hyperparam_config.trainer_config,
         output_dir=f"{output_path}/nt_distillation/different_size/bpnet/medium/hyperparam/",
     ),
 )
@@ -134,11 +134,11 @@ nt_bpnet_large = replace(
 nt_bpnet_large_hyperparam = replace(
     base_hyperparam_config,
     student_config=replace(
-        nt_bpnet_original.student_config,
+        base_hyperparam_config.student_config,
         model_size="large",
     ),
     trainer_config=replace(
-        nt_bpnet_original.trainer_config,
+        base_hyperparam_config.trainer_config,
         output_dir=f"{output_path}/nt_distillation/different_size/bpnet/large/hyperparam/",
         # batch_size=8,  # Smaller batch size for large model
     ),

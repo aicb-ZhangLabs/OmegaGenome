@@ -7,6 +7,7 @@ from .experiments import dna_bert_v2_hyperparam
 from .experiments import nt
 from .experiments import nt_hyperparam
 from .experiments import nt_different_size
+from .experiments import nt_method_hyperparam
 from .experiments import caduceus
 from .experiments import caduceus_hyperparam
 
@@ -22,6 +23,7 @@ configs = {
 hyperparam_configs = {
     **dna_bert_v2_hyperparam.experiment_configs,
     **nt_hyperparam.experiment_configs,
+    **nt_method_hyperparam.experiment_configs,
     **caduceus_hyperparam.experiment_configs,
     **nt_different_size.small_medium_large_bpnet_experiment_configs,
 }

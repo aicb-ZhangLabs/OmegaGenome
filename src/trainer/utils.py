@@ -460,7 +460,6 @@ class ExperimentTracker:
         output_dir: str,
         completion_marker: str = "final_summary.json",
         start_timestamp: str = None,
-        search_base_dir: str = None,  # <-- ADD THIS
     ):
         """
         Args:
@@ -473,10 +472,47 @@ class ExperimentTracker:
         self.completion_marker = completion_marker
         self.start_timestamp = start_timestamp
         self.base_output_dir = self._extract_base_output_dir(output_dir)
+        self.experiment_type_path = self._extract_experiment_type_path(output_dir)
         print("\n[ExperimentTracker] Initialized")
         print(f"  Output dir: {output_dir}")
         print(f"  Base output dir: {self.base_output_dir}")
+        print(f"  Experiment type path: {self.experiment_type_path}")
         print(f"  Start timestamp filter: {start_timestamp}")
+
+    def _extract_experiment_type_path(self, output_dir: str) -> str:
+        """
+        Extract experiment type path (relative path after date/time folders).
+        e.g., "/path/to/output/11022025/032144/nt_distillation/hyperparam" -> "nt_distillation/hyperparam"
+        e.g., "/path/to/output/11022025/032144/nt_distillation/different_size/bpnet/small/hyperparam"
+              -> "nt_distillation/different_size/bpnet/small/hyperparam"
+
+        This identifies the unique experiment series and prevents conflicts.
+        """
+        parts = output_dir.split(os.sep)
+
+        # Find "output" in the path
+        output_idx = None
+        for i, part in enumerate(parts):
+            if part == "output":
+                output_idx = i
+                break
+
+        if output_idx is None:
+            return ""
+
+        # Skip output, then skip date folder (8 digits), then skip time folder (6 digits)
+        # Then the rest is the experiment type path
+        remaining_parts = parts[output_idx + 1 :]
+
+        # Filter out date (DDMMYYYY) and time (HHMMSS) folders
+        experiment_parts = []
+        for part in remaining_parts:
+            # Skip 8-digit date folders and 6-digit time folders
+            if part.isdigit() and len(part) in [6, 8]:
+                continue
+            experiment_parts.append(part)
+
+        return os.sep.join(experiment_parts)
 
     def _extract_base_output_dir(self, output_dir: str) -> str:
         """
@@ -529,8 +565,7 @@ class ExperimentTracker:
             self.base_output_dir,
             "*",  # date (e.g., "11022025")
             "*",  # time (e.g., "032144")
-            "*",  # experiment type (e.g., "nt_distillation")
-            "*",  # sub-type (e.g., "hyperparam")
+            self.experiment_type_path,  # SPECIFIC experiment type (e.g., "nt_distillation/hyperparam")
             task_name,
             "*",  # exp_timestamp
             "*",  # uuid
@@ -590,8 +625,7 @@ class ExperimentTracker:
             self.base_output_dir,
             "*",  # date
             "*",  # time
-            "*",  # experiment type
-            "*",  # sub-type
+            self.experiment_type_path,  # SPECIFIC to this experiment series
             "*",  # task_name
             "*",  # exp_timestamp
             "*",  # uuid
@@ -619,10 +653,17 @@ class ExperimentTracker:
                 if output_idx is None:
                     continue
 
-                # After output: date/time/experiment_type/sub_type/task/exp_timestamp/uuid/hyperparam_str/marker
-                task_name = parts[output_idx + 5]
-                timestamp = parts[output_idx + 6]
-                hyperparam_str = parts[output_idx + 8]
+                # After output: date/time/{experiment_type_path}/task/exp_timestamp/uuid/hyperparam_str/marker
+                # Need to find where experiment_type_path ends and task begins
+                exp_type_parts = self.experiment_type_path.split(os.sep)
+                exp_type_depth = len(exp_type_parts)
+
+                # Skip: output (1) + date (1) + time (1) + experiment_type_path (N)
+                task_idx = output_idx + 3 + exp_type_depth
+
+                task_name = parts[task_idx]
+                timestamp = parts[task_idx + 1]
+                hyperparam_str = parts[task_idx + 3]
 
                 # Filter by timestamp
                 if not self._is_after_start_timestamp(timestamp):
@@ -807,7 +848,15 @@ class ExperimentTracker:
 
         # Check for partial progress
         pattern = os.path.join(
-            self.output_dir, task_name, "*", "*", hyperparam_str, "epoch_*_valmcc_*"
+            self.base_output_dir,
+            "*",  # date
+            "*",  # time
+            self.experiment_type_path,  # SPECIFIC experiment type
+            task_name,
+            "*",  # exp_timestamp
+            "*",  # uuid
+            hyperparam_str,
+            "epoch_*_valmcc_*",
         )
         checkpoints = glob.glob(pattern)
 
