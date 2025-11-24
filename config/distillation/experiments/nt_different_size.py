@@ -52,13 +52,91 @@ base_hyperparam_config = DistillationHyperparamExperimentConfig(
     temperatures=[0.5, 1.0, 1.5, 2.0, 4.0],
     zscores=[False],
 )
-
+different_size_hyperparam_config = replace(
+    base_hyperparam_config,
+    trainer_config=replace(
+        nt_hyperparam_trainer_config, wandb_project="OmegaGenome-NT-Different-Size"
+    ),
+)
 
 # Different BPNet sizes
 nt_bpnet_original = replace(
     base_config,
     student_config=original_bpnet_classifier_config,
     trainer_config=nt_different_size_original_trainer_config,
+)
+
+nt_bpnet_ultra_tiny = replace(
+    nt_bpnet_original,
+    student_config=replace(
+        nt_bpnet_original.student_config,
+        model_size="ultra_tiny",
+    ),
+    trainer_config=replace(
+        nt_bpnet_original.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/ultra_tiny/",
+    ),
+)
+
+nt_bpnet_extra_tiny = replace(
+    nt_bpnet_original,
+    student_config=replace(
+        nt_bpnet_original.student_config,
+        model_size="extra_tiny",
+    ),
+    trainer_config=replace(
+        nt_bpnet_original.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/extra_tiny/",
+    ),
+)
+
+nt_bpnet_medium_small = replace(
+    nt_bpnet_original,
+    student_config=replace(
+        nt_bpnet_original.student_config,
+        model_size="medium_small",
+    ),
+    trainer_config=replace(
+        nt_bpnet_original.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/medium_small/",
+    ),
+)
+
+# Hyperparameter search variants
+nt_bpnet_ultra_tiny_hyperparam = replace(
+    different_size_hyperparam_config,
+    student_config=replace(
+        different_size_hyperparam_config.student_config,
+        model_size="ultra_tiny",
+    ),
+    trainer_config=replace(
+        different_size_hyperparam_config.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/ultra_tiny/hyperparam/",
+    ),
+)
+
+nt_bpnet_extra_tiny_hyperparam = replace(
+    different_size_hyperparam_config,
+    student_config=replace(
+        different_size_hyperparam_config.student_config,
+        model_size="extra_tiny",
+    ),
+    trainer_config=replace(
+        different_size_hyperparam_config.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/extra_tiny/hyperparam/",
+    ),
+)
+
+nt_bpnet_medium_small_hyperparam = replace(
+    different_size_hyperparam_config,
+    student_config=replace(
+        different_size_hyperparam_config.student_config,
+        model_size="medium_small",
+    ),
+    trainer_config=replace(
+        different_size_hyperparam_config.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/medium_small/hyperparam/",
+    ),
 )
 
 nt_bpnet_tiny = replace(
@@ -86,14 +164,15 @@ nt_bpnet_small = replace(
 )
 
 nt_bpnet_small_hyperparam = replace(
-    base_hyperparam_config,
+    different_size_hyperparam_config,
     student_config=replace(
-        base_hyperparam_config.student_config,
+        different_size_hyperparam_config.student_config,
         model_size="small",
     ),
     trainer_config=replace(
-        base_hyperparam_config.trainer_config,
+        different_size_hyperparam_config.trainer_config,
         output_dir=f"{output_path}/nt_distillation/different_size/bpnet/small/hyperparam/",
+        wandb_project="OmegaGenome-NT-Different-Size",
     ),
 )
 nt_bpnet_medium = replace(
@@ -108,13 +187,13 @@ nt_bpnet_medium = replace(
     ),
 )
 nt_bpnet_medium_hyperparam = replace(
-    base_hyperparam_config,
+    different_size_hyperparam_config,
     student_config=replace(
-        base_hyperparam_config.student_config,
+        different_size_hyperparam_config.student_config,
         model_size="medium",
     ),
     trainer_config=replace(
-        base_hyperparam_config.trainer_config,
+        different_size_hyperparam_config.trainer_config,
         output_dir=f"{output_path}/nt_distillation/different_size/bpnet/medium/hyperparam/",
     ),
 )
@@ -132,13 +211,13 @@ nt_bpnet_large = replace(
 )
 
 nt_bpnet_large_hyperparam = replace(
-    base_hyperparam_config,
+    different_size_hyperparam_config,
     student_config=replace(
-        base_hyperparam_config.student_config,
+        different_size_hyperparam_config.student_config,
         model_size="large",
     ),
     trainer_config=replace(
-        base_hyperparam_config.trainer_config,
+        different_size_hyperparam_config.trainer_config,
         output_dir=f"{output_path}/nt_distillation/different_size/bpnet/large/hyperparam/",
         # batch_size=8,  # Smaller batch size for large model
     ),
@@ -231,6 +310,18 @@ small_medium_large_bpnet_experiment_configs = {
         "NT distillation with large BPNet (~5M params)",
         nt_bpnet_large_hyperparam,
     ),
+    "nt_bpnet_ultra_tiny_hyperparam": (
+        "NT distillation with ultra tiny BPNet (~6.25k params)",
+        nt_bpnet_ultra_tiny_hyperparam,
+    ),
+    "nt_bpnet_extra_tiny_hyperparam": (
+        "NT distillation with extra tiny BPNet (~25k params)",
+        nt_bpnet_extra_tiny_hyperparam,
+    ),
+    "nt_bpnet_medium_small_hyperparam": (
+        "NT distillation with medium-small BPNet (~400k params)",
+        nt_bpnet_medium_small_hyperparam,
+    ),
 }
 experiment_configs = {
     # BPNet different sizes
@@ -242,9 +333,22 @@ experiment_configs = {
         "NT distillation with tiny BPNet (~50k params)",
         nt_bpnet_tiny,
     ),
+    # NEW: Additional size variants
+    "nt_bpnet_ultra_tiny": (
+        "NT distillation with ultra tiny BPNet (~6.25k params)",
+        nt_bpnet_ultra_tiny,
+    ),
+    "nt_bpnet_extra_tiny": (
+        "NT distillation with extra tiny BPNet (~25k params)",
+        nt_bpnet_extra_tiny,
+    ),
     "nt_bpnet_small": (
         "NT distillation with small BPNet (~200k params)",
         nt_bpnet_small,
+    ),
+    "nt_bpnet_medium_small": (
+        "NT distillation with medium-small BPNet (~400k params)",
+        nt_bpnet_medium_small,
     ),
     "nt_bpnet_medium": (
         "NT distillation with medium BPNet (~1M params)",

@@ -35,7 +35,7 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
     # Extract base path without date/time prefix
     # e.g., "output/nt_distillation/hyperparam" from trainer config
     max_gpu = {}
-    max_gpu["voyager"] = 3
+    max_gpu["voyager"] = 4
     max_gpu["laniakea"] = 7
     # Initialize GPU manager with node limits
     gpu_manager = get_gpu_manager(
