@@ -66,6 +66,29 @@ nt_bpnet_original = replace(
     trainer_config=nt_different_size_original_trainer_config,
 )
 
+nt_bpnet_pico = replace(
+    nt_bpnet_original,
+    student_config=replace(
+        nt_bpnet_original.student_config,
+        model_size="pico",
+    ),
+    trainer_config=replace(
+        nt_bpnet_original.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/pico/",
+    ),
+)
+
+nt_bpnet_pico_hyperparam = replace(
+    different_size_hyperparam_config,
+    student_config=replace(
+        different_size_hyperparam_config.student_config,
+        model_size="pico",
+    ),
+    trainer_config=replace(
+        different_size_hyperparam_config.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/pico/hyperparam/",
+    ),
+)
 nt_bpnet_ultra_tiny = replace(
     nt_bpnet_original,
     student_config=replace(
@@ -223,6 +246,42 @@ nt_bpnet_large_hyperparam = replace(
     ),
 )
 
+nt_bpnet_medium_large_hyperparam = replace(
+    different_size_hyperparam_config,
+    student_config=replace(
+        different_size_hyperparam_config.student_config,
+        model_size="medium_large",
+    ),
+    trainer_config=replace(
+        different_size_hyperparam_config.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/medium_large/hyperparam/",
+    ),
+)
+
+nt_bpnet_extra_large_hyperparam = replace(
+    different_size_hyperparam_config,
+    student_config=replace(
+        different_size_hyperparam_config.student_config,
+        model_size="extra_large",
+    ),
+    trainer_config=replace(
+        different_size_hyperparam_config.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/extra_large/hyperparam/",
+    ),
+)
+
+nt_bpnet_xxlarge_hyperparam = replace(
+    different_size_hyperparam_config,
+    student_config=replace(
+        different_size_hyperparam_config.student_config,
+        model_size="xxlarge",
+    ),
+    trainer_config=replace(
+        different_size_hyperparam_config.trainer_config,
+        output_dir=f"{output_path}/nt_distillation/different_size/bpnet/xxlarge/hyperparam/",
+    ),
+)
+
 # Different architectures
 nt_bilstm_small = replace(
     base_config,
@@ -298,17 +357,9 @@ nt_cnn_large = replace(
     ),
 )
 small_medium_large_bpnet_experiment_configs = {
-    "nt_bpnet_small_hyperparam": (
-        "NT distillation with small BPNet (~200k params)",
-        nt_bpnet_small_hyperparam,
-    ),
-    "nt_bpnet_medium_hyperparam": (
-        "NT distillation with medium BPNet (~1M params)",
-        nt_bpnet_medium_hyperparam,
-    ),
-    "nt_bpnet_large_hyperparam": (
-        "NT distillation with large BPNet (~5M params)",
-        nt_bpnet_large_hyperparam,
+    "nt_bpnet_pico_hyperparam": (
+        "NT distillation with pico BPNet (~1.3k params)",
+        nt_bpnet_pico_hyperparam,
     ),
     "nt_bpnet_ultra_tiny_hyperparam": (
         "NT distillation with ultra tiny BPNet (~6.25k params)",
@@ -318,12 +369,40 @@ small_medium_large_bpnet_experiment_configs = {
         "NT distillation with extra tiny BPNet (~25k params)",
         nt_bpnet_extra_tiny_hyperparam,
     ),
+    "nt_bpnet_small_hyperparam": (
+        "NT distillation with small BPNet (~200k params)",
+        nt_bpnet_small_hyperparam,
+    ),
     "nt_bpnet_medium_small_hyperparam": (
         "NT distillation with medium-small BPNet (~400k params)",
         nt_bpnet_medium_small_hyperparam,
     ),
+    "nt_bpnet_medium_large_hyperparam": (
+        "NT distillation with medium-large BPNet (~0.4M params)",
+        nt_bpnet_medium_large_hyperparam,
+    ),
+    "nt_bpnet_extra_large_hyperparam": (
+        "NT distillation with extra-large BPNet (~0.8M params)",
+        nt_bpnet_extra_large_hyperparam,
+    ),
+    "nt_bpnet_medium_hyperparam": (
+        "NT distillation with medium BPNet (~1M params)",
+        nt_bpnet_medium_hyperparam,
+    ),
+    "nt_bpnet_large_hyperparam": (
+        "NT distillation with large BPNet (~5M params)",
+        nt_bpnet_large_hyperparam,
+    ),
+    "nt_bpnet_xxlarge_hyperparam": (
+        "NT distillation with xx-large BPNet (~3.6M params)",
+        nt_bpnet_xxlarge_hyperparam,
+    ),
 }
 experiment_configs = {
+    "nt_bpnet_pico": (
+        "NT distillation with pico BPNet (~1.3k params)",
+        nt_bpnet_pico,
+    ),
     # BPNet different sizes
     "nt_bpnet_original": (
         "NT distillation with original BPNet (~280k params)",

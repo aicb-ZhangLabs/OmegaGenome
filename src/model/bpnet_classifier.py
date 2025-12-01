@@ -23,8 +23,12 @@ class BPNetClassifierConfig:
         "ultra_tiny",
         "extra_tiny",
         "medium_small",
-    ] = "original"  # Default to original
-    hidden_dim: Optional[int] = None  # Override default hidden dimensions
+        "pico",
+        "medium_large",  # NEW: ~0.4M params
+        "extra_large",  # NEW: ~0.8M params
+        "xxlarge",  # NEW: ~3.6M params
+    ] = "original"
+    hidden_dim: Optional[int] = None
 
 
 class SimpleResidual(nn.Module):
@@ -172,7 +176,6 @@ class BPNetClassifier(nn.Module):
 
         elif model_size == "medium":
             # Medium BPNet with 128 channels
-            # Large BPNet with 256 channels and more layers
             layers = [nn.Conv1d(4, 128, 25, padding="same"), nn.ReLU()]
             for i in range(1, 10):
                 layers.append(
@@ -198,39 +201,9 @@ class BPNetClassifier(nn.Module):
                     )
                 )
             return VariableBPNet(nn.Sequential(*layers), feature_dim=256)
-        elif model_size == "ultra_tiny":
-            # Ultra Tiny BPNet with 10 channels (~6.25k params)
-            layers = nn.Sequential(
-                nn.Conv1d(4, 10, 15, padding="same"),
-                nn.ReLU(),
-                SimpleResidual(
-                    nn.Sequential(nn.Conv1d(10, 10, 3, padding="same", dilation=2), nn.ReLU())
-                ),
-                SimpleResidual(
-                    nn.Sequential(nn.Conv1d(10, 10, 3, padding="same", dilation=4), nn.ReLU())
-                ),
-            )
-            return VariableBPNet(layers, feature_dim=10)
-
-        elif model_size == "extra_tiny":
-            # Extra Tiny BPNet with 20 channels (~25k params)
-            layers = nn.Sequential(
-                nn.Conv1d(4, 20, 15, padding="same"),
-                nn.ReLU(),
-                SimpleResidual(
-                    nn.Sequential(nn.Conv1d(20, 20, 3, padding="same", dilation=2), nn.ReLU())
-                ),
-                SimpleResidual(
-                    nn.Sequential(nn.Conv1d(20, 20, 3, padding="same", dilation=4), nn.ReLU())
-                ),
-                SimpleResidual(
-                    nn.Sequential(nn.Conv1d(20, 20, 3, padding="same", dilation=8), nn.ReLU())
-                ),
-            )
-            return VariableBPNet(layers, feature_dim=20)
 
         elif model_size == "medium_small":
-            # Medium-Small BPNet with 90 channels (~400k params)
+            # Medium-Small BPNet with 90 channels (~0.48M params)
             layers = [nn.Conv1d(4, 90, 25, padding="same"), nn.ReLU()]
             for i in range(1, 10):
                 layers.append(
@@ -242,6 +215,92 @@ class BPNetClassifier(nn.Module):
                     )
                 )
             return VariableBPNet(nn.Sequential(*layers), feature_dim=90)
+
+        elif model_size == "extra_tiny":
+            # Extra Tiny BPNet with 30 channels (~0.1m/4 = 25k params)
+            # Following the successful medium/large/medium_small structure
+            layers = [nn.Conv1d(4, 30, 25, padding="same"), nn.ReLU()]
+            for i in range(1, 10):
+                layers.append(
+                    SimpleResidual(
+                        nn.Sequential(
+                            nn.Conv1d(30, 30, 3, padding="same", dilation=2 ** min(i, 6)),
+                            nn.ReLU(),
+                        )
+                    )
+                )
+            return VariableBPNet(nn.Sequential(*layers), feature_dim=30)
+
+        elif model_size == "ultra_tiny":
+            # Ultra Tiny BPNet with 14 channels (~0.1m/4/4 = 6.25k params)
+            # Following the successful medium/large/medium_small structure
+            layers = [nn.Conv1d(4, 14, 25, padding="same"), nn.ReLU()]
+            for i in range(1, 10):
+                layers.append(
+                    SimpleResidual(
+                        nn.Sequential(
+                            nn.Conv1d(14, 14, 3, padding="same", dilation=2 ** min(i, 6)),
+                            nn.ReLU(),
+                        )
+                    )
+                )
+            return VariableBPNet(nn.Sequential(*layers), feature_dim=14)
+
+        elif model_size == "pico":
+            # Pico BPNet with 7 channels (~0.1m/4/4/4 = 1.5625k params)
+            # Following the successful medium/large/medium_small structure
+            layers = [nn.Conv1d(4, 7, 25, padding="same"), nn.ReLU()]
+            for i in range(1, 10):
+                layers.append(
+                    SimpleResidual(
+                        nn.Sequential(
+                            nn.Conv1d(7, 7, 3, padding="same", dilation=2 ** min(i, 6)),
+                            nn.ReLU(),
+                        )
+                    )
+                )
+            return VariableBPNet(nn.Sequential(*layers), feature_dim=7)
+        elif model_size == "medium_large":
+            # Medium-Large BPNet with 120 channels (~0.4M params)
+            layers = [nn.Conv1d(4, 120, 25, padding="same"), nn.ReLU()]
+            for i in range(1, 10):
+                layers.append(
+                    SimpleResidual(
+                        nn.Sequential(
+                            nn.Conv1d(120, 120, 3, padding="same", dilation=2 ** min(i, 6)),
+                            nn.ReLU(),
+                        )
+                    )
+                )
+            return VariableBPNet(nn.Sequential(*layers), feature_dim=120)
+
+        elif model_size == "extra_large":
+            # Extra-Large BPNet with 170 channels (~0.8M params)
+            layers = [nn.Conv1d(4, 170, 25, padding="same"), nn.ReLU()]
+            for i in range(1, 10):
+                layers.append(
+                    SimpleResidual(
+                        nn.Sequential(
+                            nn.Conv1d(170, 170, 3, padding="same", dilation=2 ** min(i, 6)),
+                            nn.ReLU(),
+                        )
+                    )
+                )
+            return VariableBPNet(nn.Sequential(*layers), feature_dim=170)
+
+        elif model_size == "xxlarge":
+            # XX-Large BPNet with 363 channels (~3.6M params)
+            layers = [nn.Conv1d(4, 363, 25, padding="same"), nn.ReLU()]
+            for i in range(1, 10):
+                layers.append(
+                    SimpleResidual(
+                        nn.Sequential(
+                            nn.Conv1d(363, 363, 3, padding="same", dilation=2 ** min(i, 8)),
+                            nn.ReLU(),
+                        )
+                    )
+                )
+            return VariableBPNet(nn.Sequential(*layers), feature_dim=363)
         else:
             # Default to small
             return self._create_bpnet_backbone("small")
@@ -249,13 +308,17 @@ class BPNetClassifier(nn.Module):
     def _get_hidden_dim(self, model_size: str) -> int:
         """Get hidden dimension based on model size"""
         size_map = {
-            "ultra_tiny": 10,
-            "extra_tiny": 20,
+            "pico": 7,
+            "ultra_tiny": 14,
+            "extra_tiny": 30,
             "tiny": 32,
             "small": 64,
             "medium_small": 90,
             "medium": 128,
+            "medium_large": 120,  # NEW
+            "extra_large": 170,  # NEW
             "large": 256,
+            "xxlarge": 363,  # NEW
         }
         return size_map.get(model_size, 64)
 
