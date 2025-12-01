@@ -146,8 +146,34 @@ def get_teacher_model(config, task_name, teacher_ckpt):
         tuple: (tokenizer, teacher_model, teacher_hidden)
     """
     model_type = getattr(config, "model_type", "glm")  # Default to 'glm' for backward compatibility
+    if model_type == "enformer":
+        # Import Enformer utilities only when needed
+        from ..model.enformer import load_enformer_model, EnformerTokenizer
 
-    if model_type == "caduceus":
+        num_labels = get_num_labels(task_name)
+
+        # For Enformer, teacher_ckpt is the checkpoint file path
+        # Extract enformer_dim and target_length from config if available
+        enformer_dim = getattr(config.teacher_config, "enformer_dim", 1536)
+        target_length = getattr(config.teacher_config, "target_length", 8)
+
+        wrapped_model, _, base_model = load_enformer_model(
+            teacher_ckpt,
+            num_labels,
+            config.trainer_config.device,
+            enformer_dim=enformer_dim,
+            target_length=target_length,
+        )
+
+        # Create dummy tokenizer for interface compatibility
+        tokenizer = EnformerTokenizer()
+
+        # Extract teacher hidden size
+        teacher_hidden = wrapped_model.hidden_dim
+
+        return tokenizer, wrapped_model, teacher_hidden
+
+    elif model_type == "caduceus":
         # Import Caduceus utilities only when needed
         from ..trainer.utils import load_caduceus_model
 
@@ -226,8 +252,14 @@ def find_teacher_checkpoint(config, task_name):
     Returns: (checkpoint_path, score)
     """
     model_type = getattr(config, "model_type", "glm")
+    if model_type == "enformer":
+        # Import Enformer utilities only when needed
+        from ..model.enformer import find_best_enformer_checkpoint
 
-    if model_type == "caduceus":
+        checkpoint_path, score = find_best_enformer_checkpoint(task_name, config.teacher_parent_dir)
+        return checkpoint_path, score
+
+    elif model_type == "caduceus":
         # Import Caduceus utilities only when needed
         from ..trainer.utils import find_best_caduceus_checkpoint
 

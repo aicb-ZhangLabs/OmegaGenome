@@ -23,3 +23,12 @@ caduceus = GLMConfig(
     trust_remote_code=True,
     output_hidden_states=True,
 )
+
+
+# Enformer teacher configuration
+enformer = GLMConfig(
+    model_name_or_path="EleutherAI/enformer-official-rough",
+    num_labels=2,
+    trust_remote_code=True,
+    output_hidden_states=True,
+)

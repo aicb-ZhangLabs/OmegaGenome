@@ -80,3 +80,23 @@ caduceus_hyperparam_dkd_trainer_config = DistillTrainerConfig(
     max_len=1024,
 )
 caduceus_debug_trainer_config = replace(caduceus_trainer_config, epochs=2, eval_every_n_epochs=1)
+
+# Enformer trainer configurations
+enformer_trainer_config = DistillTrainerConfig(
+    output_dir=f"{output_path}/enformer_distillation/vanilla_original",
+    wandb_project="OmegaGenome-Enformer",
+    epochs=200,
+    batch_size=16,  # Enformer may need smaller batch size due to memory
+    lr=1e-4,
+    max_len=1024,  # Enformer uses 1024 sequence length
+)
+
+enformer_hyperparam_trainer_config = DistillTrainerConfig(
+    output_dir=f"{output_path}/enformer_distillation/hyperparam",
+    wandb_project="OmegaGenome-Enformer-HyperParam",
+    epochs=200,
+    batch_size=16,
+    max_len=1024,
+)
+
+enformer_debug_trainer_config = replace(enformer_trainer_config, epochs=2, eval_every_n_epochs=1)
