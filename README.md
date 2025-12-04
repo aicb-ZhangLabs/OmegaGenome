@@ -73,6 +73,12 @@ Example for linking dnabert-2 finetuned models:
 ```
 ln -sfn /extra/zhanglab0/INDV/pengchx3/dnabert2_output_shared ./data/finetuned_models/dnabert2_output_shared
 ```
+
+Example for linking enformer finetuned models:
+```
+mkdir -p ./data/finetuned_models/enformer_finetune_results/
+ln -sfn /extra/zhanglab0/INDV/pengchx3/enformer_best_teacher_checkpoints_only  ./data/finetuned_models/enformer_finetune_results/
+```
 Example for linking caduceus finetuned models
 ```
 mkdir -p "/extra/zhanglab0/INDV/pengchx3/OmegaGenome_different_version/OmegaGenome/data/finetuned_model" \
