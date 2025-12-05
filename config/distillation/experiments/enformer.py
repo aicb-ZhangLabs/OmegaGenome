@@ -14,7 +14,9 @@ from ...env import project_path, output_path
 from ...slurm import basic_distillation_slurm
 
 # Enformer parent path for checkpoints
-ENFORMER_PARENT_PATH = f"{project_path}/data/finetuned_models/enformer_finetune_results"
+ENFORMER_PARENT_PATH = (
+    f"{project_path}/data/finetuned_models/enformer_finetune_results/enformer_finetune_results/"
+)
 
 # Base Enformer experiment configuration
 enformer_base_config = DistillationExperimentConfig(

@@ -302,7 +302,23 @@ def evaluate_and_log_teacher(
     print("Evaluating Teacher Model on Test Set")
     print(f"{'=' * 60}")
     # --- START: CACHE CHECK ---
-    teacher_eval_file = os.path.join(teacher_ckpt, "teacher_evaluation.json")
+    # --- START: DETERMINE CACHE DIRECTORY BASED ON MODEL TYPE ---
+    model_type = getattr(config, "model_type", "glm")
+
+    if model_type == "enformer":
+        # For Enformer: checkpoint is a .pt file, save cache in parent directory
+        cache_dir = os.path.dirname(teacher_ckpt)
+        print(f"Enformer detected: Using parent directory for cache: {cache_dir}")
+    else:
+        # For other models (NT, Caduceus, DNABERT2): checkpoint is a directory
+        cache_dir = teacher_ckpt
+        print(f"Non-Enformer model: Using checkpoint directory for cache: {cache_dir}")
+
+    if os.path.isfile(cache_dir):
+        cache_dir = os.path.dirname(cache_dir)
+
+    teacher_eval_file = os.path.join(cache_dir, "teacher_evaluation.json")
+    # teacher_eval_file = os.path.join(teacher_ckpt, "teacher_evaluation.json")
 
     if os.path.exists(teacher_eval_file):
         try:
@@ -397,7 +413,7 @@ def evaluate_and_log_teacher(
 
     # Save to file
     teacher_eval_file_run = os.path.join(run_dir, "teacher_evaluation.json")
-    teacher_eval_file = os.path.join(teacher_ckpt, "teacher_evaluation.json")
+    # teacher_eval_file = os.path.join(teacher_ckpt, "teacher_evaluation.json")
     teacher_eval_data = {
         "task": task_name,
         "teacher_checkpoint": teacher_ckpt,

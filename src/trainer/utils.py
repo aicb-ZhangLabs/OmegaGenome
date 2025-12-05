@@ -277,13 +277,26 @@ def precompute_teacher_logits(
             max_length=max_length,
             return_tensors="pt",
         )
-        input_ids = tok.input_ids.to(device)
+        # input_ids = tok.input_ids.to(device)
 
-        # Handle missing attention_mask
-        if hasattr(tok, "attention_mask") and tok.attention_mask is not None:
-            attention_mask = tok.attention_mask.to(device)
+        # # Handle missing attention_mask
+        # if hasattr(tok, "attention_mask") and tok.attention_mask is not None:
+        #     attention_mask = tok.attention_mask.to(device)
+        # else:
+        #     attention_mask = torch.ones_like(input_ids)
+        # Handle both dict (Enformer) and BatchEncoding (HF models)
+        if isinstance(tok, dict):
+            # Enformer tokenizer returns a dict
+            input_ids = tok["input_ids"].to(device)
+            attention_mask = tok.get("attention_mask", torch.ones_like(input_ids)).to(device)
         else:
-            attention_mask = torch.ones_like(input_ids)
+            # HuggingFace tokenizers return BatchEncoding object
+            input_ids = tok.input_ids.to(device)
+            # Handle missing attention_mask
+            if hasattr(tok, "attention_mask") and tok.attention_mask is not None:
+                attention_mask = tok.attention_mask.to(device)
+            else:
+                attention_mask = torch.ones_like(input_ids)
 
         with torch.no_grad():
             if is_caduceus:
