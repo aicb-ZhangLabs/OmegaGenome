@@ -263,7 +263,9 @@ def precompute_teacher_logits(
     is_caduceus = (
         hasattr(model, "__class__") and model.__class__.__name__ == "CaduceusFeatureExtractor"
     )
-
+    is_enformer = (
+        hasattr(model, "__class__") and model.__class__.__name__ == "EnformerFeatureExtractor"
+    )
     # Debug flag to print structure once
     debug_printed = False
 
@@ -299,6 +301,22 @@ def precompute_teacher_logits(
                 attention_mask = torch.ones_like(input_ids)
 
         with torch.no_grad():
+            if is_enformer:
+                if needs_features:
+                    logits, hidden = model(
+                        input_ids=input_ids,
+                        attention_mask=attention_mask,
+                        return_features=True,
+                    )
+                    if needs_logits:
+                        logits_list.append(logits.cpu())
+                    features_list.append(hidden.cpu())
+                else:
+                    logits = model(input_ids=input_ids, attention_mask=attention_mask)
+                    if needs_logits:
+                        logits_list.append(logits.cpu())
+                continue  # Skip the standard HF model handling below
+
             if is_caduceus:
                 if needs_features:
                     logits, hidden = model(
