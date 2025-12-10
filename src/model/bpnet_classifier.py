@@ -348,15 +348,44 @@ class BPNetClassifier(nn.Module):
         total_params = sum(p.numel() for p in self.parameters())
         trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
 
+        # Calculate parameters excluding teacher projection (deployment size)
+        backbone_params = sum(p.numel() for p in self.backbone.parameters())
+        pool_params = 0  # AdaptiveAvgPool1d has no parameters
+        classifier_params = sum(p.numel() for p in self.classifier.parameters())
+
+        deployment_params = backbone_params + pool_params + classifier_params
+
+        # Calculate teacher projection params (if exists)
+        teacher_proj_params = 0
+        if self.teacher_proj is not None:
+            teacher_proj_params = sum(p.numel() for p in self.teacher_proj.parameters())
+
         print(f"\n{'=' * 60}")
         print(
             f"BPNet Classifier - {self.config.model_type.upper()} ({self.config.model_size.upper()})"
         )
         print(f"{'=' * 60}")
-        print(f"Total parameters:      {total_params:,} ({total_params / 1e6:.2f}M)")
-        print(f"Trainable parameters:  {trainable_params:,} ({trainable_params / 1e6:.2f}M)")
         print(
-            f"Feature dimension:     {self.backbone.feature_dim if hasattr(self.backbone, 'feature_dim') else 'N/A'}"
+            f"Total parameters (with teacher proj):  {total_params:,} ({total_params / 1e6:.2f}M)"
+        )
+        print(
+            f"Trainable parameters:                  {trainable_params:,} ({trainable_params / 1e6:.2f}M)"
+        )
+
+        # Show deployment size (without teacher projection)
+        if teacher_proj_params > 0:
+            print("\n--- Deployment Configuration (teacher proj excluded) ---")
+            print(f"Deployment parameters: {deployment_params:,} ({deployment_params / 1e6:.2f}M)")
+            print(f"  └─ Backbone:         {backbone_params:,} ({backbone_params / 1e6:.2f}M)")
+            print(f"  └─ Classifier head:  {classifier_params:,} ({classifier_params / 1e6:.2f}M)")
+            print(
+                f"\nTeacher projection:    {teacher_proj_params:,} ({teacher_proj_params / 1e6:.2f}M) (training only)"
+            )
+        else:
+            print("\n(No teacher projection - all parameters are deployment parameters)")
+
+        print(
+            f"\nFeature dimension:     {self.backbone.feature_dim if hasattr(self.backbone, 'feature_dim') else 'N/A'}"
         )
         print(f"Number of labels:      {self.config.num_labels}")
         print(f"{'=' * 60}\n")
