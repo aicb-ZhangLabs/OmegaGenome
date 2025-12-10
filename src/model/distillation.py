@@ -24,6 +24,93 @@ class DistillationModelConfig:
         pass
 
 
+# for dkd
+def _get_gt_mask(logits, target):
+    """Create binary mask for ground truth class."""
+    target = target.reshape(-1)
+    mask = torch.zeros_like(logits).scatter_(1, target.unsqueeze(1), 1).bool()
+    return mask
+
+
+def _get_other_mask(logits, target):
+    """Create binary mask for non-target classes."""
+    target = target.reshape(-1)
+    mask = torch.ones_like(logits).scatter_(1, target.unsqueeze(1), 0).bool()
+    return mask
+
+
+def cat_mask(t, mask1, mask2):
+    """
+    Concatenate masked probabilities into binary distribution.
+
+    Args:
+        t: Probability tensor (B, C)
+        mask1: Ground truth mask (B, C)
+        mask2: Other classes mask (B, C)
+
+    Returns:
+        Binary probability tensor (B, 2) = [P(target), P(non-target)]
+    """
+    t1 = (t * mask1).sum(dim=1, keepdims=True)  # P(target class)
+    t2 = (t * mask2).sum(dim=1, keepdims=True)  # P(all non-target classes)
+    rt = torch.cat([t1, t2], dim=1)
+    return rt
+
+
+def dkd_loss(logits_student, logits_teacher, target, alpha, beta, temperature):
+    """
+    Decoupled Knowledge Distillation Loss (CVPR 2022)
+
+    Official implementation from:
+    https://github.com/megvii-research/mdistiller/blob/master/mdistiller/distillers/DKD.py
+
+    Args:
+        logits_student: Student logits (B, C)
+        logits_teacher: Teacher logits (B, C)
+        target: Ground truth labels (B,)
+        alpha: Weight for TCKD
+        beta: Weight for NCKD
+        temperature: Temperature for softmax
+
+    Returns:
+        DKD loss = alpha * TCKD + beta * NCKD
+    """
+    gt_mask = _get_gt_mask(logits_student, target)
+    other_mask = _get_other_mask(logits_student, target)
+
+    # Get softmax probabilities
+    pred_student = F.softmax(logits_student / temperature, dim=1)
+    pred_teacher = F.softmax(logits_teacher / temperature, dim=1)
+
+    # ===== TCKD (Target Class KD) =====
+    # Create binary distribution: [P(target), P(non-target)]
+    pred_student = cat_mask(pred_student, gt_mask, other_mask)
+    pred_teacher = cat_mask(pred_teacher, gt_mask, other_mask)
+    log_pred_student = torch.log(pred_student)
+
+    # KL divergence on binary distribution
+    tckd_loss = (
+        F.kl_div(log_pred_student, pred_teacher, size_average=False)
+        * (temperature**2)
+        / target.shape[0]
+    )
+
+    # ===== NCKD (Non-Target Class KD) =====
+    # Mask out target class by subtracting large number before softmax
+    # This effectively suppresses the target class probability
+    pred_teacher_part2 = F.softmax(logits_teacher / temperature - 1000.0 * gt_mask, dim=1)
+    log_pred_student_part2 = F.log_softmax(logits_student / temperature - 1000.0 * gt_mask, dim=1)
+
+    # KL divergence on masked distribution
+    nckd_loss = (
+        F.kl_div(log_pred_student_part2, pred_teacher_part2, size_average=False)
+        * (temperature**2)
+        / target.shape[0]
+    )
+
+    return alpha * tckd_loss + beta * nckd_loss
+
+
 class DistillationModel(nn.Module):
     def __init__(
         self,
@@ -169,46 +256,22 @@ class DistillationModel(nn.Module):
         ) * (temp**2)
 
     def _dkd_loss(self, s_logits: torch.Tensor, t_logits: torch.Tensor, labels: torch.Tensor):
-        """Decoupled Knowledge Distillation Loss (CVPR 2022) - IMPROVED
-
-        Paper: "Decoupled Knowledge Distillation"
-        Improvement: Better consistency with official implementation
-
-        Reference: https://github.com/megvii-research/mdistiller/blob/master/mdistiller/distillers/DKD.py
         """
-        temp = self.config.temperature
-        alpha = self.config.dkd_alpha
-        beta = self.config.dkd_beta
+        DKD Loss - Official Implementation
 
-        batch_size = labels.shape[0]
-        gt_mask = F.one_hot(labels, num_classes=s_logits.shape[1]).bool()
+        This matches the official mdistiller repository exactly.
 
-        # Target class KD (TCKD) - measures "difficulty" of samples
-        s_probs = F.softmax(s_logits / temp, dim=1)
-        t_probs = F.softmax(t_logits / temp, dim=1)
-
-        s_target = (s_probs * gt_mask.float()).sum(dim=1, keepdim=True)
-        t_target = (t_probs * gt_mask.float()).sum(dim=1, keepdim=True)
-
-        # Use log for numerical stability
-        tckd_loss = (
-            F.kl_div(torch.log(s_target + 1e-10), t_target, reduction="sum")
-            * (temp**2)
-            / batch_size
+        Reference:
+        https://github.com/megvii-research/mdistiller/blob/master/mdistiller/distillers/DKD.py
+        """
+        return dkd_loss(
+            s_logits,
+            t_logits,
+            labels,
+            self.config.dkd_alpha,
+            self.config.dkd_beta,
+            self.config.temperature,
         )
-
-        # Non-target class KD (NCKD) - captures dark knowledge
-        # IMPROVED: Mask after temperature scaling (consistent with official implementation)
-        s_probs_nckd = F.softmax(s_logits / temp - 1000.0 * gt_mask.float(), dim=1)
-        t_probs_nckd = F.softmax(t_logits / temp - 1000.0 * gt_mask.float(), dim=1)
-
-        nckd_loss = (
-            F.kl_div(torch.log(s_probs_nckd + 1e-10), t_probs_nckd, reduction="sum")
-            * (temp**2)
-            / batch_size
-        )
-
-        return alpha * tckd_loss + beta * nckd_loss
 
     def _dist_loss(self, s_logits: torch.Tensor, t_logits: torch.Tensor):
         """DIST: Knowledge Distillation from A Stronger Teacher (NeurIPS 2022) - CORRECTED
