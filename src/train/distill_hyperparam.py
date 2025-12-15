@@ -3,14 +3,13 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import time
 import tyro
-import itertools
 
-from dataclasses import replace, asdict
+from dataclasses import replace
 from config.distillation.config import hyperparam_configs
 from config.distillation.config_schema import DistillationHyperparamExperimentConfig
 from config.slurm_manager import get_gpu_manager
 from ..trainer.utils import ExperimentTracker
-
+from ..trainer.hyperparam_utils import build_method_experiments  # NEW IMPORT
 from .distill import main as distill_main
 
 
@@ -18,102 +17,36 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
     """
     Run hyperparameter search over distillation parameters with resume support.
 
-    This script performs a grid search over:
-    - weight_ce, weight_kl, weight_mse (loss term weights)
-    - temperature (for knowledge distillation)
-    - zscore (normalization flag)
-
-    Features:
-    - Automatically detects and skips completed experiments (resume mode)
-    - Monitors SLURM GPU usage per node
-    - Waits for available GPUs before submitting jobs
-
-    Args:
-        config: Hyperparameter experiment configuration
-        resume: If True (default), skip already completed experiments
+    Now supports method-specific hyperparameters:
+    - Vanilla KD: weight_ce, weight_kl, weight_mse, temperature, zscore
+    - Logit Standardization: same as vanilla
+    - DKD: weight_ce, weight_kl, temperature, zscore, dkd_alpha, dkd_beta (no MSE)
+    - DIST: weight_ce, weight_kl, temperature, zscore (no MSE)
     """
-    # Extract base path without date/time prefix
-    # e.g., "output/nt_distillation/hyperparam" from trainer config
-    max_gpu = {}
-    max_gpu["voyager"] = 4
-    max_gpu["laniakea"] = 7
-    # Initialize GPU manager with node limits
+    # GPU manager setup
+    max_gpu = {"voyager": 4, "laniakea": 7}
     gpu_manager = get_gpu_manager(
-        node_limits={
-            "voyager": max_gpu["voyager"],  # Max 2 concurrent GPU jobs YOU can run (shared server)
-            "laniakea": max_gpu[
-                "laniakea"
-            ],  # Max 4 concurrent GPU jobs YOU can run (shared server)
-        },
+        node_limits={"voyager": max_gpu["voyager"], "laniakea": max_gpu["laniakea"]},
         node_capacity={"voyager": 4, "laniakea": 8},
     )
 
-    # Initialize experiment tracker for resume functionality
+    # Initialize experiment tracker
     tracker = ExperimentTracker(
         output_dir=config.trainer_config.output_dir,
         start_timestamp="20251019_000000",
-    )  # Only track experiments after this timestamp
-
-    # ===== BUILD ALL EXPERIMENTS =====
-
-    # Cartesian product of KL-related hyperparameters
-    kl_combinations = list(
-        itertools.product(
-            config.weight_kls,
-            config.temperatures,
-            config.zscores,
-        )
     )
 
-    # Filter out redundant combinations where weight_kl=0
-    to_skip = set()
-    is_covered = False
-    for i, (weight_kl, temperature, zscore) in enumerate(kl_combinations):
-        if weight_kl == 0.0:
-            if not is_covered:
-                is_covered = True
-            else:
-                to_skip.add(i)
-    kl_combinations = [
-        combination for i, combination in enumerate(kl_combinations) if i not in to_skip
-    ]
+    # ===== BUILD METHOD-SPECIFIC EXPERIMENTS =====
+    distill_method = config.distillation_config.distill_method
+    print(f"\n{'=' * 60}")
+    print(f"Building experiments for method: {distill_method.upper()}")
+    print(f"{'=' * 60}")
 
-    # Cartesian product of other hyperparameters
-    other_combinations = list(
-        itertools.product(
-            config.weight_ces,
-            config.weight_mses,
-        )
-    )
+    all_experiments = build_method_experiments(config, distill_method)
 
-    # Build complete list of all experiments
-    all_experiments = []
-    experiment_count = 0
-
-    for task_name in config.task_names:
-        for weight_ce, weight_mse in other_combinations:
-            for weight_kl, temperature, zscore in kl_combinations:
-                experiment_count += 1
-
-                full_distill_config = replace(
-                    config.distillation_config,
-                    weight_ce=weight_ce,
-                    weight_kl=weight_kl,
-                    weight_mse=weight_mse,
-                    temperature=temperature,
-                    zscore=zscore,
-                )
-                hyperparam_config = asdict(full_distill_config)
-                all_experiments.append(
-                    {
-                        "task_name": task_name,
-                        "hyperparam_config": hyperparam_config,
-                        "experiment_count": experiment_count,
-                    }
-                )
+    print(f"\nGenerated {len(all_experiments)} total experiments")
 
     # ===== CHECK COMPLETED EXPERIMENTS =====
-
     if resume:
         incomplete, completed, summary = tracker.generate_experiment_plan(all_experiments)
         tracker.print_summary_report(incomplete, completed, summary, save_to_file=True)
@@ -125,7 +58,6 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
         print(f"\n{'=' * 80}")
         print(f"RESUME MODE: Running {len(incomplete)} incomplete experiments")
         print(f"{'=' * 80}\n")
-
         experiments_to_run = incomplete
     else:
         print(f"\n{'=' * 80}")
@@ -134,45 +66,85 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
         experiments_to_run = all_experiments
 
     # ===== PRINT CONFIGURATION =====
-
     print(f"\n{'=' * 60}")
     print("Hyperparameter Search Configuration")
     print(f"{'=' * 60}")
+    print(f"Method: {distill_method}")
     print(f"Tasks: {config.task_names}")
     print(f"Total experiments: {len(experiments_to_run)}")
     print(f"  - CE weights: {config.weight_ces}")
     print(f"  - KL weights: {config.weight_kls}")
-    print(f"  - MSE weights: {config.weight_mses}")
+
+    if distill_method in ["vanilla", "logit_standard"]:
+        print(f"  - MSE weights: {config.weight_mses}")
+    elif distill_method == "dkd":
+        print(f"  - DKD alphas: {getattr(config, 'dkd_alphas', [0.5, 1.0, 2.0])}")
+        print(f"  - DKD betas: {getattr(config, 'dkd_betas', [4.0, 8.0, 16.0])}")
+        print("  - MSE: disabled (DKD doesn't use feature matching)")
+    elif distill_method == "dist":
+        print("  - MSE: disabled (DIST uses correlation loss)")
+
     print(f"  - Temperatures: {config.temperatures}")
     print(f"  - Z-scores: {config.zscores}")
-    print(f"{'=' * 60}")
-    print("GPU Management (Per-User Limits on Shared Servers):")
-    print(f"  - Voyager: You can use max {max_gpu['voyager']} GPUs concurrently")
-    print(f"  - Laniakea: You can use max {max_gpu['laniakea']} GPUs concurrently")
-    print("  - Other users' jobs do NOT count toward your limits")
     print(f"{'=' * 60}\n")
 
-    # Node preference order (voyager is ~2x faster, so prefer it)
+    # Node preference order
     node_preference = ["voyager", "laniakea"]
 
     # ===== RUN EXPERIMENTS =====
-
     for idx, exp in enumerate(experiments_to_run, 1):
         task_name = exp["task_name"]
         hyperparam_config = exp["hyperparam_config"]
 
+        # Extract hyperparameters for display
         weight_ce = hyperparam_config["weight_ce"]
         weight_kl = hyperparam_config["weight_kl"]
         weight_mse = hyperparam_config["weight_mse"]
         temperature = hyperparam_config["temperature"]
         zscore = hyperparam_config["zscore"]
-        # Check if partial progress exists
+
+        # Display string
+        display_params = (
+            f"CE={weight_ce}, KL={weight_kl}, MSE={weight_mse}, T={temperature}, zscore={zscore}"
+        )
+
+        # Add method-specific parameters
+        if distill_method == "dkd":
+            dkd_alpha = hyperparam_config.get("dkd_alpha", 1.0)
+            dkd_beta = hyperparam_config.get("dkd_beta", 8.0)
+            display_params += f", alpha={dkd_alpha}, beta={dkd_beta}"
+
+        # Check for partial progress
         status = tracker.get_experiment_status(task_name, hyperparam_config)
 
-        # Create configs
-        new_distill_config = replace(config.distillation_config)  # , ...)
-        new_slurm_config = replace(config.slurm_config)
-        new_dataset_config = replace(config.dataset_config)
+        print(f"\n{'=' * 60}")
+        print(f"[Experiment {idx}/{len(experiments_to_run)}] Task: {task_name}")
+        print(f"  {display_params}")
+        print(f"{'=' * 60}")
+
+        # Wait for available node
+        available_node = gpu_manager.wait_for_available_node(
+            preferred_nodes=node_preference,
+            check_interval=30,
+            max_wait=3600,
+        )
+
+        if available_node is None:
+            print(f"⚠️  Skipping experiment {idx} - no available GPU after timeout")
+            continue
+
+        print(f"🚀 Submitting to node: {available_node}")
+
+        # Create distillation config with current hyperparameters
+        # This preserves ALL fields from hyperparam_config
+        new_distill_config = replace(
+            config.distillation_config,
+            **hyperparam_config,  # Unpack all hyperparameters
+        )
+
+        # Update slurm and dataset configs
+        new_slurm_config = replace(config.slurm_config, node_list=available_node)
+        new_dataset_config = replace(config.dataset_config, task_name=task_name)
 
         # Create experiment config with resume info
         new_experiment_config = replace(
@@ -187,65 +159,14 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
             resume_epoch=status["latest_epoch"] if status["status"] == "partial" else 0,
         )
 
-        print(f"\n{'=' * 60}")
-        print(f"[Experiment {idx}/{len(experiments_to_run)}] Task: {task_name}")
-        print(
-            f"  CE={weight_ce}, KL={weight_kl}, MSE={weight_mse}, T={temperature}, zscore={zscore}"
-        )
-        print(f"{'=' * 60}")
-
-        # Wait for an available node with GPU capacity
-        available_node = gpu_manager.wait_for_available_node(
-            preferred_nodes=node_preference,
-            check_interval=30,  # Check every 30 seconds
-            max_wait=3600,  # Wait up to 1 hour
-        )
-
-        if available_node is None:
-            print(f"⚠️  Skipping experiment {idx} - no available GPU after timeout")
-            continue
-
-        print(f"🚀 Submitting to node: {available_node}")
-
-        # Create new distillation config with current hyperparameters
-        new_distill_config = replace(
-            config.distillation_config,
-            weight_ce=weight_ce,
-            weight_kl=weight_kl,
-            weight_mse=weight_mse,
-            temperature=temperature,
-            zscore=zscore,
-        )
-
-        # Update slurm config with the available node
-        new_slurm_config = replace(config.slurm_config, node_list=available_node)
-
-        # Update dataset config with current task
-        new_dataset_config = replace(config.dataset_config, task_name=task_name)
-
-        # Create new experiment config
-        new_experiment_config = replace(
-            config,
-            task_names=[task_name],  # Single task
-            dataset_config=new_dataset_config,
-            distillation_config=new_distill_config,
-            slurm_config=new_slurm_config,
-        )
-
         # Run distillation
-        distill_main(
-            new_experiment_config,
-        )
-        # Wait until SLURM registers the new job (verify it appears in queue)
+        distill_main(new_experiment_config)
 
-        # # Small delay to ensure SLURM registers the new job
-        # import time
-        # time.sleep(2)
-        time.sleep(3)  # Initial delay
-        for _ in range(10):  # Try up to 10 times (10 seconds max)
+        # Wait for SLURM to register the job
+        time.sleep(3)
+        for _ in range(10):
             current_jobs = gpu_manager.get_running_jobs_per_node()
-            expected_jobs = current_jobs.get(available_node, 0)
-            if expected_jobs > 0:  # Job registered
+            if current_jobs.get(available_node, 0) > 0:
                 break
             time.sleep(1)
 

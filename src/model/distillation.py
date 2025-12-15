@@ -227,33 +227,53 @@ class DistillationModel(nn.Module):
         return self.config.weight_kl * kl
 
     def _logit_standard_kl(self, s_logits: torch.Tensor, t_logits: torch.Tensor):
-        """Logit Standardization KD Loss (CVPR 2024) - CORRECTED
+        """
+        Logit Standardization KD Loss (CVPR 2024) - CORRECTED IMPLEMENTATION
 
         Paper: "Logit Standardization in Knowledge Distillation"
-        Key fix: Mean and std should be computed PER SAMPLE across classes, not per class
-
         Reference: https://github.com/sunshangquan/logit-standardization-KD
+
+        Key Formula: Z(z; τ) = (z - μ) / σ_weighted /τ
+        where σ_weighted uses softmax probabilities as weights for std calculation.
+
+        This is the WEIGHTED Z-score, not simple Z-score normalization.
         """
-        temp = self.config.temperature
+        temp = self.config.temperature  # This is τ (base temperature)
 
-        # FIXED: Compute mean and std PER SAMPLE (across the class dimension)
-        # Shape: s_logits is (batch_size, num_classes)
-        # We want to normalize each sample's logits independently
-        s_mean = s_logits.mean(dim=-1, keepdim=True)  # (batch_size, 1)
-        s_std = s_logits.std(dim=-1, keepdim=True, unbiased=False) + 1e-6  # (batch_size, 1)
-        t_mean = t_logits.mean(dim=-1, keepdim=True)  # (batch_size, 1)
-        t_std = t_logits.std(dim=-1, keepdim=True, unbiased=False) + 1e-6  # (batch_size, 1)
+        # ===== WEIGHTED MEAN AND STD CALCULATION =====
+        # Compute softmax probabilities (without temperature) as weights
+        # Shape: (batch_size, num_classes)
+        s_probs = F.softmax(s_logits, dim=-1)
+        t_probs = F.softmax(t_logits, dim=-1)
 
-        # Z-score normalization per sample
-        s_logits_norm = (s_logits - s_mean) / s_std
-        t_logits_norm = (t_logits - t_mean) / t_std
+        # Weighted mean: μ = Σ(p_i · z_i)
+        s_mean = (s_probs * s_logits).sum(dim=-1, keepdim=True)  # (batch_size, 1)
+        t_mean = (t_probs * t_logits).sum(dim=-1, keepdim=True)  # (batch_size, 1)
 
-        # Apply temperature scaling and KL divergence
-        return F.kl_div(
-            F.log_softmax(s_logits_norm / temp, dim=-1),
-            F.softmax(t_logits_norm / temp, dim=-1),
+        # Weighted variance: σ² = Σ(p_i · (z_i - μ)²)
+        s_var = (s_probs * (s_logits - s_mean) ** 2).sum(dim=-1, keepdim=True)  # (batch_size, 1)
+        t_var = (t_probs * (t_logits - t_mean) ** 2).sum(dim=-1, keepdim=True)  # (batch_size, 1)
+
+        # Weighted std with numerical stability
+        eps = 1e-7
+        s_std = torch.sqrt(s_var + eps)  # (batch_size, 1)
+        t_std = torch.sqrt(t_var + eps)  # (batch_size, 1)
+
+        # Z(z; τ) = (z - μ) / σ / τ  (DIVIDE by temp, not multiply!)
+        s_logits_norm = (s_logits - s_mean) / s_std / temp
+        t_logits_norm = (t_logits - t_mean) / t_std / temp
+
+        # ===== KL DIVERGENCE WITH NORMALIZED LOGITS =====
+        # Note: We apply softmax to the already-normalized logits
+        # The temperature τ is already incorporated in the normalization
+        kl_loss = F.kl_div(
+            F.log_softmax(s_logits_norm, dim=-1),
+            F.softmax(t_logits_norm, dim=-1),
             reduction="batchmean",
-        ) * (temp**2)
+        )
+
+        # No additional temperature scaling needed (already in normalization)
+        return kl_loss
 
     def _dkd_loss(self, s_logits: torch.Tensor, t_logits: torch.Tensor, labels: torch.Tensor):
         """

@@ -59,3 +59,7 @@ class DistillationHyperparamExperimentConfig(DistillationExperimentConfig):
     weight_mses: List[float] = field(default_factory=lambda: [0.0, 0.5, 1.0])
     temperatures: List[float] = field(default_factory=lambda: [0.5, 1.0, 1.5, 2.0, 4.0])
     zscores: List[bool] = field(default_factory=lambda: [False, True])
+
+    # DKD-specific hyperparameters
+    dkd_alphas: List[float] = field(default_factory=lambda: [0.5, 1.0, 2.0])
+    dkd_betas: List[float] = field(default_factory=lambda: [4.0, 8.0, 16.0])
