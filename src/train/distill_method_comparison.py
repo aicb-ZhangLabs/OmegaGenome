@@ -11,6 +11,7 @@ Usage:
 """
 
 import os
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import time
@@ -27,11 +28,24 @@ from .distill import distill
 
 # All 18 genomic tasks
 ALL_TASKS = [
-    "H2AFZ", "H3K27ac", "H3K27me3", "H3K36me3", "H3K4me1",
-    "H3K4me2", "H3K4me3", "H3K9ac", "H3K9me3", "H4K20me1",
-    "promoter_all", "promoter_tata", "promoter_no_tata",
-    "enhancers", "enhancers_types",
-    "splice_sites_all", "splice_sites_acceptors", "splice_sites_donors",
+    "H2AFZ",
+    "H3K27ac",
+    "H3K27me3",
+    "H3K36me3",
+    "H3K4me1",
+    "H3K4me2",
+    "H3K4me3",
+    "H3K9ac",
+    "H3K9me3",
+    "H4K20me1",
+    "promoter_all",
+    "promoter_tata",
+    "promoter_no_tata",
+    "enhancers",
+    "enhancers_types",
+    "splice_sites_all",
+    "splice_sites_acceptors",
+    "splice_sites_donors",
 ]
 
 # Default seeds for reproducibility
@@ -41,6 +55,7 @@ DEFAULT_SEEDS = [42, 123, 456, 789, 1024]
 @dataclass
 class MethodHyperparams:
     """Best hyperparameters for a specific KD method (from hyperparameter search)."""
+
     weight_ce: float = 0.5
     weight_kl: float = 0.5
     weight_mse: float = 0.0
@@ -57,32 +72,37 @@ class MethodHyperparams:
 # ============================================================================
 
 # NT Teacher - Best hyperparameters per method
+# NT Teacher - Best hyperparameters per method
 NT_METHOD_HYPERPARAMS: Dict[str, MethodHyperparams] = {
     "vanilla": MethodHyperparams(
         weight_ce=0.5,
         weight_kl=0.5,
         weight_mse=0.0,
-        temperature=2.0,
+        temperature=4.0,
+        zscore=False,
     ),
     "logit_standard": MethodHyperparams(
         weight_ce=0.1,
-        weight_kl=0.9,
+        weight_kl=0.95,
         weight_mse=0.0,
         temperature=2.0,
+        zscore=False,
     ),
     "dkd": MethodHyperparams(
         weight_ce=0.5,
-        weight_kl=0.5,
+        weight_kl=0.25,
         weight_mse=0.0,
         temperature=4.0,
-        dkd_alpha=1.0,
-        dkd_beta=8.0,
+        zscore=False,
+        dkd_alpha=2.0,
+        dkd_beta=4.0,
     ),
     "dist": MethodHyperparams(
         weight_ce=0.5,
-        weight_kl=0.5,
+        weight_kl=1.0,
         weight_mse=0.0,
-        temperature=2.0,
+        temperature=1.0,
+        zscore=False,
     ),
 }
 
@@ -158,35 +178,35 @@ MODEL_METHOD_HYPERPARAMS = {
 @dataclass
 class MethodComparisonConfig:
     """Configuration for KD method comparison experiments."""
-    
+
     # Teacher model type
     model_type: Literal["nt", "caduceus", "enformer", "dnabert2"] = "nt"
-    
+
     # Methods to compare
     methods: List[Literal["vanilla", "logit_standard", "dkd", "dist"]] = field(
         default_factory=lambda: ["vanilla", "logit_standard", "dkd", "dist"]
     )
-    
+
     # Tasks to run (empty = all tasks)
     tasks: List[str] = field(default_factory=list)
-    
+
     # Random seeds
     seeds: List[int] = field(default_factory=lambda: DEFAULT_SEEDS.copy())
-    
+
     # Student model
     student_model_type: Literal["bpnet", "bilstm", "cnn"] = "bpnet"
     student_model_size: str = "original"
-    
+
     # Training parameters
     epochs: int = 200
     batch_size: int = 16
     lr: float = 1e-4
     max_len: int = 1000
-    
+
     # Output
     output_dir: str = f"{output_path}/method_comparison"
     wandb_project: str = "OmegaGenome-Method-Comparison"
-    
+
     # SLURM
     node_list: str = "voyager"
 
@@ -198,14 +218,14 @@ def get_teacher_config_and_path(model_type: str):
     from config.distillation.experiments.caduceus import CADUCEUS_PARENT_PATH
     from config.distillation.experiments.enformer import ENFORMER_PARENT_PATH
     from config.distillation.experiments.dna_bert_v2 import DNABERT2_PARENT_PATH
-    
+
     config_map = {
         "nt": (nt_2b5, NT_PARENT_PATH),
         "caduceus": (caduceus, CADUCEUS_PARENT_PATH),
         "enformer": (enformer, ENFORMER_PARENT_PATH),
         "dnabert2": (dna_bert_v2, DNABERT2_PARENT_PATH),
     }
-    
+
     return config_map[model_type]
 
 
@@ -227,12 +247,12 @@ def create_experiment_config(
     from ..model.distillation import DistillationModelConfig
     from ..model.bpnet_classifier import BPNetClassifierConfig
     from ..trainer.distill_trainer import DistillTrainerConfig
-    
+
     teacher_config, teacher_parent_dir = get_teacher_config_and_path(config.model_type)
-    
+
     # Get method-specific best hyperparameters
     hp = get_method_hyperparams(config.model_type, method)
-    
+
     # Create distillation config with method-specific hyperparameters
     distill_config = DistillationModelConfig(
         distill_method=method,
@@ -244,13 +264,13 @@ def create_experiment_config(
         dkd_alpha=hp.dkd_alpha,
         dkd_beta=hp.dkd_beta,
     )
-    
+
     # Create student config
     student_config = BPNetClassifierConfig(
         model_type=config.student_model_type,
         model_size=config.student_model_size,
     )
-    
+
     # Create trainer config
     trainer_config = DistillTrainerConfig(
         output_dir=os.path.join(config.output_dir, config.model_type, method),
@@ -260,13 +280,15 @@ def create_experiment_config(
         lr=config.lr,
         max_len=config.max_len,
     )
-    
+
     # Create dataset config
-    dataset_config = replace(nucletide_transformer_revised_benchmark, task_name=task_name)
-    
+    dataset_config = replace(
+        nucletide_transformer_revised_benchmark, task_name=task_name
+    )
+
     # Create SLURM config
     slurm_config = replace(basic_distillation_slurm, node_list=config.node_list)
-    
+
     # Create experiment config
     exp_config = DistillationExperimentConfig(
         task_names=[task_name],
@@ -280,19 +302,19 @@ def create_experiment_config(
         slurm_config=slurm_config,
         random_state=seed,
     )
-    
+
     return exp_config
 
 
 def main(config: MethodComparisonConfig):
     """Run method comparison experiments with method-specific best hyperparameters."""
-    
+
     # Determine tasks
     tasks = config.tasks if config.tasks else ALL_TASKS
-    
+
     # Calculate total experiments
     total_experiments = len(tasks) * len(config.methods) * len(config.seeds)
-    
+
     print(f"\n{'=' * 80}")
     print("METHOD COMPARISON EXPERIMENT (with method-specific best hyperparameters)")
     print(f"{'=' * 80}")
@@ -302,60 +324,62 @@ def main(config: MethodComparisonConfig):
     print(f"Tasks: {len(tasks)} tasks")
     print(f"Seeds: {config.seeds}")
     print(f"Total experiments: {total_experiments}")
-    
+
     # Print method-specific hyperparameters
     print(f"\nMethod-specific best hyperparameters (from hyperparameter search):")
     for method in config.methods:
         hp = get_method_hyperparams(config.model_type, method)
         print(f"  {method}:")
-        print(f"    weight_ce={hp.weight_ce}, weight_kl={hp.weight_kl}, "
-              f"weight_mse={hp.weight_mse}, temperature={hp.temperature}")
+        print(
+            f"    weight_ce={hp.weight_ce}, weight_kl={hp.weight_kl}, "
+            f"weight_mse={hp.weight_mse}, temperature={hp.temperature}"
+        )
         if method == "dkd":
             print(f"    dkd_alpha={hp.dkd_alpha}, dkd_beta={hp.dkd_beta}")
     print(f"{'=' * 80}\n")
-    
+
     # GPU manager
     gpu_manager = get_gpu_manager(
         node_limits={"voyager": 3, "laniakea": 6},
         node_capacity={"voyager": 4, "laniakea": 8},
     )
-    
+
     # Run experiments
     experiment_idx = 0
     for task_name, method, seed in product(tasks, config.methods, config.seeds):
         experiment_idx += 1
-        
+
         hp = get_method_hyperparams(config.model_type, method)
-        
+
         print(f"\n{'=' * 60}")
         print(f"[Experiment {experiment_idx}/{total_experiments}]")
         print(f"Task: {task_name}, Method: {method}, Seed: {seed}")
         print(f"Hyperparams: CE={hp.weight_ce}, KL={hp.weight_kl}, T={hp.temperature}")
         print(f"{'=' * 60}")
-        
+
         # Wait for available GPU
         available_node = gpu_manager.wait_for_available_node(
             preferred_nodes=[config.node_list, "laniakea", "voyager"],
             check_interval=30,
             max_wait=3600,
         )
-        
+
         if available_node is None:
             print(f"⚠️ Skipping - no available GPU")
             continue
-        
+
         print(f"🚀 Submitting to node: {available_node}")
-        
+
         # Create experiment config
         exp_config = create_experiment_config(config, task_name, method, seed)
         exp_config = replace(
             exp_config,
             slurm_config=replace(exp_config.slurm_config, node_list=available_node),
         )
-        
+
         # Run distillation
         distill[exp_config.slurm_config](exp_config, task_name)
-        
+
         # Wait for job registration
         time.sleep(3)
         for _ in range(10):
@@ -363,7 +387,7 @@ def main(config: MethodComparisonConfig):
             if current_jobs.get(available_node, 0) > 0:
                 break
             time.sleep(1)
-    
+
     print(f"\n{'=' * 80}")
     print("Method comparison experiments submitted!")
     print(f"{'=' * 80}\n")
@@ -411,5 +435,7 @@ experiment_configs = {
 
 
 if __name__ == "__main__":
-    config = tyro.extras.overridable_config_cli(experiment_configs, sort_subcommands=True)
+    config = tyro.extras.overridable_config_cli(
+        experiment_configs, sort_subcommands=True
+    )
     main(config)
