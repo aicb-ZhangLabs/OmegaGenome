@@ -1,9 +1,10 @@
 """
 Experiment script for comparing different knowledge distillation methods
-using method-specific best hyperparameters (from prior hyperparameter search)
+using task-specific best hyperparameters (from prior hyperparameter search)
 and multiple random seeds.
 
-Each method uses its own optimal hyperparameters found from hyperparameter search.
+Each (task, method) combination uses its own optimal hyperparameters.
+Hyperparameters are defined in: config/best_hyperparams.py
 
 Usage:
     python -m src.train.distill_method_comparison --help
@@ -17,12 +18,13 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import time
 import tyro
 from dataclasses import dataclass, field, replace
-from typing import List, Literal, Dict, Any
+from typing import List, Literal
 from itertools import product
 
 from config.env import project_path, output_path
 from config.slurm_manager import get_gpu_manager
 from config.slurm import basic_distillation_slurm
+from config.best_hyperparams import get_method_hyperparams, DistillHyperparams
 from .distill import distill
 
 
@@ -49,130 +51,8 @@ ALL_TASKS = [
 ]
 
 # Default seeds for reproducibility
-DEFAULT_SEEDS = [42, 123, 456, 789, 1024]
-
-
-@dataclass
-class MethodHyperparams:
-    """Best hyperparameters for a specific KD method (from hyperparameter search)."""
-
-    weight_ce: float = 0.5
-    weight_kl: float = 0.5
-    weight_mse: float = 0.0
-    temperature: float = 2.0
-    zscore: bool = False
-    # DKD-specific
-    dkd_alpha: float = 1.0
-    dkd_beta: float = 8.0
-
-
-# ============================================================================
-# BEST HYPERPARAMETERS PER METHOD (from hyperparameter search)
-# Update these based on your hyperparameter search results
-# ============================================================================
-
-# NT Teacher - Best hyperparameters per method
-# NT Teacher - Best hyperparameters per method
-NT_METHOD_HYPERPARAMS: Dict[str, MethodHyperparams] = {
-    "vanilla": MethodHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=4.0,
-        zscore=False,
-    ),
-    "logit_standard": MethodHyperparams(
-        weight_ce=0.1,
-        weight_kl=0.95,
-        weight_mse=0.0,
-        temperature=2.0,
-        zscore=False,
-    ),
-    "dkd": MethodHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.25,
-        weight_mse=0.0,
-        temperature=4.0,
-        zscore=False,
-        dkd_alpha=2.0,
-        dkd_beta=4.0,
-    ),
-    "dist": MethodHyperparams(
-        weight_ce=0.5,
-        weight_kl=1.0,
-        weight_mse=0.0,
-        temperature=1.0,
-        zscore=False,
-    ),
-}
-
-# Caduceus Teacher - Best hyperparameters per method
-CADUCEUS_METHOD_HYPERPARAMS: Dict[str, MethodHyperparams] = {
-    "vanilla": MethodHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-    ),
-    "logit_standard": MethodHyperparams(
-        weight_ce=0.1,
-        weight_kl=0.9,
-        weight_mse=0.0,
-        temperature=2.0,
-    ),
-    "dkd": MethodHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=4.0,
-        dkd_alpha=1.0,
-        dkd_beta=8.0,
-    ),
-    "dist": MethodHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-    ),
-}
-
-# Enformer Teacher - Best hyperparameters per method
-ENFORMER_METHOD_HYPERPARAMS: Dict[str, MethodHyperparams] = {
-    "vanilla": MethodHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-    ),
-    "logit_standard": MethodHyperparams(
-        weight_ce=0.1,
-        weight_kl=0.9,
-        weight_mse=0.0,
-        temperature=2.0,
-    ),
-    "dkd": MethodHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=4.0,
-        dkd_alpha=1.0,
-        dkd_beta=8.0,
-    ),
-    "dist": MethodHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-    ),
-}
-
-# Mapping from model_type to method hyperparameters
-MODEL_METHOD_HYPERPARAMS = {
-    "nt": NT_METHOD_HYPERPARAMS,
-    "caduceus": CADUCEUS_METHOD_HYPERPARAMS,
-    "enformer": ENFORMER_METHOD_HYPERPARAMS,
-    "dnabert2": NT_METHOD_HYPERPARAMS,  # Use NT defaults for DNABERT2
-}
+DEFAULT_SEEDS = [24, 321, 654, 987, 4021]  # seed set 2
+# [42, 123, 456, 789, 1024] #seed set 1
 
 
 @dataclass
@@ -204,8 +84,8 @@ class MethodComparisonConfig:
     max_len: int = 1000
 
     # Output
-    output_dir: str = f"{output_path}/method_comparison"
-    wandb_project: str = "OmegaGenome-Method-Comparison"
+    output_dir: str = f"{output_path}/method_comparison-seedset2"
+    wandb_project: str = "OmegaGenome-Method-Compariso-seedset2"
 
     # SLURM
     node_list: str = "voyager"
@@ -229,19 +109,13 @@ def get_teacher_config_and_path(model_type: str):
     return config_map[model_type]
 
 
-def get_method_hyperparams(model_type: str, method: str) -> MethodHyperparams:
-    """Get best hyperparameters for a specific method and teacher model."""
-    method_hyperparams = MODEL_METHOD_HYPERPARAMS.get(model_type, NT_METHOD_HYPERPARAMS)
-    return method_hyperparams.get(method, MethodHyperparams())
-
-
 def create_experiment_config(
     config: MethodComparisonConfig,
     task_name: str,
     method: str,
     seed: int,
 ):
-    """Create a single experiment configuration with method-specific best hyperparameters."""
+    """Create a single experiment configuration with task-specific best hyperparameters."""
     from config.distillation.config_schema import DistillationExperimentConfig
     from config.distillation.data import nucletide_transformer_revised_benchmark
     from ..model.distillation import DistillationModelConfig
@@ -250,10 +124,10 @@ def create_experiment_config(
 
     teacher_config, teacher_parent_dir = get_teacher_config_and_path(config.model_type)
 
-    # Get method-specific best hyperparameters
-    hp = get_method_hyperparams(config.model_type, method)
+    # Get task-specific best hyperparameters from config/best_hyperparams.py
+    hp = get_method_hyperparams(config.model_type, task_name, method)
 
-    # Create distillation config with method-specific hyperparameters
+    # Create distillation config with task-specific hyperparameters
     distill_config = DistillationModelConfig(
         distill_method=method,
         weight_ce=hp.weight_ce,
@@ -307,7 +181,7 @@ def create_experiment_config(
 
 
 def main(config: MethodComparisonConfig):
-    """Run method comparison experiments with method-specific best hyperparameters."""
+    """Run method comparison experiments with task-specific best hyperparameters."""
 
     # Determine tasks
     tasks = config.tasks if config.tasks else ALL_TASKS
@@ -316,7 +190,8 @@ def main(config: MethodComparisonConfig):
     total_experiments = len(tasks) * len(config.methods) * len(config.seeds)
 
     print(f"\n{'=' * 80}")
-    print("METHOD COMPARISON EXPERIMENT (with method-specific best hyperparameters)")
+    print("METHOD COMPARISON EXPERIMENT")
+    print("(using task-specific best hyperparameters from config/best_hyperparams.py)")
     print(f"{'=' * 80}")
     print(f"Teacher model: {config.model_type}")
     print(f"Student model: {config.student_model_type}-{config.student_model_size}")
@@ -325,17 +200,17 @@ def main(config: MethodComparisonConfig):
     print(f"Seeds: {config.seeds}")
     print(f"Total experiments: {total_experiments}")
 
-    # Print method-specific hyperparameters
-    print(f"\nMethod-specific best hyperparameters (from hyperparameter search):")
-    for method in config.methods:
-        hp = get_method_hyperparams(config.model_type, method)
-        print(f"  {method}:")
-        print(
-            f"    weight_ce={hp.weight_ce}, weight_kl={hp.weight_kl}, "
-            f"weight_mse={hp.weight_mse}, temperature={hp.temperature}"
-        )
-        if method == "dkd":
-            print(f"    dkd_alpha={hp.dkd_alpha}, dkd_beta={hp.dkd_beta}")
+    # Print task-specific hyperparameters
+    print(f"\nTask-specific best hyperparameters:")
+    for task in tasks[:3]:  # Show first 3 tasks as example
+        print(f"  {task}:")
+        for method in config.methods:
+            hp = get_method_hyperparams(config.model_type, task, method)
+            print(
+                f"    {method}: CE={hp.weight_ce}, KL={hp.weight_kl}, T={hp.temperature}"
+            )
+    if len(tasks) > 3:
+        print(f"  ... and {len(tasks) - 3} more tasks")
     print(f"{'=' * 80}\n")
 
     # GPU manager
@@ -349,12 +224,14 @@ def main(config: MethodComparisonConfig):
     for task_name, method, seed in product(tasks, config.methods, config.seeds):
         experiment_idx += 1
 
-        hp = get_method_hyperparams(config.model_type, method)
+        hp = get_method_hyperparams(config.model_type, task_name, method)
 
         print(f"\n{'=' * 60}")
         print(f"[Experiment {experiment_idx}/{total_experiments}]")
         print(f"Task: {task_name}, Method: {method}, Seed: {seed}")
         print(f"Hyperparams: CE={hp.weight_ce}, KL={hp.weight_kl}, T={hp.temperature}")
+        if method == "dkd":
+            print(f"  DKD: alpha={hp.dkd_alpha}, beta={hp.dkd_beta}")
         print(f"{'=' * 60}")
 
         # Wait for available GPU
@@ -396,12 +273,12 @@ def main(config: MethodComparisonConfig):
 # Pre-defined experiment configurations
 experiment_configs = {
     "nt_method_comparison": (
-        "Compare KD methods using NT teacher with method-specific best hyperparams",
+        "Compare KD methods using NT teacher with task-specific best hyperparams",
         MethodComparisonConfig(
             model_type="nt",
             methods=["vanilla", "logit_standard", "dkd", "dist"],
-            tasks=["promoter_all", "H3K4me3", "splice_sites_all"],
-            seeds=[42, 123, 456, 789, 1024],
+            tasks=["splice_sites_all", "splice_sites_donors"],
+            seeds=DEFAULT_SEEDS,
         ),
     ),
     "nt_method_comparison_all_tasks": (

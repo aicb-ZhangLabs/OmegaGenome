@@ -1,9 +1,10 @@
 """
 Experiment script for comparing different student model sizes
-using size-specific best hyperparameters (from prior hyperparameter search)
+using task-specific best hyperparameters (from prior hyperparameter search)
 and multiple random seeds.
 
-Each model size uses its own optimal hyperparameters found from hyperparameter search.
+Each (task, size) combination uses its own optimal hyperparameters.
+Hyperparameters are defined in: config/best_hyperparams.py
 
 Usage:
     python -m src.train.distill_size_comparison --help
@@ -16,12 +17,13 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import time
 import tyro
 from dataclasses import dataclass, field, replace
-from typing import List, Literal, Dict
+from typing import List, Literal
 from itertools import product
 
 from config.env import project_path, output_path
 from config.slurm_manager import get_gpu_manager
 from config.slurm import basic_distillation_slurm
+from config.best_hyperparams import get_size_hyperparams, DistillHyperparams
 from .distill import distill
 
 
@@ -52,147 +54,6 @@ MODEL_SIZES = [
 
 # Default seeds for reproducibility
 DEFAULT_SEEDS = [42, 123, 456, 789, 1024]
-
-
-@dataclass
-class SizeHyperparams:
-    """Best hyperparameters for a specific model size (from hyperparameter search)."""
-    weight_ce: float = 0.5
-    weight_kl: float = 0.5
-    weight_mse: float = 0.0
-    temperature: float = 2.0
-    zscore: bool = False
-    distill_method: str = "vanilla"
-    # DKD-specific (if using DKD method)
-    dkd_alpha: float = 1.0
-    dkd_beta: float = 8.0
-
-
-# ============================================================================
-# BEST HYPERPARAMETERS PER MODEL SIZE (from hyperparameter search)
-# Update these based on your hyperparameter search results
-# Key: (teacher_model_type, model_size) -> SizeHyperparams
-# ============================================================================
-
-# NT Teacher - Best hyperparameters per model size
-NT_SIZE_HYPERPARAMS: Dict[str, SizeHyperparams] = {
-    "pico": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "ultra_tiny": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "extra_tiny": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "tiny": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "small": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "medium_small": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "original": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "medium": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "medium_large": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "extra_large": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "large": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-    "xxlarge": SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    ),
-}
-
-# Caduceus Teacher - Best hyperparameters per model size
-CADUCEUS_SIZE_HYPERPARAMS: Dict[str, SizeHyperparams] = {
-    size: SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    )
-    for size in MODEL_SIZES
-}
-
-# Enformer Teacher - Best hyperparameters per model size
-ENFORMER_SIZE_HYPERPARAMS: Dict[str, SizeHyperparams] = {
-    size: SizeHyperparams(
-        weight_ce=0.5,
-        weight_kl=0.5,
-        weight_mse=0.0,
-        temperature=2.0,
-        distill_method="vanilla",
-    )
-    for size in MODEL_SIZES
-}
-
-# Mapping from model_type to size hyperparameters
-MODEL_SIZE_HYPERPARAMS = {
-    "nt": NT_SIZE_HYPERPARAMS,
-    "caduceus": CADUCEUS_SIZE_HYPERPARAMS,
-    "enformer": ENFORMER_SIZE_HYPERPARAMS,
-    "dnabert2": NT_SIZE_HYPERPARAMS,  # Use NT defaults for DNABERT2
-}
 
 
 @dataclass
@@ -248,19 +109,13 @@ def get_teacher_config_and_path(model_type: str):
     return config_map[model_type]
 
 
-def get_size_hyperparams(model_type: str, model_size: str) -> SizeHyperparams:
-    """Get best hyperparameters for a specific model size and teacher."""
-    size_hyperparams = MODEL_SIZE_HYPERPARAMS.get(model_type, NT_SIZE_HYPERPARAMS)
-    return size_hyperparams.get(model_size, SizeHyperparams())
-
-
 def create_experiment_config(
     config: SizeComparisonConfig,
     task_name: str,
     model_size: str,
     seed: int,
 ):
-    """Create a single experiment configuration with size-specific best hyperparameters."""
+    """Create a single experiment configuration with task-specific best hyperparameters."""
     from config.distillation.config_schema import DistillationExperimentConfig
     from config.distillation.data import nucletide_transformer_revised_benchmark
     from ..model.distillation import DistillationModelConfig
@@ -269,10 +124,10 @@ def create_experiment_config(
     
     teacher_config, teacher_parent_dir = get_teacher_config_and_path(config.model_type)
     
-    # Get size-specific best hyperparameters
-    hp = get_size_hyperparams(config.model_type, model_size)
+    # Get task-specific best hyperparameters from config/best_hyperparams.py
+    hp = get_size_hyperparams(config.model_type, task_name, model_size)
     
-    # Create distillation config with size-specific hyperparameters
+    # Create distillation config with task-specific hyperparameters
     distill_config = DistillationModelConfig(
         distill_method=hp.distill_method,
         weight_ce=hp.weight_ce,
@@ -329,7 +184,7 @@ def create_experiment_config(
 
 
 def main(config: SizeComparisonConfig):
-    """Run size comparison experiments with size-specific best hyperparameters."""
+    """Run size comparison experiments with task-specific best hyperparameters."""
     
     # Determine tasks
     tasks = config.tasks if config.tasks else ALL_TASKS
@@ -343,7 +198,8 @@ def main(config: SizeComparisonConfig):
     total_experiments = len(tasks) * len(config.sizes) * len(config.seeds)
     
     print(f"\n{'=' * 80}")
-    print("SIZE COMPARISON EXPERIMENT (with size-specific best hyperparameters)")
+    print("SIZE COMPARISON EXPERIMENT")
+    print("(using task-specific best hyperparameters from config/best_hyperparams.py)")
     print(f"{'=' * 80}")
     print(f"Teacher model: {config.model_type}")
     print(f"Student architecture: {config.student_model_type}")
@@ -352,13 +208,18 @@ def main(config: SizeComparisonConfig):
     print(f"Seeds: {config.seeds}")
     print(f"Total experiments: {total_experiments}")
     
-    # Print size-specific hyperparameters
-    print(f"\nSize-specific best hyperparameters (from hyperparameter search):")
-    for size in config.sizes:
-        hp = get_size_hyperparams(config.model_type, size)
-        print(f"  {size}:")
-        print(f"    method={hp.distill_method}, weight_ce={hp.weight_ce}, "
-              f"weight_kl={hp.weight_kl}, temperature={hp.temperature}")
+    # Print task-specific hyperparameters
+    print(f"\nTask-specific best hyperparameters (examples):")
+    for task in tasks[:2]:  # Show first 2 tasks as example
+        print(f"  {task}:")
+        for size in config.sizes[:3]:  # Show first 3 sizes
+            hp = get_size_hyperparams(config.model_type, task, size)
+            print(f"    {size}: method={hp.distill_method}, CE={hp.weight_ce}, "
+                  f"KL={hp.weight_kl}, T={hp.temperature}")
+        if len(config.sizes) > 3:
+            print(f"    ... and {len(config.sizes) - 3} more sizes")
+    if len(tasks) > 2:
+        print(f"  ... and {len(tasks) - 2} more tasks")
     print(f"{'=' * 80}\n")
     
     # GPU manager
@@ -372,7 +233,7 @@ def main(config: SizeComparisonConfig):
     for task_name, model_size, seed in product(tasks, config.sizes, config.seeds):
         experiment_idx += 1
         
-        hp = get_size_hyperparams(config.model_type, model_size)
+        hp = get_size_hyperparams(config.model_type, task_name, model_size)
         
         print(f"\n{'=' * 60}")
         print(f"[Experiment {experiment_idx}/{total_experiments}]")
@@ -420,7 +281,7 @@ def main(config: SizeComparisonConfig):
 # Pre-defined experiment configurations
 experiment_configs = {
     "nt_size_comparison": (
-        "Compare BPNet sizes using NT teacher with size-specific best hyperparams",
+        "Compare BPNet sizes using NT teacher with task-specific best hyperparams",
         SizeComparisonConfig(
             model_type="nt",
             student_model_type="bpnet",
