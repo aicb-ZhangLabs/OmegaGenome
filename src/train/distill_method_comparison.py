@@ -52,7 +52,8 @@ ALL_TASKS = [
 
 # Default seeds for reproducibility
 DEFAULT_SEEDS = [24, 321, 654, 987, 4021]  # seed set 2
-# [42, 123, 456, 789, 1024] #seed set 1
+DEFAULT_SEEDS1 = [42, 123, 456, 789, 1024]  # seed set 1
+DIST_DEBUG_SEEDS = [42, 1024]  # For debugging
 
 
 @dataclass
@@ -279,6 +280,24 @@ experiment_configs = {
             methods=["vanilla", "logit_standard", "dkd", "dist"],
             tasks=["splice_sites_all", "splice_sites_donors"],
             seeds=DEFAULT_SEEDS,
+        ),
+    ),
+    "nt_method_comparison_donors_seed1": (
+        "Compare KD methods using NT teacher with task-specific best hyperparams",
+        MethodComparisonConfig(
+            model_type="nt",
+            methods=["vanilla", "logit_standard", "dkd", "dist"],
+            tasks=["splice_sites_donors"],
+            seeds=DEFAULT_SEEDS1,
+        ),
+    ),
+    "nt_method_comparison_donors_dist_debug": (
+        "Compare KD methods using NT teacher with task-specific best hyperparams",
+        MethodComparisonConfig(
+            model_type="nt",
+            methods=["dist"],
+            tasks=["splice_sites_donors"],
+            seeds=DIST_DEBUG_SEEDS,
         ),
     ),
     "nt_method_comparison_all_tasks": (

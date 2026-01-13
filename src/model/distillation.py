@@ -1,9 +1,92 @@
+"""
+COMPREHENSIVE DEBUGGING VERSION for Logit Standardization KD
+=============================================================
+
+INSTRUCTIONS:
+1. Replace your src/model/distillation.py with this file
+2. Run training with logit_standard method
+3. Check console output and log file for detailed diagnostics
+
+This version logs EVERY step to identify:
+- Where the bug is occurring
+- What values are being computed at each step
+- Why MCC might be low
+
+POTENTIAL BUG SOURCES TO CHECK:
+1. std() using wrong unbiased parameter (FIXED in this version)
+2. Teacher logits being None or corrupt
+3. Label distribution issues
+4. Loss weighting problems
+5. Temperature scaling issues
+6. Gradient flow problems
+
+Reference: https://github.com/sunshangquan/logit-standardization-KD
+Paper: "Logit Standardization in Knowledge Distillation" (CVPR 2024)
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import numpy as np
+import sys
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Literal, Optional
+
+
+# ============================================================================
+# GLOBAL DEBUG SETTINGS
+# ============================================================================
+DEBUG = True
+DEBUG_LOG_EVERY = 50  # Log every N batches
+DEBUG_BATCH = 0
+DEBUG_LOG_FIRST_N = 5  # Always log first N batches
+
+
+def log(msg, force=False):
+    """Debug logging function."""
+    global DEBUG_BATCH
+    if DEBUG and (
+        force or DEBUG_BATCH < DEBUG_LOG_FIRST_N or DEBUG_BATCH % DEBUG_LOG_EVERY == 0
+    ):
+        print(f"[DEBUG batch={DEBUG_BATCH}] {msg}", file=sys.stderr)
+
+
+def stats(t, name):
+    """Get tensor statistics string."""
+    if t is None:
+        return f"{name}=None"
+    with torch.no_grad():
+        f = t.float()
+        return (
+            f"{name}: shape={list(t.shape)}, "
+            f"[{f.min():.4f}, {f.max():.4f}], "
+            f"μ={f.mean():.4f}, σ={f.std():.4f}, "
+            f"nan={torch.isnan(f).any()}, inf={torch.isinf(f).any()}"
+        )
+
+
+def per_sample(t, name):
+    """Per-sample stats for [B, C] tensor."""
+    if t is None or len(t.shape) != 2:
+        return stats(t, name)
+    with torch.no_grad():
+        f = t.float()
+        B, C = f.shape
+        means = f.mean(dim=-1)
+        stds_pop = f.std(dim=-1, unbiased=False)
+        stds_samp = f.std(dim=-1, unbiased=True)
+        return (
+            f"{name}: [{B}x{C}]\n"
+            f"  means: [{means.min():.4f}, {means.max():.4f}] avg={means.mean():.4f}\n"
+            f"  std_pop: [{stds_pop.min():.4f}, {stds_pop.max():.4f}] avg={stds_pop.mean():.4f}\n"
+            f"  std_samp: [{stds_samp.min():.4f}, {stds_samp.max():.4f}] avg={stds_samp.mean():.4f}\n"
+            f"  ratio(samp/pop)={((stds_samp)/(stds_pop+1e-10)).mean():.4f}"
+        )
+
+
+# ============================================================================
+# CONFIG
+# ============================================================================
 
 
 @dataclass
@@ -17,26 +100,27 @@ class DistillationModelConfig:
 
     # Extended for new distillation methods
     distill_method: Literal["vanilla", "logit_standard", "dkd", "dist"] = "vanilla"
-    dkd_alpha: float = 1.0  # For DKD method
-    dkd_beta: float = 8.0  # For DKD method
+    dkd_alpha: float = 1.0
+    dkd_beta: float = 8.0
 
     def __post_init__(self):
         pass
 
 
-# for dkd
+# ============================================================================
+# DKD HELPERS
+# ============================================================================
+
+
 def _get_gt_mask(logits, target):
-    """Create binary mask for ground truth class."""
     target = target.reshape(-1)
-    mask = torch.zeros_like(logits).scatter_(1, target.unsqueeze(1), 1).bool()
-    return mask
+    return torch.zeros_like(logits).scatter_(1, target.unsqueeze(1), 1).bool()
 
 
 def _get_other_mask(logits, target):
     """Create binary mask for non-target classes."""
     target = target.reshape(-1)
-    mask = torch.ones_like(logits).scatter_(1, target.unsqueeze(1), 0).bool()
-    return mask
+    return torch.ones_like(logits).scatter_(1, target.unsqueeze(1), 0).bool()
 
 
 def cat_mask(t, mask1, mask2):
@@ -98,8 +182,12 @@ def dkd_loss(logits_student, logits_teacher, target, alpha, beta, temperature):
     # ===== NCKD (Non-Target Class KD) =====
     # Mask out target class by subtracting large number before softmax
     # This effectively suppresses the target class probability
-    pred_teacher_part2 = F.softmax(logits_teacher / temperature - 1000.0 * gt_mask, dim=1)
-    log_pred_student_part2 = F.log_softmax(logits_student / temperature - 1000.0 * gt_mask, dim=1)
+    pred_teacher_part2 = F.softmax(
+        logits_teacher / temperature - 1000.0 * gt_mask, dim=1
+    )
+    log_pred_student_part2 = F.log_softmax(
+        logits_student / temperature - 1000.0 * gt_mask, dim=1
+    )
 
     # KL divergence on masked distribution
     nckd_loss = (
@@ -109,6 +197,11 @@ def dkd_loss(logits_student, logits_teacher, target, alpha, beta, temperature):
     )
 
     return alpha * tckd_loss + beta * nckd_loss
+
+
+# ============================================================================
+# MAIN MODEL
+# ============================================================================
 
 
 class DistillationModel(nn.Module):
@@ -125,16 +218,30 @@ class DistillationModel(nn.Module):
         self.student_model = student_model
         self.device = device
 
+        print("\n" + "=" * 70, file=sys.stderr)
+        print("DISTILLATION DEBUG VERSION INITIALIZED", file=sys.stderr)
+        print("=" * 70, file=sys.stderr)
+        print(f"  method={config.distill_method}", file=sys.stderr)
+        print(f"  temperature={config.temperature}", file=sys.stderr)
+        print(
+            f"  weight_ce={config.weight_ce}, weight_kl={config.weight_kl}",
+            file=sys.stderr,
+        )
+        print("=" * 70 + "\n", file=sys.stderr)
+
     def prepare_batch(self, batch: List[torch.Tensor]):
         ids, labs = batch[0].to(self.device), batch[1].to(self.device)
-        tlog = batch[2].to(self.device) if len(batch) > 2 and self.config.weight_kl > 0 else None
-        tfeats = batch[3].to(self.device) if len(batch) > 3 and self.config.weight_mse > 0 else None
-        return {
-            "ids": ids,
-            "labs": labs,
-            "tlog": tlog,
-            "tfeats": tfeats,
-        }
+        tlog = (
+            batch[2].to(self.device)
+            if len(batch) > 2 and self.config.weight_kl > 0
+            else None
+        )
+        tfeats = (
+            batch[3].to(self.device)
+            if len(batch) > 3 and self.config.weight_mse > 0
+            else None
+        )
+        return {"ids": ids, "labs": labs, "tlog": tlog, "tfeats": tfeats}
 
     def get_student_knowledge(self, inputs: Dict[str, torch.Tensor]):
         """get the knowledge from the student
@@ -155,25 +262,53 @@ class DistillationModel(nn.Module):
         tfeats = inputs["tfeats"]
         return tlog, tfeats
 
-    def forward(self, batch: List[torch.Tensor]) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    def forward(self, batch) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        global DEBUG_BATCH
+        DEBUG_BATCH += 1
+
         inputs = self.prepare_batch(batch)
         loss, metrics = self.distillation_loss(inputs)
         return loss, metrics
 
-    def distillation_loss(
-        self, inputs: Dict[str, torch.Tensor]
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    def distillation_loss(self, inputs) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         s_logits, s_feats = self.get_student_knowledge(inputs)
         tlog, tfeats = self.get_teacher_knowledge(inputs)
 
-        ce = F.cross_entropy(s_logits, inputs["labs"])
-        loss = self.config.weight_ce * ce
+        log(f"\n{'='*60}")
+        log(f"METHOD: {self.config.distill_method}")
+        log(per_sample(s_logits, "Student logits"))
+        log(per_sample(tlog, "Teacher logits"))
 
-        kl = self.kl_term(s_logits, tlog, inputs["labs"])
+        # CHECK: Are teacher logits actually different from student?
+        if tlog is not None and s_logits.shape == tlog.shape:
+            diff = (s_logits - tlog).abs().mean()
+            log(f"Student-Teacher logit diff: {diff.item():.6f}")
+            if diff < 0.01:
+                log(
+                    "!!! WARNING: Student and teacher logits are nearly identical !!!",
+                    force=True,
+                )
+
+        # Label info
+        labels = inputs["labs"]
+        unique, counts = torch.unique(labels, return_counts=True)
+        log(f"Labels: unique={unique.tolist()}, counts={counts.tolist()}")
+
+        # CE Loss
+        ce = F.cross_entropy(s_logits, labels)
+        loss = self.config.weight_ce * ce
+        log(f"CE: raw={ce.item():.6f}, weighted={loss.item():.6f}")
+
+        # KL Loss
+        kl = self.kl_term(s_logits, tlog, labels)
         loss += kl
 
+        # MSE Loss
         mse = self.mse_term(s_feats, tfeats)
         loss += mse
+
+        log(f"TOTAL: {loss.item():.6f}")
+        log(f"{'='*60}\n")
 
         return loss, {
             "loss": loss.item(),
@@ -182,14 +317,9 @@ class DistillationModel(nn.Module):
             "mse": mse.item(),
         }
 
-    def kl_term(
-        self,
-        s_logits: torch.Tensor,
-        tlog: Optional[torch.Tensor],
-        labels: Optional[torch.Tensor] = None,
-    ):
-        """Extended KL term supporting multiple distillation methods"""
+    def kl_term(self, s_logits, tlog, labels=None):
         if self.config.weight_kl <= 0 or tlog is None:
+            log("KL SKIPPED (weight=0 or tlog=None)")
             return torch.tensor(0.0, device=self.device)
 
         method = self.config.distill_method
@@ -204,86 +334,155 @@ class DistillationModel(nn.Module):
             # DIST (NeurIPS 2022) - FIXED
             kl = self._dist_loss(s_logits, tlog)
         else:
-            # Vanilla KD (default)
-            if self.config.zscore:
-                m = s_logits.mean(dim=-1, keepdims=True)
-                sd = s_logits.std(dim=-1, keepdims=True) + 1e-6
-                s_dist = (s_logits - m) / sd
-                raise NotImplementedError("Z-scoring is not implemented")
-            else:
-                if self.config.kl_method == "kl":
-                    s_dist = s_logits / self.config.temperature
-                    t_dist = tlog / self.config.temperature
-                    kl = F.kl_div(
-                        F.log_softmax(s_dist, dim=-1),
-                        F.softmax(t_dist, dim=-1),
-                        reduction="batchmean",
-                    ) * (self.config.temperature**2)
-                elif self.config.kl_method == "mse":
-                    kl = F.mse_loss(s_logits, tlog)
-                else:
-                    raise ValueError(f"Invalid KL method: {self.config.kl_method}")
+            kl = self._vanilla_kl(s_logits, tlog)
 
-        return self.config.weight_kl * kl
+        weighted = self.config.weight_kl * kl
+        log(f"KL: raw={kl.item():.6f}, weighted={weighted.item():.6f}")
+        return weighted
 
-    def _logit_standard_kl(self, s_logits: torch.Tensor, t_logits: torch.Tensor):
+    def _vanilla_kl(self, s_logits, tlog):
+        temp = self.config.temperature
+        s_scaled = s_logits / temp
+        t_scaled = tlog / temp
+        kl = F.kl_div(
+            F.log_softmax(s_scaled, dim=-1),
+            F.softmax(t_scaled, dim=-1),
+            reduction="batchmean",
+        ) * (temp**2)
+        return kl
+
+    def _logit_standard_kl_debug(self, s_logits, t_logits):
         """
+        LOGIT STANDARDIZATION with comprehensive debugging.
         Logit Standardization KD Loss (CVPR 2024) - CORRECTED IMPLEMENTATION
 
         Paper: "Logit Standardization in Knowledge Distillation"
         Reference: https://github.com/sunshangquan/logit-standardization-KD
-
-        Key Formula: Z(z; τ) = (z - μ) / σ_weighted /τ
-        where σ_weighted uses softmax probabilities as weights for std calculation.
-
-        This is the WEIGHTED Z-score, not simple Z-score normalization.
+        Algorithm from paper:
+        1. μ = mean(z)
+        2. σ = sqrt(mean((z - μ)²))  # POPULATION std (divide by K, not K-1)
+        3. z_norm = (z - μ) / σ / τ
+        4. KL = KL_div(softmax(z_s_norm), softmax(z_t_norm)) * τ²
         """
-        temp = self.config.temperature  # This is τ (base temperature)
+        temp = self.config.temperature
+        K = s_logits.shape[-1]
+        B = s_logits.shape[0]
 
-        # ===== WEIGHTED MEAN AND STD CALCULATION =====
-        # Compute softmax probabilities (without temperature) as weights
-        # Shape: (batch_size, num_classes)
-        s_probs = F.softmax(s_logits, dim=-1)
-        t_probs = F.softmax(t_logits, dim=-1)
-
-        # Weighted mean: μ = Σ(p_i · z_i)
-        s_mean = (s_probs * s_logits).sum(dim=-1, keepdim=True)  # (batch_size, 1)
-        t_mean = (t_probs * t_logits).sum(dim=-1, keepdim=True)  # (batch_size, 1)
-
-        # Weighted variance: σ² = Σ(p_i · (z_i - μ)²)
-        s_var = (s_probs * (s_logits - s_mean) ** 2).sum(dim=-1, keepdim=True)  # (batch_size, 1)
-        t_var = (t_probs * (t_logits - t_mean) ** 2).sum(dim=-1, keepdim=True)  # (batch_size, 1)
-
-        # Weighted std with numerical stability
-        eps = 1e-7
-        s_std = torch.sqrt(s_var + eps)  # (batch_size, 1)
-        t_std = torch.sqrt(t_var + eps)  # (batch_size, 1)
-
-        # Z(z; τ) = (z - μ) / σ / τ  (DIVIDE by temp, not multiply!)
-        s_logits_norm = (s_logits - s_mean) / s_std / temp
-        t_logits_norm = (t_logits - t_mean) / t_std / temp
-
-        # ===== KL DIVERGENCE WITH NORMALIZED LOGITS =====
-        # Note: We apply softmax to the already-normalized logits
-        # The temperature τ is already incorporated in the normalization
-        kl_loss = F.kl_div(
-            F.log_softmax(s_logits_norm, dim=-1),
-            F.softmax(t_logits_norm, dim=-1),
-            reduction="batchmean",
+        log(f"\n[LOGIT_STD] K={K}, B={B}, temp={temp}")
+        log(
+            f"[LOGIT_STD] Expected std ratio (sample/pop) = sqrt({K}/{K-1}) = {np.sqrt(K/(K-1)):.6f}"
         )
 
-        # No additional temperature scaling needed (already in normalization)
-        return kl_loss
+        # STEP 1: Compute mean
+        s_mean = s_logits.mean(dim=-1, keepdim=True)
+        t_mean = t_logits.mean(dim=-1, keepdim=True)
+        log(stats(s_mean, "[LOGIT_STD] s_mean"))
+        log(stats(t_mean, "[LOGIT_STD] t_mean"))
 
-    def _dkd_loss(self, s_logits: torch.Tensor, t_logits: torch.Tensor, labels: torch.Tensor):
-        """
-        DKD Loss - Official Implementation
+        # STEP 2: Compute std - CRITICAL: Use population std (unbiased=False)
+        # Paper's Algorithm 1: σ(x) = sqrt((1/K) Σ (x^(k) - x̄)²)
+        s_std_pop = s_logits.std(dim=-1, keepdim=True, unbiased=False)  # CORRECT
+        t_std_pop = t_logits.std(dim=-1, keepdim=True, unbiased=False)  # CORRECT
+        s_std_samp = s_logits.std(
+            dim=-1, keepdim=True, unbiased=True
+        )  # WRONG (PyTorch default)
+        t_std_samp = t_logits.std(
+            dim=-1, keepdim=True, unbiased=True
+        )  # WRONG (PyTorch default)
 
-        This matches the official mdistiller repository exactly.
+        log(stats(s_std_pop, "[LOGIT_STD] s_std POPULATION (unbiased=False) [CORRECT]"))
+        log(stats(s_std_samp, "[LOGIT_STD] s_std SAMPLE (unbiased=True) [WRONG]"))
+        log(stats(t_std_pop, "[LOGIT_STD] t_std POPULATION (unbiased=False) [CORRECT]"))
 
-        Reference:
-        https://github.com/megvii-research/mdistiller/blob/master/mdistiller/distillers/DKD.py
-        """
+        ratio = (s_std_samp / (s_std_pop + 1e-10)).mean().item()
+        log(f"[LOGIT_STD] Actual std ratio (sample/pop): {ratio:.6f}")
+
+        # Use POPULATION std (add small epsilon)
+        s_std = s_std_pop + 1e-7
+        t_std = t_std_pop + 1e-7
+
+        # STEP 3: Z-score normalize then divide by temperature
+        s_centered = s_logits - s_mean
+        t_centered = t_logits - t_mean
+
+        s_normalized = s_centered / s_std
+        t_normalized = t_centered / t_std
+
+        # Check: after normalization, per-sample std should be ~1
+        s_norm_std = s_normalized.std(dim=-1, unbiased=False).mean().item()
+        t_norm_std = t_normalized.std(dim=-1, unbiased=False).mean().item()
+        log(
+            f"[LOGIT_STD] After normalization: s_std={s_norm_std:.6f}, t_std={t_norm_std:.6f} (should be ~1.0)"
+        )
+
+        s_norm = s_normalized / temp
+        t_norm = t_normalized / temp
+
+        log(per_sample(s_norm, "[LOGIT_STD] s_norm (final)"))
+        log(per_sample(t_norm, "[LOGIT_STD] t_norm (final)"))
+
+        # Show sample values
+        if B >= 1:
+            log(f"[LOGIT_STD] s_norm[0] = {s_norm[0].detach().cpu().numpy()}")
+            log(f"[LOGIT_STD] t_norm[0] = {t_norm[0].detach().cpu().numpy()}")
+
+        # STEP 4: Softmax
+        s_softmax = F.softmax(s_norm, dim=-1)
+        t_softmax = F.softmax(t_norm, dim=-1)
+
+        log(per_sample(s_softmax, "[LOGIT_STD] s_softmax"))
+        log(per_sample(t_softmax, "[LOGIT_STD] t_softmax"))
+
+        if B >= 1:
+            log(f"[LOGIT_STD] s_softmax[0] = {s_softmax[0].detach().cpu().numpy()}")
+            log(f"[LOGIT_STD] t_softmax[0] = {t_softmax[0].detach().cpu().numpy()}")
+
+        # Entropy check (critical for understanding if distributions are too uniform)
+        max_entropy = np.log(K)
+        s_entropy = -(s_softmax * torch.log(s_softmax + 1e-10)).sum(dim=-1).mean()
+        t_entropy = -(t_softmax * torch.log(t_softmax + 1e-10)).sum(dim=-1).mean()
+
+        log(f"[LOGIT_STD] max_entropy (K={K}): {max_entropy:.6f}")
+        log(
+            f"[LOGIT_STD] s_entropy: {s_entropy.item():.6f} ({100*s_entropy.item()/max_entropy:.1f}%)"
+        )
+        log(
+            f"[LOGIT_STD] t_entropy: {t_entropy.item():.6f} ({100*t_entropy.item()/max_entropy:.1f}%)"
+        )
+
+        if s_entropy.item() / max_entropy > 0.95:
+            log(
+                "[LOGIT_STD] !!!! CRITICAL: Student softmax >95% max entropy - nearly uniform !!!!",
+                force=True,
+            )
+        if t_entropy.item() / max_entropy > 0.95:
+            log(
+                "[LOGIT_STD] !!!! CRITICAL: Teacher softmax >95% max entropy - nearly uniform !!!!",
+                force=True,
+            )
+
+        # STEP 5: KL divergence
+        kl = F.kl_div(F.log_softmax(s_norm, dim=-1), t_softmax, reduction="batchmean")
+        kl_scaled = kl * (temp**2)
+
+        log(f"[LOGIT_STD] KL (before T²): {kl.item():.6f}")
+        log(f"[LOGIT_STD] KL (after T²={temp**2}): {kl_scaled.item():.6f}")
+
+        # Compare with vanilla KD
+        vanilla_kl = F.kl_div(
+            F.log_softmax(s_logits / temp, dim=-1),
+            F.softmax(t_logits / temp, dim=-1),
+            reduction="batchmean",
+        ) * (temp**2)
+
+        log(f"[LOGIT_STD] Vanilla KL: {vanilla_kl.item():.6f}")
+        log(
+            f"[LOGIT_STD] Ratio (logit_std / vanilla): {kl_scaled.item() / (vanilla_kl.item() + 1e-10):.6f}"
+        )
+
+        return kl_scaled
+
+    def _dkd_loss(self, s_logits, t_logits, labels):
         return dkd_loss(
             s_logits,
             t_logits,
@@ -293,60 +492,32 @@ class DistillationModel(nn.Module):
             self.config.temperature,
         )
 
-    def _dist_loss(self, s_logits: torch.Tensor, t_logits: torch.Tensor):
-        """DIST: Knowledge Distillation from A Stronger Teacher (NeurIPS 2022) - CORRECTED
+    def _dist_loss(self, s_logits, t_logits):
+        s_probs = F.softmax(s_logits / self.config.temperature, dim=1)
+        t_probs = F.softmax(t_logits / self.config.temperature, dim=1)
 
-        Paper: "Knowledge Distillation from A Stronger Teacher"
-        Key fix: Properly implement inter-class and intra-class correlation losses
-
-        The method computes:
-        1. Inter-class correlation: Pearson correlation per class across batch dimension
-        2. Intra-class correlation: Pearson correlation per instance across class dimension
-
-        Reference: https://github.com/hunto/DIST_KD
-        """
-
-        # Get probability distributions
-        s_probs = F.softmax(s_logits / self.config.temperature, dim=1)  # (B, C)
-        t_probs = F.softmax(t_logits / self.config.temperature, dim=1)  # (B, C)
-
-        # ===== Inter-class correlation =====
-        # For each class, compute correlation across the batch
-        # This captures how different samples relate to each class
-        s_t = s_probs.t()  # (C, B)
-        t_t = t_probs.t()  # (C, B)
-
-        s_mean = s_t.mean(dim=1, keepdim=True)  # (C, 1)
-        t_mean = t_t.mean(dim=1, keepdim=True)  # (C, 1)
-        s_centered = s_t - s_mean  # (C, B)
-        t_centered = t_t - t_mean  # (C, B)
-
-        # Pearson correlation per class
-        inter_corr = (s_centered * t_centered).sum(dim=1)  # (C,)
-        s_norm = torch.sqrt((s_centered**2).sum(dim=1) + 1e-8)  # (C,)
-        t_norm = torch.sqrt((t_centered**2).sum(dim=1) + 1e-8)  # (C,)
-        inter_corr = inter_corr / (s_norm * t_norm + 1e-8)  # (C,)
+        s_t, t_t = s_probs.t(), t_probs.t()
+        s_mean, t_mean = s_t.mean(dim=1, keepdim=True), t_t.mean(dim=1, keepdim=True)
+        s_c, t_c = s_t - s_mean, t_t - t_mean
+        inter_corr = (s_c * t_c).sum(dim=1)
+        s_n = torch.sqrt((s_c**2).sum(dim=1) + 1e-8)
+        t_n = torch.sqrt((t_c**2).sum(dim=1) + 1e-8)
+        inter_corr = inter_corr / (s_n * t_n + 1e-8)
         inter_loss = (1 - inter_corr).mean()
 
-        # ===== Intra-class correlation =====
-        # For each instance, compute correlation of its predictions across classes
-        # This captures the prediction pattern for each sample
-        s_mean = s_probs.mean(dim=1, keepdim=True)  # (B, 1)
-        t_mean = t_probs.mean(dim=1, keepdim=True)  # (B, 1)
-        s_centered = s_probs - s_mean  # (B, C)
-        t_centered = t_probs - t_mean  # (B, C)
-
-        # Pearson correlation per instance
-        intra_corr = (s_centered * t_centered).sum(dim=1)  # (B,)
-        s_norm = torch.sqrt((s_centered**2).sum(dim=1) + 1e-8)  # (B,)
-        t_norm = torch.sqrt((t_centered**2).sum(dim=1) + 1e-8)  # (B,)
-        intra_corr = intra_corr / (s_norm * t_norm + 1e-8)  # (B,)
+        s_mean, t_mean = s_probs.mean(dim=1, keepdim=True), t_probs.mean(
+            dim=1, keepdim=True
+        )
+        s_c, t_c = s_probs - s_mean, t_probs - t_mean
+        intra_corr = (s_c * t_c).sum(dim=1)
+        s_n = torch.sqrt((s_c**2).sum(dim=1) + 1e-8)
+        t_n = torch.sqrt((t_c**2).sum(dim=1) + 1e-8)
+        intra_corr = intra_corr / (s_n * t_n + 1e-8)
         intra_loss = (1 - intra_corr).mean()
 
-        # Combine both losses (paper uses equal weighting)
         return (inter_loss + intra_loss) / 2.0
 
-    def mse_term(self, s_feats: torch.Tensor, tfeats: Optional[torch.Tensor]):
+    def mse_term(self, s_feats, tfeats):
         if self.config.weight_mse > 0 and tfeats is not None:
             s_feats, tfeats = self.student_model.aligned_feats(s_feats, tfeats)
             mse = F.mse_loss(s_feats, tfeats)
