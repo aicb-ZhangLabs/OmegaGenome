@@ -516,6 +516,18 @@ METHOD_BEST_HYPERPARAMS: Dict[str, Dict[str, Dict[str, DistillHyperparams]]] = {
 # Update these based on your hyperparameter search results!
 # ============================================================================
 
+# ============================================================
+# BEST HYPERPARAMETERS PER MODEL SIZE (splice_sites_all)
+# ============================================================
+#  model_size    mcc distill_method  temperature  weight_ce  weight_kl  weight_mse  dkd_alpha  dkd_beta
+#        pico 0.2992        vanilla       0.5000     0.5000     1.0000           1          1         8
+# ultra_small 0.5942        vanilla       0.5000     0.5000     0.5000           0          1         8
+# extra_small 0.8401        vanilla       4.0000     0.5000     1.0000           1          1         8
+#    original 0.9078        vanilla       4.0000     0.5000     0.5000           0          1         8
+# extra_large 0.8612        vanilla       1.5000     0.5000     1.0000           5          1         8
+#       large 0.9540        vanilla       0.5000     0.5000     0.0000           1          1         8
+#     xxlarge 0.9505        vanilla       0.5000     0.5000     0.0000           0          1         8
+
 SIZE_BEST_HYPERPARAMS: Dict[str, Dict[str, Dict[str, DistillHyperparams]]] = {
     # =========== NT Teacher ===========
     "nt": {
@@ -596,42 +608,61 @@ SIZE_BEST_HYPERPARAMS: Dict[str, Dict[str, Dict[str, DistillHyperparams]]] = {
                 weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
             ),
         },
-        "splice_sites_all": {
+        "splice_sites_all": {  # Data: pico | Temp=0.5, CE=0.5, KL=1.0, MSE=1.0
             "pico": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
+                weight_ce=0.5,
+                weight_kl=1.0,
+                weight_mse=1.0,
+                temperature=0.5,
+                distill_method="vanilla",
             ),
+            # Data: ultra_small -> Key: ultra_tiny | Temp=0.5, CE=0.5, KL=0.5, MSE=0.0
             "ultra_tiny": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
+                weight_ce=0.5,
+                weight_kl=0.5,
+                weight_mse=0.0,
+                temperature=0.5,
+                distill_method="vanilla",
             ),
+            # Data: extra_small -> Key: extra_tiny | Temp=4.0, CE=0.5, KL=1.0, MSE=1.0
             "extra_tiny": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
+                weight_ce=0.5,
+                weight_kl=1.0,
+                weight_mse=1.0,
+                temperature=4.0,
+                distill_method="vanilla",
             ),
-            "tiny": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
-            ),
-            "small": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
-            ),
-            "medium_small": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
-            ),
+            # Data: original | Temp=4.0, CE=0.5, KL=0.5, MSE=0.0
             "original": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
+                weight_ce=0.5,
+                weight_kl=0.5,
+                weight_mse=0.0,
+                temperature=4.0,
+                distill_method="vanilla",
             ),
-            "medium": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
-            ),
-            "medium_large": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
-            ),
+            # Data: extra_large | Temp=1.5, CE=0.5, KL=1.0, MSE=5.0
             "extra_large": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
+                weight_ce=0.5,
+                weight_kl=1.0,
+                weight_mse=5.0,
+                temperature=1.5,
+                distill_method="vanilla",
             ),
+            # Data: large | Temp=0.5, CE=0.5, KL=0.0, MSE=1.0
             "large": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
+                weight_ce=0.5,
+                weight_kl=0.0,
+                weight_mse=1.0,
+                temperature=0.5,
+                distill_method="vanilla",
             ),
+            # Data: xxlarge | Temp=0.5, CE=0.5, KL=0.0, MSE=0.0
             "xxlarge": DistillHyperparams(
-                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
+                weight_ce=0.5,
+                weight_kl=0.0,
+                weight_mse=0.0,
+                temperature=0.5,
+                distill_method="vanilla",
             ),
         },
         # Add more tasks as needed...

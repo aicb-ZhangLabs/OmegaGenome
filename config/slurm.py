@@ -4,10 +4,14 @@ from .env import env, output_path
 exclude_code_folders = [
     "wandb",
     "output",
+    "output*",
     "output_original",
     "output_caduceus_hyperparam",
     "output_bpnet_medium",
+    "output_logits_and_medium_debug",
     "outputs",
+    "output_medium_debug_11_18",
+    "output_enformer_hyper_12_07",
     "data",
     "datasets",
     ".venv_caduceus",
@@ -16,6 +20,8 @@ exclude_code_folders = [
     ".vscode",
     "uv.lock",
     "tests",
+    ".ruff_cache",
+    ".github",
 ]
 
 basic_distillation_slurm = SlurmConfig(
