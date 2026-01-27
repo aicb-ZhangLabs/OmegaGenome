@@ -58,10 +58,22 @@ MODEL_SIZES = [
     "tiny",  # ~50k params
     "small",  # ~200k params
     "medium_small",  # ~400k params
-    "original",  # ~280k params
+    "original",  # ~280k params (100k backbone)
     "medium",  # ~1M params
     "medium_large",  # ~0.4M params
-    "extra_large",  # ~0.8M params
+    "extra_large",  # ~0.8M params (BROKEN - has dilation cap issue)
+    "extra_large_fix",  # ~0.8M params (FIXED - no dilation cap)
+    "large",  # ~5M params
+    "xxlarge",  # ~3.6M params
+]
+
+# Model sizes for scaling law experiments (excludes broken extra_large)
+MODEL_SIZES_SCALING = [
+    "pico",  # ~1.3k params
+    "ultra_tiny",  # ~6.25k params
+    "extra_tiny",  # ~25k params
+    "original",  # ~280k params
+    "extra_large_fix",  # ~0.8M params (FIXED version)
     "large",  # ~5M params
     "xxlarge",  # ~3.6M params
 ]
@@ -75,6 +87,14 @@ MODEL_SIZES_SXL = [
     "large",  # ~5M params
     "xxlarge",  # ~3.6M params
 ]
+
+# Model sizes for comparing extra_large vs extra_large_fix
+MODEL_SIZES_EXTRA_LARGE_COMPARISON = [
+    "original",  # Baseline
+    "extra_large",  # Broken (dilation cap 6)
+    "extra_large_fix",  # Fixed (no dilation cap)
+]
+
 # Default seeds for reproducibility
 # DEFAULT_SEEDS = [42, 123, 456, 789, 1024]
 DEFAULT_SEEDS = [42, 123, 456, 789, 1024, 24, 321, 654, 987, 4021]
@@ -149,7 +169,13 @@ def create_experiment_config(
     teacher_config, teacher_parent_dir = get_teacher_config_and_path(config.model_type)
 
     # Get task-specific best hyperparameters from config/best_hyperparams.py
-    hp = get_size_hyperparams(config.model_type, task_name, model_size)
+    # For extra_large_fix, use the same hyperparameters as extra_large initially
+    lookup_size = model_size
+    if model_size == "extra_large_fix":
+        # Use extra_large hyperparams as starting point (can be tuned later)
+        lookup_size = "extra_large"
+    
+    hp = get_size_hyperparams(config.model_type, task_name, lookup_size)
 
     # Create distillation config with task-specific hyperparameters
     distill_config = DistillationModelConfig(
@@ -239,7 +265,8 @@ def main(config: SizeComparisonConfig):
     for task in tasks[:2]:  # Show first 2 tasks as example
         print(f"  {task}:")
         for size in config.sizes[:3]:  # Show first 3 sizes
-            hp = get_size_hyperparams(config.model_type, task, size)
+            lookup_size = size if size != "extra_large_fix" else "extra_large"
+            hp = get_size_hyperparams(config.model_type, task, lookup_size)
             print(
                 f"    {size}: method={hp.distill_method}, CE={hp.weight_ce}, "
                 f"KL={hp.weight_kl}, T={hp.temperature}"
@@ -261,7 +288,8 @@ def main(config: SizeComparisonConfig):
     for task_name, model_size, seed in product(tasks, config.sizes, config.seeds):
         experiment_idx += 1
 
-        hp = get_size_hyperparams(config.model_type, task_name, model_size)
+        lookup_size = model_size if model_size != "extra_large_fix" else "extra_large"
+        hp = get_size_hyperparams(config.model_type, task_name, lookup_size)
 
         print(f"\n{'=' * 60}")
         print(f"[Experiment {experiment_idx}/{total_experiments}]")
@@ -310,6 +338,48 @@ def main(config: SizeComparisonConfig):
 
 # Pre-defined experiment configurations
 experiment_configs = {
+    # ================================================================
+    # MAIN EXPERIMENT: Compare extra_large vs extra_large_fix
+    # ================================================================
+    "nt_extra_large_fix_comparison": (
+        "Compare extra_large (broken) vs extra_large_fix (fixed dilation) vs original",
+        SizeComparisonConfig(
+            model_type="nt",
+            student_model_type="bpnet",
+            sizes=MODEL_SIZES_EXTRA_LARGE_COMPARISON,
+            tasks=["splice_sites_all"],
+            seeds=DEFAULT_SEEDS,
+            wandb_project="OmegaGenome-ExtraLarge-Fix",
+        ),
+    ),
+    "nt_extra_large_fix_only": (
+        "Run only extra_large_fix to verify the fix works",
+        SizeComparisonConfig(
+            model_type="nt",
+            student_model_type="bpnet",
+            sizes=["extra_large_fix"],
+            tasks=["splice_sites_all"],
+            seeds=DEFAULT_SEEDS,
+            wandb_project="OmegaGenome-ExtraLarge-Fix",
+        ),
+    ),
+    # ================================================================
+    # SCALING LAW EXPERIMENTS: Verify proper scaling behavior
+    # ================================================================
+    "nt_scaling_law_verification": (
+        "Verify scaling law with fixed models (excludes broken extra_large)",
+        SizeComparisonConfig(
+            model_type="nt",
+            student_model_type="bpnet",
+            sizes=MODEL_SIZES_SCALING,
+            tasks=["splice_sites_all"],
+            seeds=DEFAULT_SEEDS,
+            wandb_project="OmegaGenome-Scaling-Law",
+        ),
+    ),
+    # ================================================================
+    # ORIGINAL EXPERIMENTS (preserved for backward compatibility)
+    # ================================================================
     "nt_size_comparison-xxs-xxl": (
         "Compare BPNet sizes using NT teacher with task-specific best hyperparams",
         SizeComparisonConfig(
@@ -358,6 +428,20 @@ experiment_configs = {
             sizes=["pico", "ultra_tiny", "extra_tiny", "tiny"],
             tasks=ALL_TASKS,
             seeds=[42, 123, 456],
+        ),
+    ),
+    # ================================================================
+    # MULTI-TASK EXPERIMENTS with extra_large_fix
+    # ================================================================
+    "nt_extra_large_fix_all_tasks": (
+        "Run extra_large_fix on all 18 genomic tasks",
+        SizeComparisonConfig(
+            model_type="nt",
+            student_model_type="bpnet",
+            sizes=["extra_large_fix"],
+            tasks=ALL_TASKS,
+            seeds=[42, 123, 456],
+            wandb_project="OmegaGenome-ExtraLarge-Fix-AllTasks",
         ),
     ),
 }
