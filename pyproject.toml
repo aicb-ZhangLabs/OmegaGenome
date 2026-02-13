@@ -1,0 +1,102 @@
+[project]
+name = "omega-genome"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "ipython>=9.6.0",
+    "nntool==1.8.3",
+    "numpy==1.26.4",
+    "pydantic==2.10.6",
+    "scikit-learn>=1.7.2",
+    "tyro>=0.9.33",
+]
+
+[project.optional-dependencies]
+default = [
+    "torch==2.6.0",
+    "transformers==4.57.1",
+    "peft>=0.17.1",
+    "accelerate==1.10.1",
+    "datasets>=4.2.0",
+    "einops>=0.8.1",
+    "mamba-ssm==2.2.4",
+]
+aido_dna = [
+    "torch==2.6.0",
+    "modelgenerator>=0.1.2",
+]
+caduceus = [
+    "torch==2.6.0",
+]
+
+[tool.uv]
+conflicts = [
+    [
+      { extra = "default" },
+      { extra = "aido_dna" },
+      { extra = "caduceus" },
+    ],
+]
+no-build-isolation-package = ['mamba-ssm']
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu118", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+    { index = "pytorch-cu118", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+nntool = [{ index = "nntool", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu118"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true
+
+[[tool.uv.index]]
+name = "nntool"
+url = "https://jhliu17.github.io/nntool/wheel/"
+format = "flat"
+
+[tool.ruff]
+# Specify the Python version you're targeting
+target-version = "py311"
+
+# Set the maximum line length
+line-length = 100
+
+# Enable auto-fixing for specific rule categories
+fix = true
+
+# Directories to include/exclude
+include = ["*.py", "*.pyi", "**/pyproject.toml"]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.1",
+]
