@@ -89,7 +89,7 @@ mkdir -p "/extra/zhanglab0/INDV/pengchx3/OmegaGenome_different_version/OmegaGeno
 
 ### Finetuning
 
-### Distiallation
+### Distillation
 
 See help message
 
