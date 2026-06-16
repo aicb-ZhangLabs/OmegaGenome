@@ -117,7 +117,20 @@ selecting "H3K4me3 in K562" needs an accession->(assay, biosample) join via the 
 NTv3's `ntv3_tracks_pipeline.py`). That join is the one data step before training the subset.
 
 ## 5. Status
-- Branch `ntv3-multitrack`: scaffold + tests committed (regressor, teacher loader w/ gated bypass
-  + HF token, distill loss, dataset, per-track Pearson; 6 test groups / 32 asserts pass).
-- Next: ENCODE accession join for the v1 track subset, target-generation on NTv3-650M (H100), then
-  the trainer loop + config for the per-bp distillation result.
+- Branch `ntv3-multitrack`: full pipeline + tests committed (regressor, teacher loader w/ gated
+  bypass + HF token, UCSC window fetch, target-gen, trainer w/ per-track z-norm, per-track Pearson;
+  44 test assertions). v1 K562 9-track manifest ENCODE-joined.
+- Bugs found & fixed via runs: (1) bf16 dtype crash in NTv3-650M -> fp32 default + autocast;
+  (2) `build_teacher_targets` equal-length guard.
+
+### v1 first result (2026-06-16) — CPU 100M proof: FAILED, root-caused, fixed
+- Tiny CPU proof (100M teacher, 48 train/16 test windows x 4kb): **mean test Pearson -0.045**
+  (negative). NOT a code bug.
+- Diagnosed via train-vs-test curve: TRAIN Pearson rises 0.24->0.47 while TEST stays ~0 ->
+  **overfitting from data starvation** (48 windows can't generalize across genomic regions).
+  Alignment verified correct (student emits L=4096 -> interp to teacher L=1536, no transpose).
+  Per-track z-norm added (heterogeneous scales: DNase std 8.5 vs H3K9me3 std 0.43) but the real
+  fix is window count.
+- **Fix = scale up windows.** Queued: `235979` (100M, node-flexible, 2000/400 windows) and `235964`
+  (650M, voyager, 2000/400) — both use the normalized trainer. Awaiting free GPUs (cluster saturated).
+- Lesson: the 30-min CPU proof caught the failure before burning a voyager H100 — keep proofs small-first.
