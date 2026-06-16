@@ -70,6 +70,16 @@ Net new files (small): `config/.../ntv3.py` (teacher cfg), `src/model/bpnet_regr
 3. **Pick the representative subset** of NTv3 tasks for the revision (e.g. a few expression /
    chromatin tracks) rather than all 106.
 
+## 4b. Confirmed interface (probe, 2026-06-16)
+Loaded NTv3-100M-post locally via the gated-snapshot bypass (`prepare_local_snapshot` strips the
+`InstaDeepAI/ntv3_base_model--` auto_map prefix → loads the snapshot's local `.py` with
+`local_files_only`). One CPU forward on 1024 bp returned:
+- `bigwig_tracks_logits` = **`[B, L_out, T]` = `(1, 384, 7362)`** — tracks are the **last dim**
+  (7362 for human); subsetting via `index_select(-1, idx)` is correct.
+- **Resolution**: 1024 bp → 384 bins (U-Net downsampling), so align the student to the teacher's
+  `L_out` in the loss (`AdaptiveAvgPool1d`/interpolate), not a fixed `out_resolution`.
+- 650M default needs an HF token (gated) or its own local snapshot; runs on H100.
+
 ## 5. Status
 - Branch `ntv3-multitrack` created (worktree `code_ntv3/`). No code written yet — this is the
   understanding + design + cost-estimate plan (per "first understand" before implementing).
