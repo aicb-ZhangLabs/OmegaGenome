@@ -131,6 +131,18 @@ NTv3's `ntv3_tracks_pipeline.py`). That join is the one data step before trainin
   Alignment verified correct (student emits L=4096 -> interp to teacher L=1536, no transpose).
   Per-track z-norm added (heterogeneous scales: DNase std 8.5 vs H3K9me3 std 0.43) but the real
   fix is window count.
-- **Fix = scale up windows.** Queued: `235979` (100M, node-flexible, 2000/400 windows) and `235964`
-  (650M, voyager, 2000/400) — both use the normalized trainer. Awaiting free GPUs (cluster saturated).
+- **Fix = scale up windows** + per-track z-norm. Confirmed directionally:
+
+  | run | teacher | windows (tr/te) | student | mean test Pearson |
+  |---|---|---|---|---|
+  | CPU proof | 100M | 48 / 16 | small | **-0.045** (fail) |
+  | 235979 | 100M | 2000 / 400 | medium | **+0.172** (best; final 0.108) |
+  | 235981 | 100M | 8000 / 1500 | medium | queued |
+  | 235964 | 650M | 2000 / 400 | medium | queued (voyager) |
+
+  Best per-track at 100M/2000: H3K27me3 0.354, H3K4me1 0.213, H3K9me3 0.100; H3K4me3/H3K9ac ~0.03.
+  `best>final` => still mildly data-limited at 2000 windows; 8k run tests the window lever.
+- **Still preliminary, not paper-grade.** Levers left: more windows (genome affords ~190k 16kb
+  windows), bigger student, 650M teacher, and student-vs-*ground-truth* eval (needs ENCODE bigwigs +
+  pyBigWig) rather than student-vs-teacher fidelity.
 - Lesson: the 30-min CPU proof caught the failure before burning a voyager H100 — keep proofs small-first.
