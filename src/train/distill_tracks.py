@@ -21,9 +21,16 @@ from src.trainer.track_distill import _teacher_to_btl, align_student_to_teacher,
 from src.trainer.track_metrics import per_track_pearson
 
 
-def _load_split(path: str):
+def _load_raw(path: str):
     d = torch.load(path, weights_only=False)
-    return TrackDataset(d["sequences"], d["targets"], max_len=d["window"]), d["labels"]
+    return d["sequences"], d["targets"], d["labels"], d["window"]
+
+
+def _track_stats(targets):
+    """Per-track mean/std over (windows, positions) -> [1, 1, T] each."""
+    mu = targets.mean(dim=(0, 1), keepdim=True)
+    sd = targets.std(dim=(0, 1), keepdim=True).clamp_min(1e-6)
+    return mu, sd
 
 
 @torch.no_grad()
@@ -49,11 +56,20 @@ def main():
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--batch_size", type=int, default=8)
+    ap.add_argument("--no-normalize", action="store_true", help="disable per-track target z-norm")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    train_ds, labels = _load_split(os.path.join(args.data, "train.pt"))
-    test_ds, _ = _load_split(os.path.join(args.data, "test.pt"))
+    tr_seqs, tr_tgt, labels, window = _load_raw(os.path.join(args.data, "train.pt"))
+    te_seqs, te_tgt, _, _ = _load_raw(os.path.join(args.data, "test.pt"))
+    # Per-track z-normalization with TRAIN stats (heterogeneous track scales otherwise let the
+    # high-magnitude tracks dominate MSE). Pearson is scale-invariant, so the metric is unchanged;
+    # this only conditions training. Disable with --no-normalize.
+    if not args.no_normalize:
+        mu, sd = _track_stats(tr_tgt)
+        tr_tgt, te_tgt = (tr_tgt - mu) / sd, (te_tgt - mu) / sd
+    train_ds = TrackDataset(tr_seqs, tr_tgt, max_len=window)
+    test_ds = TrackDataset(te_seqs, te_tgt, max_len=window)
     T = len(labels)
     student = BPNetRegressor(BPNetRegressorConfig(num_tracks=T, model_size=args.model_size)).to(device)
     opt = torch.optim.Adam(student.parameters(), lr=args.lr)

@@ -12,9 +12,9 @@ import numpy as np
 import torch
 
 from src.data.ntv3_windows import tile_windows
-from src.data.track_dataset import build_teacher_targets
+from src.data.track_dataset import TrackDataset, build_teacher_targets
 from src.model.bpnet_regressor import BPNetRegressor, BPNetRegressorConfig
-from src.train.distill_tracks import _evaluate, _load_split
+from src.train.distill_tracks import _evaluate, _load_raw, _track_stats
 
 
 class _StubTeacher:
@@ -52,14 +52,24 @@ def test_load_and_eval():
             {"sequences": seqs, "targets": torch.randn(N, Lt, T), "labels": ["a", "b", "c"], "window": W},
             os.path.join(d, "test.pt"),
         )
-        ds, labels = _load_split(os.path.join(d, "test.pt"))
-        ok(len(ds) == N and labels == ["a", "b", "c"], "load_split len/labels")
-        ids, tgt = ds[0]
-        ok(tuple(ids.shape) == (W,) and tuple(tgt.shape) == (Lt, T), "load_split item shapes")
+        tgt_raw = torch.randn(N, Lt, T) * torch.tensor([8.0, 2.0, 0.4]) + 3.0  # heterogeneous scales
+        torch.save(
+            {"sequences": seqs, "targets": tgt_raw, "labels": ["a", "b", "c"], "window": W},
+            os.path.join(d, "test.pt"),
+        )
+        seqs2, tgt, labels, window = _load_raw(os.path.join(d, "test.pt"))
+        ok(len(seqs2) == N and labels == ["a", "b", "c"] and window == W, "load_raw fields")
+        # per-track z-norm should give ~unit std / ~zero mean per track
+        mu, sd = _track_stats(tgt)
+        z = (tgt - mu) / sd
+        ok(tuple(mu.shape) == (1, 1, T), "track_stats shape")
+        ok(bool((z.std(dim=(0, 1)) - 1.0).abs().max() < 0.05), "z-norm unit std per track")
+        ds = TrackDataset(seqs2, z, max_len=window)
+        ids, t0 = ds[0]
+        ok(tuple(ids.shape) == (W,) and tuple(t0.shape) == (Lt, T), "dataset item shapes")
         student = BPNetRegressor(BPNetRegressorConfig(num_tracks=T, model_size="small"))
         mean_r, per = _evaluate(student, ds, "cpu", batch_size=2)
-        ok(len(per) == T, "_evaluate per-track length")
-        ok(np.isfinite(mean_r), "_evaluate mean finite")
+        ok(len(per) == T and np.isfinite(mean_r), "_evaluate per-track + finite")
 
 
 def test_build_teacher_targets_guard():
