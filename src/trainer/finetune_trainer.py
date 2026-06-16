@@ -134,6 +134,7 @@ def finetune_teacher_task(
         weight_decay=ft.weight_decay,
         warmup_ratio=ft.warmup_ratio,
         lr_scheduler_type=ft.lr_scheduler_type,
+        optim=ft.optim,
         bf16=ft.bf16,
         gradient_checkpointing=ft.gradient_checkpointing,
         logging_steps=ft.log_every,

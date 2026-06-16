@@ -55,6 +55,7 @@ class TeacherFinetuneConfig:
     lr_scheduler_type: str = "cosine"
     max_len: int = 1024
     early_stopping_patience: int = 3  # in eval epochs; 0 disables
+    optim: str = "adamw_torch"  # HF optimizer; use "paged_adamw_8bit" for full-FT on <80GB GPUs (needs bitsandbytes)
 
     # --- precision / memory (defaults suit billion-scale teachers) ---
     bf16: bool = True
@@ -107,6 +108,31 @@ carbon_8b_finetune = replace(
     grad_accum=2,
 )
 
+# Full-parameter fine-tune (use_lora=False -> all 3B params train). Needs an 80GB H100 with
+# plain adamw_torch (fp32 optimizer states ~48GB); on a 48GB A6000 set optim="paged_adamw_8bit"
+# (requires bitsandbytes). Lower LR than LoRA, small batch + grad-accum for memory.
+carbon_3b_fullft = replace(
+    carbon_3b_finetune,
+    teacher_name="carbon_3b_fullft",
+    output_dir=f"{output_path}/teacher_finetune/carbon_3b_fullft",
+    use_lora=False,
+    batch_size=2,
+    grad_accum=8,        # effective batch 16, matches the LoRA runs
+    lr=2e-5,             # full-FT uses a lower LR than LoRA's 1e-4
+    optim="adamw_torch",
+)
+
+# One-task timing probe for full-FT (enhancers = representative 400bp/30k task).
+carbon_3b_fullft_debug = replace(
+    carbon_3b_fullft,
+    teacher_name="carbon_3b_fullft_debug",
+    output_dir=f"{output_path}/teacher_finetune/carbon_3b_fullft_debug",
+    task_names=["enhancers"],
+    epochs=1,
+    early_stopping_patience=0,
+    use_wandb=False,
+)
+
 # Registry consumed by the CLI. To add a teacher (e.g. AIDO.DNA-7B, GENERATOR-1B):
 #   aido_dna_7b_finetune = replace(carbon_3b_finetune, teacher_name="aido_dna_7b",
 #                                  teacher_config=aido_dna_7b, output_dir=...)
@@ -115,4 +141,6 @@ finetune_configs = {
     "carbon_3b": ("Fine-tune Carbon-3B (LoRA) on the 18-task NT benchmark", carbon_3b_finetune),
     "carbon_3b_debug": ("Carbon-3B single-task smoke test", carbon_3b_debug),
     "carbon_8b": ("Fine-tune Carbon-8B (LoRA) on the 18-task NT benchmark", carbon_8b_finetune),
+    "carbon_3b_fullft": ("Full-parameter fine-tune Carbon-3B (needs H100)", carbon_3b_fullft),
+    "carbon_3b_fullft_debug": ("Full-FT timing probe on one task", carbon_3b_fullft_debug),
 }
