@@ -27,6 +27,11 @@ class GLMConfig:
     output_hidden_states: bool = True  # For feature extraction
     trust_remote_code: bool = True
 
+    # Teacher-specific input formatting (e.g. Carbon needs the "<dna>" tag and
+    # add_special_tokens=False). No-op defaults keep existing teachers unaffected.
+    input_prefix: str = ""
+    add_special_tokens: bool = True
+
     # LoRA-specific fields
     base_model_path: Optional[str] = None  # Base model for LoRA adapters
     is_lora: Optional[bool] = None  # Auto-detect if None

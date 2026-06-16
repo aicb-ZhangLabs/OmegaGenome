@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from src.model.glm import GLMConfig
 
 
@@ -32,3 +34,16 @@ enformer = GLMConfig(
     trust_remote_code=True,
     output_hidden_states=True,
 )
+
+# Carbon teacher configs (HuggingFaceBio, autoregressive, Apache-2.0). HF-native; needs the
+# "<dna>" prefix and add_special_tokens=False for its hybrid 6-mer tokenizer.
+carbon_3b = GLMConfig(
+    model_name_or_path="HuggingFaceBio/Carbon-3B",
+    num_labels=2,
+    trust_remote_code=True,
+    output_hidden_states=True,
+    input_prefix="<dna>",
+    add_special_tokens=False,
+)
+carbon_8b = replace(carbon_3b, model_name_or_path="HuggingFaceBio/Carbon-8B")
+carbon_500m = replace(carbon_3b, model_name_or_path="HuggingFaceBio/Carbon-500M")

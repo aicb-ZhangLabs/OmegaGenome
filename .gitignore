@@ -19,3 +19,11 @@ output_bpnet_medium
 env.toml
 wandb/
 !src/data
+
+# carbon caches/venvs/outputs
+.venv_carbon*/
+.hf_cache/
+.uv_cache/
+.wandb_cache/
+wandb/
+slurm-*.out
