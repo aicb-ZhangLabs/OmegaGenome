@@ -1,0 +1,66 @@
+"""Orchestration tests for the NTv3 pipeline scripts (window tiling + distill_tracks load/eval).
+
+Synthetic cached data only -> no NTv3 download / no network. Covers the parts of the CLIs that
+were previously only syntax-checked. Run: python -m tests.test_ntv3_orchestration
+"""
+
+import os
+import sys
+import tempfile
+
+import numpy as np
+import torch
+
+from src.data.ntv3_windows import tile_windows
+from src.model.bpnet_regressor import BPNetRegressor, BPNetRegressorConfig
+from src.train.distill_tracks import _evaluate, _load_split
+
+_n = 0
+
+
+def ok(c, m):
+    global _n
+    assert c, "FAIL: " + m
+    _n += 1
+
+
+def test_tiling():
+    ok(tile_windows("chr1", 0, 1000, 100) == [("chr1", i * 100, (i + 1) * 100) for i in range(10)],
+       "non-overlapping tiling")
+    ok(len(tile_windows("chr1", 0, 1000, 100, n=3)) == 3, "n cap")
+    ok(tile_windows("chr1", 0, 1000, 300, stride=100)[:2] == [("chr1", 0, 300), ("chr1", 100, 400)],
+       "stride/overlap")
+    ok(tile_windows("chr1", 0, 50, 100) == [], "window > range -> empty")
+    ok(tile_windows("chr1", 100, 100 + 16384 * 2, 16384, n=2)[0] == ("chr1", 100, 16484),
+       "offset start")
+
+
+def test_load_and_eval():
+    with tempfile.TemporaryDirectory() as d:
+        N, Lt, T, W = 6, 48, 3, 512
+        seqs = ["ACGT" * (W // 4) for _ in range(N)]
+        torch.save(
+            {"sequences": seqs, "targets": torch.randn(N, Lt, T), "labels": ["a", "b", "c"], "window": W},
+            os.path.join(d, "test.pt"),
+        )
+        ds, labels = _load_split(os.path.join(d, "test.pt"))
+        ok(len(ds) == N and labels == ["a", "b", "c"], "load_split len/labels")
+        ids, tgt = ds[0]
+        ok(tuple(ids.shape) == (W,) and tuple(tgt.shape) == (Lt, T), "load_split item shapes")
+        student = BPNetRegressor(BPNetRegressorConfig(num_tracks=T, model_size="small"))
+        mean_r, per = _evaluate(student, ds, "cpu", batch_size=2)
+        ok(len(per) == T, "_evaluate per-track length")
+        ok(np.isfinite(mean_r), "_evaluate mean finite")
+
+
+if __name__ == "__main__":
+    failed = 0
+    for fn in [test_tiling, test_load_and_eval]:
+        try:
+            fn()
+            print(f"PASS  {fn.__name__}")
+        except Exception as e:
+            failed += 1
+            print(f"FAIL  {fn.__name__}: {e}")
+    print(f"\n{2 - failed}/2 passed, {_n} assertions")
+    sys.exit(1 if failed else 0)
