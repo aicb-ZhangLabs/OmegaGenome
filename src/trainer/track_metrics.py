@@ -21,9 +21,10 @@ def per_track_pearson(pred, target):
     p = np.transpose(pred, (1, 0, 2)).reshape(T, -1)  # [T, N*L]
     t = np.transpose(target, (1, 0, 2)).reshape(T, -1)
     rs = np.full(T, np.nan)
+    eps = 1e-8  # treat tracks constant up to float noise (e.g. all-zero) as undefined -> NaN
     for k in range(T):
         pk, tk = p[k], t[k]
-        if pk.std() > 0 and tk.std() > 0:
+        if pk.std() > eps and tk.std() > eps:
             rs[k] = float(np.corrcoef(pk, tk)[0, 1])
     mean_r = float(np.nanmean(rs)) if np.isfinite(rs).any() else float("nan")
     return mean_r, rs

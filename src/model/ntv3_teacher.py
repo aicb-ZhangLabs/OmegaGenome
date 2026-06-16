@@ -71,6 +71,8 @@ class NTv3TeacherConfig:
     species: str = "human"  # NTv3 is species-conditioned; "human" has 7362 bigwig tracks
     trust_remote_code: bool = True
     bf16: bool = True
+    # HF token for the gated NTv3 repos (650M etc.). Falls back to the HF_TOKEN env var.
+    hf_token_path: Optional[str] = "/home/pengchx3/text-dna/huggingface-token-0616.txt"
     # Optional subset of bigwig track indices to distill (human has 7362; a paper subset is
     # far smaller). None = all tracks for the species.
     track_subset: Optional[Sequence[int]] = None
@@ -88,18 +90,16 @@ class NTv3Teacher:
         # Local-snapshot bypass for the gated dynamic modeling files (no-op for HF repo ids).
         resolved = prepare_local_snapshot(config.model_name_or_path)
         local = os.path.isdir(resolved)
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            resolved, trust_remote_code=config.trust_remote_code, local_files_only=local
-        )
+        # HF token for gated repos (650M etc.); ignored for local_files_only loads.
+        token = os.environ.get("HF_TOKEN")
+        if not token and config.hf_token_path and os.path.exists(config.hf_token_path):
+            token = open(config.hf_token_path).read().strip()
+        kw = {"trust_remote_code": config.trust_remote_code, "local_files_only": local}
+        if token and not local:
+            kw["token"] = token
+        self.tokenizer = AutoTokenizer.from_pretrained(resolved, **kw)
         self.model = (
-            AutoModel.from_pretrained(
-                resolved,
-                trust_remote_code=config.trust_remote_code,
-                torch_dtype=dtype,
-                local_files_only=local,
-            )
-            .to(device)
-            .eval()
+            AutoModel.from_pretrained(resolved, torch_dtype=dtype, **kw).to(device).eval()
         )
 
     @property
