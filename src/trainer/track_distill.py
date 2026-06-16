@@ -39,7 +39,9 @@ def track_distill_loss(
 
     student: ``[B, T, L_student]`` (BPNetRegressor output).
     teacher: ``[B, L_teacher, T]`` (NTv3 ``bigwig_tracks_logits``); treated as a fixed target.
-    Returns a scalar. ``kind`` in {"mse", "poisson"} (poisson treats student as a log-rate).
+    Returns a scalar. ``kind`` in {"mse", "poisson", "pearson", "mse+pearson"}:
+    poisson treats student as a log-rate; pearson = 1 - mean per-(window,track) correlation along
+    position (directly optimizes the eval metric); "mse+pearson" sums both.
     """
     teacher = _teacher_to_btl(teacher).detach()  # [B, T, L_teacher]; never backprop into teacher
     if student.shape[1] != teacher.shape[1]:
@@ -52,4 +54,12 @@ def track_distill_loss(
     if kind == "poisson":
         # student = log-rate, teacher = non-negative target counts/signal
         return F.poisson_nll_loss(student, teacher, log_input=True, full=False)
+    if kind in ("pearson", "mse+pearson"):
+        # Pearson along the position axis, per (window, track); maximize -> 1 - mean corr.
+        s = student - student.mean(dim=-1, keepdim=True)
+        t = teacher - teacher.mean(dim=-1, keepdim=True)
+        num = (s * t).sum(dim=-1)
+        den = s.norm(dim=-1) * t.norm(dim=-1) + 1e-8
+        corr = (num / den).mean()
+        return (1.0 - corr) + (F.mse_loss(student, teacher) if kind == "mse+pearson" else 0.0)
     raise ValueError(f"unknown loss kind: {kind!r}")
