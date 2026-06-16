@@ -39,8 +39,15 @@ def build_teacher_targets(teacher, sequences, batch_size: int = 4):
     """Run an NTv3 teacher over ``sequences`` and stack its per-bp tracks: ``[N, L_teacher, T]``.
 
     ``teacher`` is anything with ``predict_tracks(list[str]) -> [b, L_teacher, T]`` (NTv3Teacher
-    or a stub). Targets are moved to CPU float and concatenated.
+    or a stub). Targets are moved to CPU float and concatenated. All sequences must share one
+    length so their per-bp outputs align (the windowing pipeline guarantees this).
     """
+    lengths = {len(s) for s in sequences}
+    if len(lengths) > 1:
+        raise ValueError(
+            f"build_teacher_targets requires equal-length sequences for aligned per-bp tracks; "
+            f"got {len(lengths)} distinct lengths {sorted(lengths)[:5]}..."
+        )
     chunks = []
     for i in range(0, len(sequences), batch_size):
         out = teacher.predict_tracks(sequences[i : i + batch_size])

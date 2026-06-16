@@ -70,7 +70,10 @@ class NTv3TeacherConfig:
     model_name_or_path: str = NTV3_650M_POST
     species: str = "human"  # NTv3 is species-conditioned; "human" has 7362 bigwig tracks
     trust_remote_code: bool = True
-    bf16: bool = True
+    # fp32 by default: NTv3's gated modeling code mixes a float32 tensor into a Linear, so a pure
+    # bf16 load crashes ("mat1/mat2 dtype mismatch"). bf16=True still works — predict_tracks runs
+    # it under autocast. fp32 650M inference fits comfortably on an H100.
+    bf16: bool = False
     # HF token for the gated NTv3 repos (650M etc.). Falls back to the HF_TOKEN env var.
     hf_token_path: Optional[str] = "/home/pengchx3/text-dna/huggingface-token-0616.txt"
     # Optional subset of bigwig track indices to distill (human has 7362; a paper subset is
@@ -130,7 +133,10 @@ class NTv3Teacher:
             return_tensors="pt",
         ).to(self.device)
         species_ids = self.model.encode_species(species).to(self.device)
-        out = self.model(input_ids=batch["input_ids"], species_ids=species_ids)
+        # bf16 load mixes dtypes inside the gated modeling code; autocast reconciles them.
+        use_amp = self.config.bf16 and self.device != "cpu"
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=use_amp):
+            out = self.model(input_ids=batch["input_ids"], species_ids=species_ids)
         tracks = out.bigwig_tracks_logits
         if self.config.track_subset is not None:
             idx = torch.as_tensor(list(self.config.track_subset), device=tracks.device)

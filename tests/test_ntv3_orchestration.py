@@ -12,8 +12,17 @@ import numpy as np
 import torch
 
 from src.data.ntv3_windows import tile_windows
+from src.data.track_dataset import build_teacher_targets
 from src.model.bpnet_regressor import BPNetRegressor, BPNetRegressorConfig
 from src.train.distill_tracks import _evaluate, _load_split
+
+
+class _StubTeacher:
+    """predict_tracks -> [b, L, T] proportional to seq length (mimics NTv3's per-bp output)."""
+
+    def predict_tracks(self, seqs):
+        L, T = len(seqs[0]) // 4, 3
+        return torch.randn(len(seqs), L, T)
 
 _n = 0
 
@@ -53,14 +62,26 @@ def test_load_and_eval():
         ok(np.isfinite(mean_r), "_evaluate mean finite")
 
 
+def test_build_teacher_targets_guard():
+    teacher = _StubTeacher()
+    tgt = build_teacher_targets(teacher, ["ACGT" * 64] * 3, batch_size=2)  # equal length
+    ok(tuple(tgt.shape) == (3, 64, 3), "equal-length build shape")
+    try:
+        build_teacher_targets(teacher, ["ACGT" * 64, "ACGT" * 65], batch_size=1)
+        ok(False, "unequal lengths must raise")
+    except ValueError:
+        ok(True, "unequal lengths raise ValueError")
+
+
 if __name__ == "__main__":
     failed = 0
-    for fn in [test_tiling, test_load_and_eval]:
+    fns = [test_tiling, test_load_and_eval, test_build_teacher_targets_guard]
+    for fn in fns:
         try:
             fn()
             print(f"PASS  {fn.__name__}")
         except Exception as e:
             failed += 1
             print(f"FAIL  {fn.__name__}: {e}")
-    print(f"\n{2 - failed}/2 passed, {_n} assertions")
+    print(f"\n{len(fns) - failed}/{len(fns)} passed, {_n} assertions")
     sys.exit(1 if failed else 0)
