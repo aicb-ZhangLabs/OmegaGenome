@@ -80,8 +80,44 @@ Loaded NTv3-100M-post locally via the gated-snapshot bypass (`prepare_local_snap
   `L_out` in the loss (`AdaptiveAvgPool1d`/interpolate), not a fixed `out_resolution`.
 - 650M default needs an HF token (gated) or its own local snapshot; runs on H100.
 
+## 4c. Track subset — recommendation (chosen to fix the major revision)
+
+Picked to answer specific reviewer points, not just "interesting biology." One NTv3 multi-track
+distillation experiment hits four concerns at once:
+
+| Reviewer point | How this answers it |
+|---|---|
+| **R1.1a** "classification, not numeric inference (e.g. histone mark signals)" | per-bp **quantitative signal** regression, led by the **same histone marks** as our classification benchmark |
+| **R1.1b** "resolution not very high" | NTv3 + student are **base-resolution** |
+| **R1.1c** "one task per data type, not per cell type" | same assays across **multiple cell types** |
+| **R2.1a** "use strong billion-scale gLM teachers" | teacher is **NTv3** (SOTA seq-to-function FM) |
+
+Track families mirror the canonical Enformer/Borzoi readouts (CAGE / DNase / ATAC / histone ChIP
+/ RNA-seq), scored by **per-track Pearson** — the field-standard metric reviewers know.
+
+**Recommended subset (tiered):**
+- **v1 (proof, K562 only):** the 6 canonical histone marks H3K4me3 (active promoters), H3K27ac
+  (active enhancers), H3K4me1 (primed enhancers), H3K27me3 (Polycomb), H3K36me3 (gene bodies),
+  H3K9me3 (heterochromatin) — *the same marks as our classification tasks, now as signal* — plus
+  DNase-seq + CAGE. ~8 tracks. Direct R1.1a rebuttal.
+- **v2 (full, per cell type):** same panel across K562 / GM12878 / HepG2 (+ ATAC, RNA-seq where
+  available). ~25-35 tracks. Adds the per-cell-type axis (R1.1c).
+
+Enabled rebuttal: *"Addressing the concern that our tasks were classification rather than
+quantitative inference, we extend OmegaGenome to base-resolution, multi-cell-type signal
+prediction by distilling NTv3 across histone-mark, accessibility, and transcription tracks;
+compact students retain X% of NTv3's per-track Pearson at Y x fewer parameters."*
+
+**Optional complementary task:** NTv3's 21 named BED annotation tracks (protein_coding_gene, exon,
+splice donor/acceptor, CTCF-bound, enhancer/promoter tissue-specific, UTRs, ...) — readable, no
+metadata join needed — a per-bp genome-annotation task for breadth.
+
+**Impl note:** NTv3's 7362 human bigwig tracks are named only by ENCODE accession (`ENCSR...`), so
+selecting "H3K4me3 in K562" needs an accession->(assay, biosample) join via the ENCODE API (or
+NTv3's `ntv3_tracks_pipeline.py`). That join is the one data step before training the subset.
+
 ## 5. Status
-- Branch `ntv3-multitrack` created (worktree `code_ntv3/`). No code written yet — this is the
-  understanding + design + cost-estimate plan (per "first understand" before implementing).
-- Next: resolve data access (#1), then scaffold the loader + `BPNetRegressor` + one probe task to
-  measure real cost, then extrapolate to the chosen subset.
+- Branch `ntv3-multitrack`: scaffold + tests committed (regressor, teacher loader w/ gated bypass
+  + HF token, distill loss, dataset, per-track Pearson; 6 test groups / 32 asserts pass).
+- Next: ENCODE accession join for the v1 track subset, target-generation on NTv3-650M (H100), then
+  the trainer loop + config for the per-bp distillation result.
