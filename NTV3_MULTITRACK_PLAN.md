@@ -136,12 +136,27 @@ NTv3's `ntv3_tracks_pipeline.py`). That join is the one data step before trainin
   | run | teacher | windows (tr/te) | student | mean test Pearson |
   |---|---|---|---|---|
   | CPU proof | 100M | 48 / 16 | small | **-0.045** (fail) |
-  | 235979 | 100M | 2000 / 400 | medium | **+0.172** (best; final 0.108) |
-  | 235981 | 100M | 8000 / 1500 | medium | queued |
+  | 235979 | 100M | 2000 / 400 | medium | **+0.172** |
+  | 235981 | 100M | 8000 / 1500 | medium | **+0.221** |
+  | 236263 | 100M | 8000 / 1500 | **dilated** | queued |
   | 235964 | 650M | 2000 / 400 | medium | queued (voyager) |
 
-  Best per-track at 100M/2000: H3K27me3 0.354, H3K4me1 0.213, H3K9me3 0.100; H3K4me3/H3K9ac ~0.03.
-  `best>final` => still mildly data-limited at 2000 windows; 8k run tests the window lever.
+  Window scaling helps: 0.172 (2k) -> 0.221 (8k). Best per-track at 100M/2000: H3K27me3 0.354,
+  H3K4me1 0.213, H3K9me3 0.100; H3K4me3/H3K9ac ~0.03.
+
+### Loss x architecture ablation (cached targets, 800 windows, 30 ep)
+  | loss | arch | params | best test Pearson |
+  |---|---|---|---|
+  | mse | medium | 0.46M | 0.202 |
+  | mse | **large** | 1.8M | **0.240** |
+  | poisson | medium | 0.46M | 0.213 |
+  | pearson | medium | 0.46M | 0.155 |
+  | mse+pearson | medium | 0.46M | 0.168 |
+
+  **Capacity is the main lever** (large > medium, +0.04). **Loss is minor**: poisson ~ mse (slight
+  poisson edge, matches count-like data); the correlation loss *hurt* (refuted the hypothesis that a
+  metric-aligned loss would help). => the new **DilatedTrackNet** (RF ~32kb, full-window context)
+  is the principled next step beyond just adding channels; job 236263 tests it on the 8k targets.
 - **Still preliminary, not paper-grade.** Levers left: more windows (genome affords ~190k 16kb
   windows), bigger student, 650M teacher, and student-vs-*ground-truth* eval (needs ENCODE bigwigs +
   pyBigWig) rather than student-vs-teacher fidelity.
