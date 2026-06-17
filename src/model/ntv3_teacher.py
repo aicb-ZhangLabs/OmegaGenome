@@ -20,7 +20,9 @@ NTV3_INPUT_MULTIPLE = 128  # NTv3 requires input length a multiple of 128
 
 # Known checkpoints (override model_name_or_path to point elsewhere):
 NTV3_650M_POST = "InstaDeepAI/NTv3_650M_post"   # default teacher (HF; gated -> needs HF token)
-NTV3_100M_POST_LOCAL = "/extra/zhanglab0/INDV/pengchx3/ntv3_local/100m_post"  # quick-test snapshot
+# quick-test snapshot on the galaxy SSD (NOT /extra). Path is the sshfs mount on laniakea/voyager;
+# on galaxy natively it's /srv/disk00/sshfs/pengchx3/ntv3_local/100m_post (sbatches resolve per node).
+NTV3_100M_POST_LOCAL = "/tmp/galaxy_srv_disk00/pengchx3/ntv3_local/100m_post"
 
 _GATED_PREFIX = "InstaDeepAI/ntv3_base_model--"
 

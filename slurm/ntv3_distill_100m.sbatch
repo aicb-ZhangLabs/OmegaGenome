@@ -21,10 +21,11 @@ HOME_HF=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.hf_cache
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" TRANSFORMERS_CACHE="$HOME_HF/hub" TOKENIZERS_PARALLELISM=false
 
 SSD=/tmp/galaxy_srv_disk00/pengchx3
-if mountpoint -q "$SSD" 2>/dev/null; then OUT="$SSD/ntv3_targets/v1_100m"; else OUT="$REPO/.ntv3_run/v1_100m"; fi
+mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3   # galaxy-native path
+OUT="$SSD/ntv3_targets/v1_100m"
 mkdir -p "$OUT"; echo "outputs -> $OUT"
 PY=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
-M100=/extra/zhanglab0/INDV/pengchx3/ntv3_local/100m_post
+M100="$SSD/ntv3_local/100m_post"   # 100M snapshot on the SSD (not /extra)
 
 echo "=== 1. generate NTv3-100M per-bp targets ==="
 "$PY" -m src.train.ntv3_gen_targets --model "$M100" --out "$OUT" \
