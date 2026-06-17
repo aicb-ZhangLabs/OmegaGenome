@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader
 
 from src.data.track_dataset import TrackDataset
 from src.model.bpnet_regressor import BPNetRegressor, BPNetRegressorConfig
+from src.model.dilated_track_net import DilatedTrackNet, DilatedTrackNetConfig
 from src.trainer.track_distill import _teacher_to_btl, align_student_to_teacher, track_distill_loss
 from src.trainer.track_metrics import per_track_pearson
 
@@ -34,12 +35,14 @@ def _track_stats(targets):
 
 
 @torch.no_grad()
-def _evaluate(student, ds, device, batch_size):
+def _evaluate(student, ds, device, batch_size, loss_kind="mse"):
     """Per-track Pearson between student and teacher tracks on a dataset."""
     student.eval()
     preds, tgts = [], []
     for ids, tgt in DataLoader(ds, batch_size=batch_size):
         out = student(ids.to(device))  # [B, T, Ls]
+        if loss_kind == "poisson":
+            out = out.exp()  # student emits a log-rate under poisson; correlate the rate itself
         teacher = _teacher_to_btl(tgt.to(device))  # [B, T, Lt]
         out = align_student_to_teacher(out, teacher.shape[-1])  # [B, T, Lt]
         preds.append(out.cpu().numpy())
@@ -57,7 +60,13 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--batch_size", type=int, default=8)
     ap.add_argument("--no-normalize", action="store_true", help="disable per-track target z-norm")
+    ap.add_argument("--student", choices=["bpnet", "dilated"], default="bpnet")
+    ap.add_argument("--loss", choices=["mse", "poisson", "pearson", "mse+pearson"], default="mse")
+    ap.add_argument("--hidden", type=int, default=256, help="dilated student channels")
+    ap.add_argument("--n_blocks", type=int, default=14, help="dilated student blocks (sets receptive field)")
     args = ap.parse_args()
+    if args.loss == "poisson" and not args.no_normalize:
+        raise SystemExit("poisson needs raw (non-negative) targets; pass --no-normalize with --loss poisson")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tr_seqs, tr_tgt, labels, window = _load_raw(os.path.join(args.data, "train.pt"))
@@ -71,7 +80,14 @@ def main():
     train_ds = TrackDataset(tr_seqs, tr_tgt, max_len=window)
     test_ds = TrackDataset(te_seqs, te_tgt, max_len=window)
     T = len(labels)
-    student = BPNetRegressor(BPNetRegressorConfig(num_tracks=T, model_size=args.model_size)).to(device)
+    if args.student == "dilated":
+        student = DilatedTrackNet(
+            DilatedTrackNetConfig(num_tracks=T, hidden=args.hidden, n_blocks=args.n_blocks)
+        ).to(device)
+        print(f"student=dilated hidden={args.hidden} blocks={args.n_blocks} "
+              f"receptive_field={student.receptive_field} (window={window})")
+    else:
+        student = BPNetRegressor(BPNetRegressorConfig(num_tracks=T, model_size=args.model_size)).to(device)
     opt = torch.optim.Adam(student.parameters(), lr=args.lr)
     loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True)
 
@@ -82,18 +98,20 @@ def main():
         tot = 0.0
         for ids, tgt in loader:
             opt.zero_grad()
-            loss = track_distill_loss(student(ids.to(device)), tgt.to(device), "mse")
+            loss = track_distill_loss(student(ids.to(device)), tgt.to(device), args.loss)
             loss.backward()
             opt.step()
             tot += loss.item()
-        mean_r, _ = _evaluate(student, test_ds, device, args.batch_size)
-        print(f"epoch {ep:3d}  train_mse={tot / len(loader):.4f}  test_mean_pearson={mean_r:.4f}")
+        mean_r, _ = _evaluate(student, test_ds, device, args.batch_size, args.loss)
+        print(f"epoch {ep:3d}  train_loss={tot / len(loader):.4f}  test_mean_pearson={mean_r:.4f}")
         if mean_r > best:
             best = mean_r
             torch.save(student.state_dict(), os.path.join(args.out, "student_best.pt"))
 
-    mean_r, per = _evaluate(student, test_ds, device, args.batch_size)
+    mean_r, per = _evaluate(student, test_ds, device, args.batch_size, args.loss)
     result = {
+        "student": args.student,
+        "loss": args.loss,
         "model_size": args.model_size,
         "n_tracks": T,
         "labels": labels,
