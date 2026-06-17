@@ -163,3 +163,45 @@ NTv3's `ntv3_tracks_pipeline.py`). That join is the one data step before trainin
   windows), bigger student, 650M teacher, and student-vs-*ground-truth* eval (needs ENCODE bigwigs +
   pyBigWig) rather than student-vs-teacher fidelity.
 - Lesson: the 30-min CPU proof caught the failure before burning a voyager H100 — keep proofs small-first.
+
+## 6. Student architecture: BPNet → DilatedTrackNet (design logic)
+
+Code: `src/model/bpnet_regressor.py` (v1 student) and `src/model/dilated_track_net.py` (the upgrade).
+Tests: `tests/test_dilated_track_net.py` (10 angles / 24 asserts, incl. empirical receptive field).
+
+**v1 student (BPNetRegressor) and why it caps out.** It reuses the BPNetClassifier dilated-conv
+stem and swaps the global-pool+linear head for a **1×1 conv head** → per-bp `[T, L]`. Because the
+head is 1×1, each output position's tracks are predicted from **only the stem's receptive field (RF)**:
+- `medium`: dilations capped at 2⁶=64 → RF ≈ **a few hundred bp**
+- `large`: dilations capped at 2⁸=256 → RF ≈ **1–2 kb**
+
+Both are **far below the 16 kb window**, so marks that depend on long-range context can't be modeled.
+The data agree: across every run, **broad marks learn** (H3K27me3 ~0.36, H3K4me1 ~0.21) while
+**sharp/locally-defined marks stay flat** (H3K4me3 ~0.02, H3K9ac ~0.02). The ablation also showed
+capacity helps (large 0.240 > medium 0.202) but that's just more channels — it does **not** extend RF.
+
+**The change — DilatedTrackNet.** Keep the base-resolution, per-bp, 1×1-head design (so it stays a
+drop-in: `input_ids [B,L]` → `[B,T,L]`), but replace the shallow stem with a **deep stack of dilated
+residual blocks** whose dilation doubles each layer:
+
+    one-hot(4) → stem(conv k=15) → [ResBlock(dilation 2^i) for i in 0..13] → 1×1 track head
+    ResBlock = Conv(k=3,dilation d) → BN → GELU → Conv(1×1) → BN → (+ residual) → GELU
+
+Receptive field (the whole point):
+
+    RF = 1 + (stem_k − 1) + Σ_blocks (k − 1)·dilation
+       = 1 + 14 + 2·(1+2+4+…+8192) = 1 + 14 + 2·16383 ≈ **32.8 kb  ⟹ covers the 16 kb window**
+
+**Why this design (vs alternatives).**
+- *Just a bigger BPNet* — adds channels, not RF; ablation showed capacity alone plateaus.
+- *Dilated residual tower (chosen)* — RF grows **exponentially with depth** at base resolution,
+  cheap, residual makes the depth trainable; proven lineage (WaveNet/BPNet/Borzoi trunk). Keeps
+  base-res output to match NTv3's per-bp targets, and the same I/O contract → swappable via `--student`.
+- *U-Net* — also viable (NTv3 itself is one) and more memory-efficient at long range; deferred as a
+  later option if base-res memory becomes the bottleneck.
+- *Transformer (Enformer-style)* — best long-range but heavier and outputs coarse bins; overkill for
+  a compact student.
+
+**Hypothesis it tests (not yet confirmed — job was cancelled mid-run):** full-window RF should lift
+the *sharp* marks (H3K4me3/H3K9ac) that the small-RF BPNet can't localize, while holding the broad
+marks. Result pending rerun (`sbatch slurm/ntv3_distill_dilated.sbatch`, reuses cached 8k targets).
