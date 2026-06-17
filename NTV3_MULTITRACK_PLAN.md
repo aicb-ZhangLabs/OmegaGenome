@@ -138,11 +138,13 @@ NTv3's `ntv3_tracks_pipeline.py`). That join is the one data step before trainin
   | CPU proof | 100M | 48 / 16 | small | **-0.045** (fail) |
   | 235979 | 100M | 2000 / 400 | medium | **+0.172** |
   | 235981 | 100M | 8000 / 1500 | medium | **+0.221** |
-  | 236263 | 100M | 8000 / 1500 | **dilated** | queued |
-  | 235964 | 650M | 2000 / 400 | medium | queued (voyager) |
+  | 235964 | **650M** | 2000 / 400 | medium | **+0.169** |
+  | 236263 | 100M | 8000 / 1500 | **dilated** | cancelled mid-run (rerun pending) |
 
-  Window scaling helps: 0.172 (2k) -> 0.221 (8k). Best per-track at 100M/2000: H3K27me3 0.354,
-  H3K4me1 0.213, H3K9me3 0.100; H3K4me3/H3K9ac ~0.03.
+  **Teacher size does NOT help**: 650M@2k (0.169) ~ 100M@2k (0.172). **Data is the lever**:
+  100M@8k (0.221) >> both @2k. Consistent per-track pattern (650M): broad marks learn (H3K27me3
+  0.364, H3K4me1 0.208, H3K9me3 0.148) but sharp marks don't (H3K4me3 0.016, H3K9ac 0.021) ->
+  motivates the dilated/long-RF student (rerun pending, see RESUME_JOBS.md).
 
 ### Loss x architecture ablation (cached targets, 800 windows, 30 ep)
   | loss | arch | params | best test Pearson |
