@@ -49,9 +49,14 @@ def prepare_bigwigs(manifest: dict, cache_dir: str) -> List[str]:
             missing.append(t["label"])
             continue
         dst = os.path.join(cache_dir, f"{t['label']}__{facc}.bigWig")
+        # Atomic download: fetch to a .part temp then os.replace into place. A present `dst` is then
+        # guaranteed complete — so a concurrent reader (or a second downloader) can never open a
+        # half-written file (the race that crashed pyBigWig.open with a size>0-but-truncated bigWig).
         if not (os.path.exists(dst) and os.path.getsize(dst) > 0):
             print(f"  downloading {t['label']} ({facc}) ...", flush=True)
-            urllib.request.urlretrieve(url, dst)
+            part = f"{dst}.part.{os.getpid()}"
+            urllib.request.urlretrieve(url, part)
+            os.replace(part, dst)
         paths.append(dst)
     if missing:
         print(f"  WARNING: no bigWig for {missing} -> those tracks score NaN", flush=True)
