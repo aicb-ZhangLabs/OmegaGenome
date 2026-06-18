@@ -93,7 +93,7 @@ def build_glm(config: GLMConfig):
             num_labels=config.num_labels,
             output_hidden_states=config.output_hidden_states,
             trust_remote_code=config.trust_remote_code,
-            torch_dtype=_dtype,
+            dtype=_dtype,
         )
 
         # Load LoRA adapter
@@ -115,7 +115,7 @@ def build_glm(config: GLMConfig):
             num_labels=config.num_labels,
             output_hidden_states=config.output_hidden_states,
             trust_remote_code=config.trust_remote_code,
-            torch_dtype=_dtype,
+            dtype=_dtype,
         )
 
     # Some autoregressive tokenizers (e.g. Carbon) define no pad token, which breaks batched
