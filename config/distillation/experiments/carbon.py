@@ -105,12 +105,13 @@ carbon_smoke_config = DistillationExperimentConfig(
 )
 
 # Registries (picked by name via tyro on the distill / distill_hyperparam CLIs).
+# Values are (description, config) tuples — tyro's overridable_config_cli indexes [1] for the config.
 experiment_configs = {
-    "carbon-smoke": carbon_smoke_config,
-    "carbon-raw": carbon_raw_config,
-    "carbon-l2norm": carbon_l2norm_config,
+    "carbon-smoke": ("Carbon->deploy_120k 1-task inline smoke (H3K4me3, 2 epochs)", carbon_smoke_config),
+    "carbon-raw": ("Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, raw MSE", carbon_raw_config),
+    "carbon-l2norm": ("Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, L2-norm MSE", carbon_l2norm_config),
 }
 hyperparam_experiment_configs = {
-    "carbon-base-raw": carbon_base_hyperparam_raw_config,
-    "carbon-base-l2norm": carbon_base_hyperparam_l2norm_config,
+    "carbon-base-raw": ("Carbon->deploy_120k base vanilla HP sweep (raw MSE)", carbon_base_hyperparam_raw_config),
+    "carbon-base-l2norm": ("Carbon->deploy_120k base vanilla HP sweep (L2-norm MSE)", carbon_base_hyperparam_l2norm_config),
 }
