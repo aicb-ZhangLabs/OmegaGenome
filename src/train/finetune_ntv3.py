@@ -146,10 +146,26 @@ def main():
                          name=f"{'lora' if args.use_lora else 'fullft'}-seq{args.sequence_length}")
 
     best_val = 0.0
+    start_step = 0
     best_path = os.path.join(args.out, "best_model.pth")
+    latest_path = os.path.join(args.out, "latest_state.pth")
+    # Resume (for --requeue / crash recovery): restore model+optimizer+scheduler+step+best_val.
+    # Pure bookkeeping — the per-step training math is unchanged; training continues its trajectory.
+    if os.path.exists(latest_path):
+        ckpt = torch.load(latest_path, map_location=device)
+        model.load_state_dict(ckpt["model"])
+        optimizer.load_state_dict(ckpt["optimizer"])
+        scheduler.load_state_dict(ckpt["scheduler"])
+        start_step, best_val = ckpt["step"], ckpt["best_val"]
+        print(f"RESUMED from {latest_path} at step {start_step} (best_val={best_val:.4f})", flush=True)
+
+    def _save_latest(step):
+        torch.save({"model": model.state_dict(), "optimizer": optimizer.state_dict(),
+                    "scheduler": scheduler.state_dict(), "step": step, "best_val": best_val}, latest_path)
+
     train_iter = iter(train_loader)
     model.train()
-    for step in range(args.num_steps_training):
+    for step in range(start_step, args.num_steps_training):
         optimizer.zero_grad()
         for _ in range(args.num_accumulation_gradient):
             try:
@@ -183,6 +199,7 @@ def main():
                 best_val = vm["mean/pearson"]
                 torch.save(model.state_dict(), best_path)
                 print(f"  new best val mean_pearson={best_val:.4f} -> saved", flush=True)
+            _save_latest(step + 1)  # periodic full-state checkpoint for resume (every validation)
             model.train()
 
     # final test with the best checkpoint (no test-set selection bias)

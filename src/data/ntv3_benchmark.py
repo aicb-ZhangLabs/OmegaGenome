@@ -71,7 +71,11 @@ def stage_to_local(data_dir: str, stage_dir: str, species: str = "human") -> str
             continue
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         if not (os.path.exists(dst) and os.path.getsize(dst) == os.path.getsize(src)):
-            shutil.copy2(src, dst)
+            # Atomic copy (copy to a pid-scoped temp then os.replace) so concurrent stagers — e.g.
+            # several seeds sharing one node-local dir — can't read or finish a half-written file.
+            tmp = f"{dst}.tmp.{os.getpid()}"
+            shutil.copy2(src, tmp)
+            os.replace(tmp, dst)
     return stage_dir
 
 
