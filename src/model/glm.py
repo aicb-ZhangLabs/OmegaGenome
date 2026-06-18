@@ -114,8 +114,15 @@ def build_glm(config: GLMConfig):
 
 
 def get_best_checkpoint(parent_path: str, task_name: str, model_type: str = "default"):
-    """Find best checkpoint for a task - supports both GLM and NT directory structures"""
+    """Find best checkpoint for a task - supports Carbon-LoRA, GLM, and NT directory structures."""
     import re
+
+    # Carbon-LoRA layout (finetune_teacher save): {parent}/{task}_finetuned/ with the PEFT adapter
+    # (adapter_config.json) directly inside — no `checkpoint-N` / `model-best_mcc` subdir. Checked
+    # first so the consolidated teacher dir (carbon_teachers/carbon_3b_lora) resolves correctly.
+    lora_dir = os.path.join(parent_path, f"{task_name}_finetuned")
+    if os.path.isfile(os.path.join(lora_dir, "adapter_config.json")):
+        return lora_dir, -1.0
 
     if "NT" in model_type or "nucleotide" in parent_path.lower():
         # NT checkpoint structure: finetuned_models/{task}_finetuned/model-best*mcc_score*

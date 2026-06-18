@@ -97,6 +97,7 @@ class DistillationModelConfig:
     temperature: float = 2.0
     zscore: bool = False
     kl_method: Literal["kl", "mse"] = "kl"
+    mse_normalize: bool = False  # L2-normalize features before MSE (cosine-style) vs raw MSE
 
     # Extended for new distillation methods
     distill_method: Literal["vanilla", "logit_standard", "dkd", "dist"] = "vanilla"
@@ -325,8 +326,10 @@ class DistillationModel(nn.Module):
         method = self.config.distill_method
 
         if method == "logit_standard":
-            # Logit Standardization (CVPR 2024) - FIXED
+            # Logit Standardization (CVPR 2024)
             kl = self._logit_standard_kl(s_logits, tlog)
+        elif method == "logit_standard_debug":
+            kl = self._logit_standard_kl_debug(s_logits, tlog)
         elif method == "dkd" and labels is not None:
             # Decoupled Knowledge Distillation (CVPR 2022) - IMPROVED
             kl = self._dkd_loss(s_logits, tlog, labels)
@@ -350,6 +353,25 @@ class DistillationModel(nn.Module):
             reduction="batchmean",
         ) * (temp**2)
         return kl
+
+    def _logit_standard_kl(self, s_logits, t_logits):
+        """Logit Standardization KD (CVPR 2024) — clean production implementation.
+
+        Z-score each logit vector with POPULATION std (paper Algorithm 1), divide by temperature,
+        then KL(softmax(student) || softmax(teacher)) * T². Numerically identical to the verbose
+        ``_logit_standard_kl_debug`` below (same mean, unbiased=False std + 1e-7 eps, /T, batchmean).
+        Reference: https://github.com/sunshangquan/logit-standardization-KD
+        """
+        temp = self.config.temperature
+
+        def standardize(z):
+            mu = z.mean(dim=-1, keepdim=True)
+            sigma = z.std(dim=-1, keepdim=True, unbiased=False) + 1e-7
+            return (z - mu) / sigma / temp
+
+        s_norm, t_norm = standardize(s_logits), standardize(t_logits)
+        return F.kl_div(F.log_softmax(s_norm, dim=-1), F.softmax(t_norm, dim=-1),
+                        reduction="batchmean") * (temp ** 2)
 
     def _logit_standard_kl_debug(self, s_logits, t_logits):
         """
@@ -520,6 +542,11 @@ class DistillationModel(nn.Module):
     def mse_term(self, s_feats, tfeats):
         if self.config.weight_mse > 0 and tfeats is not None:
             s_feats, tfeats = self.student_model.aligned_feats(s_feats, tfeats)
+            if self.config.mse_normalize:
+                # L2-normalize each feature vector before MSE: removes the scale mismatch between
+                # a 3B-LLM hidden state and the tiny conv's pooled features (cosine-style matching).
+                s_feats = F.normalize(s_feats, dim=-1)
+                tfeats = F.normalize(tfeats, dim=-1)
             mse = F.mse_loss(s_feats, tfeats)
             mse = self.config.weight_mse * mse
         else:
