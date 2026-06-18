@@ -105,8 +105,12 @@ def main():
         tr_ids, tr_tgt = prep("train", args.n_train)
         va_ids, va_tgt = prep("val", args.n_test)   # val for model selection (their split)
         te_ids, te_tgt = prep("test", args.n_test)  # test for final report only
+        # Atomic write (same rationale as prepare_bigwigs): save to a pid-scoped temp then os.replace,
+        # so a concurrent reader / second builder can never load a half-written .pt cache.
+        tmp = f"{cache}.tmp.{os.getpid()}"
         torch.save({"tr_ids": tr_ids, "tr_tgt": tr_tgt, "va_ids": va_ids, "va_tgt": va_tgt,
-                    "te_ids": te_ids, "te_tgt": te_tgt}, cache)
+                    "te_ids": te_ids, "te_tgt": te_tgt}, tmp)
+        os.replace(tmp, cache)
         print(f"cached prepared data -> {cache}")
     print(f"train {len(tr_ids)} / val {len(va_ids)} / test {len(te_ids)} windows")
 
