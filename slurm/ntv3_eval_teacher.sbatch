@@ -24,10 +24,10 @@ PV=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_po
 
 SSD=/tmp/galaxy_srv_disk00/pengchx3
 mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3   # galaxy-native path
-MODEL="${1:-InstaDeepAI/NTv3_650M_post}"
+MODEL="${1:-InstaDeepAI/NTv3_650M_post}"; [ $# -gt 0 ] && shift   # remaining args -> eval_teacher
 
 "$PV" -m src.train.eval_teacher --model "$MODEL" \
       --bigwig_dir "$SSD/ntv3_targets/ground_truth_bigwigs" \
       --out "$SSD/ntv3_targets/teacher_eval" \
-      --window 16384 --n_eval 200 --eval_chrom chr10 --batch_size 2
+      --window 16384 --n_eval 200 --eval_chrom chr10 --batch_size 2 "$@"
 echo "=== done: $SSD/ntv3_targets/teacher_eval/ ==="
