@@ -248,6 +248,8 @@ def distill(
         teacher_ckpt=teacher_ckpt,
         resume_from_checkpoint=config.resume_checkpoint,  # Read from config
         resume_from_epoch=config.resume_epoch,  # Read from config
+        input_prefix=getattr(config.teacher_config, "input_prefix", ""),
+        add_special_tokens=getattr(config.teacher_config, "add_special_tokens", True),
     )
 
     wandb.finish()

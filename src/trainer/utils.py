@@ -81,7 +81,9 @@ def _compute_cache_key(sequences: list, teacher_ckpt: str, max_length: int) -> s
     key_str = f"{len(sequences)}_{teacher_ckpt}_{max_length}"
     # Add first and last few sequences as sample
     if len(sequences) > 0:
-        sample = sequences[0] if len(sequences) == 1 else f"{sequences[0]}_{sequences[-1]}"
+        sample = (
+            sequences[0] if len(sequences) == 1 else f"{sequences[0]}_{sequences[-1]}"
+        )
         key_str += f"_{sample}"
 
     return hashlib.md5(key_str.encode()).hexdigest()
@@ -148,7 +150,11 @@ def _load_cache(
 
         # Load arrays
         logits = np.load(logits_path)
-        features = np.load(features_path) if needs_features and features_path.exists() else None
+        features = (
+            np.load(features_path)
+            if needs_features and features_path.exists()
+            else None
+        )
 
         return logits, features, metadata
 
@@ -157,7 +163,9 @@ def _load_cache(
         return None, None, None
 
 
-def _validate_cache(metadata: dict, sequences: list, teacher_ckpt: str, max_length: int) -> bool:
+def _validate_cache(
+    metadata: dict, sequences: list, teacher_ckpt: str, max_length: int
+) -> bool:
     """
     Validate that cached data matches current request.
 
@@ -196,6 +204,11 @@ def precompute_teacher_logits(
     max_length,
     needs_logits: bool = True,  # NEW: explicit flag for logits
     needs_features: bool = False,
+    # Teacher input formatting — MUST match how the teacher was fine-tuned (e.g. Carbon's "<dna>"
+    # prefix + add_special_tokens=False), else the teacher sees mis-formatted input and the distilled
+    # logits/features are garbage. Defaults ("" / True) are a no-op for the other teachers.
+    input_prefix: str = "",
+    add_special_tokens: bool = True,
     # NEW: Cache parameters
     project_path: Optional[str] = "",
     teacher_parent_dir: Optional[str] = "",
@@ -231,7 +244,9 @@ def precompute_teacher_logits(
     """
     cache_dir: Optional[Path] = None
     # ===== CACHING LOGIC =====
-    cache_enabled = use_cache and all([project_path, teacher_parent_dir, task_name, teacher_ckpt])
+    cache_enabled = use_cache and all(
+        [project_path, teacher_parent_dir, task_name, teacher_ckpt]
+    )
 
     if cache_enabled:
         # <--- FIX: Add asserts to narrow types from `str | None` to `str`
@@ -242,7 +257,9 @@ def precompute_teacher_logits(
         cache_dir = _get_cache_dir(project_path, teacher_parent_dir, task_name)
 
         # Try to load from cache
-        cached_logits, cached_features, metadata = _load_cache(cache_dir, needs_features)
+        cached_logits, cached_features, metadata = _load_cache(
+            cache_dir, needs_features
+        )
 
         if cached_logits is not None and metadata is not None:
             # Validate cache
@@ -261,22 +278,27 @@ def precompute_teacher_logits(
     features_list = []
     # Check if model is CaduceusFeatureExtractor
     is_caduceus = (
-        hasattr(model, "__class__") and model.__class__.__name__ == "CaduceusFeatureExtractor"
+        hasattr(model, "__class__")
+        and model.__class__.__name__ == "CaduceusFeatureExtractor"
     )
     is_enformer = (
-        hasattr(model, "__class__") and model.__class__.__name__ == "EnformerFeatureExtractor"
+        hasattr(model, "__class__")
+        and model.__class__.__name__ == "EnformerFeatureExtractor"
     )
     # Debug flag to print structure once
     debug_printed = False
 
     print(f"Computing teacher outputs for {len(sequences)} sequences...")
-    for i in tqdm(range(0, len(sequences), batch_size), total=len(sequences) // batch_size):
-        batch = sequences[i : i + batch_size]
+    for i in tqdm(
+        range(0, len(sequences), batch_size), total=len(sequences) // batch_size
+    ):
+        batch = [input_prefix + s for s in sequences[i : i + batch_size]]
         tok = tokenizer(
             batch,
             padding="max_length",
             truncation=True,
             max_length=max_length,
+            add_special_tokens=add_special_tokens,
             return_tensors="pt",
         )
         # input_ids = tok.input_ids.to(device)
@@ -290,7 +312,9 @@ def precompute_teacher_logits(
         if isinstance(tok, dict):
             # Enformer tokenizer returns a dict
             input_ids = tok["input_ids"].to(device)
-            attention_mask = tok.get("attention_mask", torch.ones_like(input_ids)).to(device)
+            attention_mask = tok.get("attention_mask", torch.ones_like(input_ids)).to(
+                device
+            )
         else:
             # HuggingFace tokenizers return BatchEncoding object
             input_ids = tok.input_ids.to(device)
@@ -357,7 +381,9 @@ def precompute_teacher_logits(
                             print(f"Debug - Num hidden layers: {len(hs)}")
                             print(f"Debug - Last hidden state shape: {hs[-1].shape}")
                         else:
-                            print(f"Debug - Hidden states shape (single tensor): {hs.shape}")
+                            print(
+                                f"Debug - Hidden states shape (single tensor): {hs.shape}"
+                            )
                     debug_printed = True
 
                 # Extract features
@@ -380,10 +406,14 @@ def precompute_teacher_logits(
                         actual_batch_size = logits.shape[0]
                         if actual_batch_size == 1:
                             # Single sequence: pool across sequence dimension
-                            hidden = last_hidden.mean(dim=0, keepdim=True)  # [1, hidden_size]
+                            hidden = last_hidden.mean(
+                                dim=0, keepdim=True
+                            )  # [1, hidden_size]
                         else:
                             # Multiple sequences but concatenated - need to split and pool
-                            seq_len_per_sample = last_hidden.shape[0] // actual_batch_size
+                            seq_len_per_sample = (
+                                last_hidden.shape[0] // actual_batch_size
+                            )
                             hidden_list = []
                             for b in range(actual_batch_size):
                                 start_idx = b * seq_len_per_sample
@@ -392,15 +422,21 @@ def precompute_teacher_logits(
                                 # Pool this sequence
                                 pooled = seq_hidden.mean(dim=0)  # [hidden_size]
                                 hidden_list.append(pooled)
-                            hidden = torch.stack(hidden_list)  # [batch_size, hidden_size]
+                            hidden = torch.stack(
+                                hidden_list
+                            )  # [batch_size, hidden_size]
                     else:
-                        raise ValueError(f"Unexpected hidden state shape: {last_hidden.shape}")
+                        raise ValueError(
+                            f"Unexpected hidden state shape: {last_hidden.shape}"
+                        )
                 else:
                     # Fallback: use pooler_output or logits
                     if hasattr(out, "pooler_output") and out.pooler_output is not None:
                         hidden = out.pooler_output
                     else:
-                        print("Warning: Cannot extract hidden states, using logits as features")
+                        print(
+                            "Warning: Cannot extract hidden states, using logits as features"
+                        )
                         hidden = logits
 
                 features_list.append(hidden.cpu())
@@ -518,6 +554,13 @@ class ExperimentTracker:
               -> "nt_distillation/different_size/bpnet/small/hyperparam"
 
         This identifies the unique experiment series and prevents conflicts.
+
+        NOTE: Handles trailing slashes correctly - paths like ".../hyperparam/" are normalized
+        to avoid empty string components that would break path depth calculations.
+
+        FIX (2026-01-29): Added filtering of empty strings to handle trailing slashes.
+        Without this fix, paths ending with "/" would produce an empty string component
+        when split, causing incorrect depth calculations in get_completed_experiments().
         """
         parts = output_dir.split(os.sep)
 
@@ -535,9 +578,14 @@ class ExperimentTracker:
         # Then the rest is the experiment type path
         remaining_parts = parts[output_idx + 1 :]
 
-        # Filter out date (DDMMYYYY) and time (HHMMSS) folders
+        # Filter out date (DDMMYYYY) and time (HHMMSS) folders AND empty strings
+        # Empty strings occur when path has trailing slash: "a/b/".split("/") -> ['a', 'b', '']
+        # This is the KEY FIX for the extra_large_fix_hyperparam_extend tracking issue
         experiment_parts = []
         for part in remaining_parts:
+            # Skip empty strings (from trailing slashes) - THIS IS THE FIX
+            if not part:
+                continue
             # Skip 8-digit date folders and 6-digit time folders
             if part.isdigit() and len(part) in [6, 8]:
                 continue
@@ -623,7 +671,9 @@ class ExperimentTracker:
                                 timestamp = parts[i + 1]
                                 if self._is_after_start_timestamp(timestamp):
                                     filtered_matches.append(match_path)
-                                    print(f"    ✓ Match (timestamp {timestamp}): {match_path}")
+                                    print(
+                                        f"    ✓ Match (timestamp {timestamp}): {match_path}"
+                                    )
                                 else:
                                     print(
                                         f"    ✗ Filtered out (timestamp {timestamp} < {self.start_timestamp})"
@@ -648,7 +698,9 @@ class ExperimentTracker:
         completed = set()
 
         if not os.path.exists(self.base_output_dir):
-            print(f"[WARNING] Base output directory does not exist: {self.base_output_dir}")
+            print(
+                f"[WARNING] Base output directory does not exist: {self.base_output_dir}"
+            )
             return completed
 
         # Pattern: {base_output_dir}/*/*/*/*/*/*/*/{completion_marker}
@@ -687,6 +739,11 @@ class ExperimentTracker:
                 # After output: date/time/{experiment_type_path}/task/exp_timestamp/uuid/hyperparam_str/marker
                 # Need to find where experiment_type_path ends and task begins
                 exp_type_parts = self.experiment_type_path.split(os.sep)
+                # FIX: Filter out empty strings from exp_type_parts to get correct depth
+                # This handles cases where experiment_type_path was derived from a path with trailing slash
+                exp_type_parts = [
+                    p for p in exp_type_parts if p
+                ]  # Remove empty strings
                 exp_type_depth = len(exp_type_parts)
 
                 # Skip: output (1) + date (1) + time (1) + experiment_type_path (N)
@@ -711,7 +768,9 @@ class ExperimentTracker:
                 print(f"    Error: {e}")
                 continue
 
-        print(f"\n[ExperimentTracker] Scan complete: {len(completed)} unique experiments found")
+        print(
+            f"\n[ExperimentTracker] Scan complete: {len(completed)} unique experiments found"
+        )
         return completed
 
     def generate_experiment_plan(
@@ -746,7 +805,9 @@ class ExperimentTracker:
             "completed": len(completed),
             "incomplete": len(incomplete),
             "completion_rate": (
-                f"{len(completed) / len(all_experiments) * 100:.1f}%" if all_experiments else "0%"
+                f"{len(completed) / len(all_experiments) * 100:.1f}%"
+                if all_experiments
+                else "0%"
             ),
         }
 
@@ -899,7 +960,9 @@ class ExperimentTracker:
             }
 
         # Find latest checkpoint
-        latest_ckpt = max(checkpoints, key=lambda p: int(p.split("epoch_")[1].split("_")[0]))
+        latest_ckpt = max(
+            checkpoints, key=lambda p: int(p.split("epoch_")[1].split("_")[0])
+        )
         latest_epoch = int(latest_ckpt.split("epoch_")[1].split("_")[0])
 
         return {
@@ -1001,9 +1064,9 @@ def load_caduceus_model(checkpoint_path, num_labels, device, best_ckpt_file=None
     config = AutoConfig.from_pretrained(checkpoint_path, trust_remote_code=True)
 
     # Create model from config
-    base_model = AutoModelForSequenceClassification.from_config(config, trust_remote_code=True).to(
-        device
-    )
+    base_model = AutoModelForSequenceClassification.from_config(
+        config, trust_remote_code=True
+    ).to(device)
 
     # Load weights
     if best_ckpt_file:
@@ -1040,7 +1103,9 @@ def find_best_caduceus_checkpoint(task_name, checkpoint_root):
     task_dir = os.path.join(checkpoint_root, f"{task_name}_caduceus_finetuned")
 
     if not os.path.isdir(task_dir):
-        print(f"Warning: Checkpoint directory not found for task '{task_name}' at {task_dir}")
+        print(
+            f"Warning: Checkpoint directory not found for task '{task_name}' at {task_dir}"
+        )
         return None, -1.0, None
 
     best_score = -1.0
@@ -1071,5 +1136,7 @@ def find_best_caduceus_checkpoint(task_name, checkpoint_root):
             print(f"Found Caduceus model for '{task_name}' at {task_dir}")
             return task_dir, 0.0, None
 
-        print(f"Warning: No valid Caduceus checkpoint found for task '{task_name}' in {task_dir}")
+        print(
+            f"Warning: No valid Caduceus checkpoint found for task '{task_name}' in {task_dir}"
+        )
         return None, -1.0, None

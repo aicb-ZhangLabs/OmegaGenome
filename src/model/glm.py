@@ -386,9 +386,19 @@ def evaluate_and_log_teacher(
     # Create dataset and dataloader
     test_dataset = SimpleTextDataset(X_test, y_test)
 
+    # Match the teacher's fine-tuning input format (e.g. Carbon's "<dna>" prefix + add_special_tokens
+    # =False); defaults ("" / True) are a no-op for the other teachers. Also ensure a pad token exists
+    # (autoregressive teachers ship none), else batched padding + classification pooling fail.
+    _prefix = getattr(config.teacher_config, "input_prefix", "")
+    _add_special = getattr(config.teacher_config, "add_special_tokens", True)
+    if teacher_tokenizer.pad_token is None and teacher_tokenizer.eos_token is not None:
+        teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
+    if getattr(teacher_model.config, "pad_token_id", None) is None and teacher_tokenizer.pad_token_id is not None:
+        teacher_model.config.pad_token_id = teacher_tokenizer.pad_token_id
+
     # Collate function for teacher
     def collate_fn(batch):
-        texts = [item["text"] for item in batch]
+        texts = [_prefix + item["text"] for item in batch]
         labels = [item["label"] for item in batch]
 
         encoded = teacher_tokenizer(
@@ -396,6 +406,7 @@ def evaluate_and_log_teacher(
             padding="max_length",
             truncation=True,
             max_length=config.trainer_config.max_len,
+            add_special_tokens=_add_special,
             return_tensors="pt",
         )
 

@@ -135,6 +135,8 @@ def train_distill_task(
     teacher_ckpt: str,  # <-- ADD THIS PARAMETER
     resume_from_checkpoint: Optional[str] = None,  # NEW parameter
     resume_from_epoch: int = 0,  # NEW parameter
+    input_prefix: str = "",  # teacher input formatting (Carbon "<dna>"); no-op default for others
+    add_special_tokens: bool = True,
 ):
     # move models to device
     model.to(config.device)
@@ -168,6 +170,8 @@ def train_distill_task(
             config.max_len,
             needs_logits=needs_logits,  # NEW: explicit logits flag
             needs_features=needs_features,
+            input_prefix=input_prefix,
+            add_special_tokens=add_special_tokens,
             # Cache parameters
             project_path=project_path,
             teacher_parent_dir=teacher_parent_dir,
