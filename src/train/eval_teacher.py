@@ -52,7 +52,14 @@ def main():
 
     print("preparing ground-truth bigWigs (download/cached) + reading signal ...")
     bw_paths = prepare_bigwigs(man, args.bigwig_dir)
-    truth = ground_truth_targets(bw_paths, coords, nbins=L_out)  # [N, L_out, T]
+    # NTv3-post CROPS its track outputs to the central 37.5% of the input at base resolution (per
+    # the official docs), so L_out == 0.375*window bp at 1bp. Align ground truth to that SAME central
+    # region at 1bp — otherwise predictions and truth are spatially misaligned (the 0.20-vs-0.75 bug).
+    offset = (args.window - L_out) // 2
+    crop_coords = [(c, s + offset, s + offset + L_out) for (c, s, _e) in coords]
+    print(f"NTv3 crop: L_out={L_out} = central {100*L_out/args.window:.1f}% of {args.window}bp "
+          f"(offset {offset}); ground truth read at 1bp over the crop")
+    truth = ground_truth_targets(bw_paths, crop_coords, nbins=L_out)  # [N, L_out, T] @ 1bp
 
     # per-track Pearson: NTv3 prediction vs measured signal; [N, L, T] -> [N, T, L]
     mean_r, per = per_track_pearson(pred.permute(0, 2, 1).numpy(), np.transpose(truth, (0, 2, 1)))

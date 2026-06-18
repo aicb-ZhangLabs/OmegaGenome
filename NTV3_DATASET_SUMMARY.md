@@ -65,6 +65,26 @@ signal** PCC (the teacher's quality), NOT our student-vs-teacher fidelity — di
 - **Data regime:** NTv3 fine-tunes **genome-wide** (Borzoi's regime ~whole genome), 32kb→1Mb context;
   longer context helps, especially expression/distal modalities. Benchmark = 106 tasks, 32kb, base-res.
 
+## 5c. OUR reproduction of the teacher numbers (2026-06-17) — VALIDATED
+
+Eval code: `src/train/eval_teacher.py` + `src/data/ground_truth.py` (ENCODE bigWig vs NTv3 prediction).
+**Key fix:** NTv3-post crops track outputs to the **central 37.5%** of the input (per the GitHub v3
+doc); aligning ground truth to that exact region at 1 bp took the mean from **0.197 -> 0.611**.
+
+NTv3-650M-post vs measured signal, K562, 400 chr8 windows (16 kb -> central 6144 bp @ 1 bp):
+
+| track | Pearson | track | Pearson |
+|---|---|---|---|
+| DNase-seq | **0.916** | H2AFZ | 0.481 |
+| H3K4me2 | 0.819 | H3K4me1 | 0.413 |
+| H3K4me3 | 0.807 | H3K36me3 | 0.279 |
+| H3K9ac | 0.779 | H3K9me3 | 0.257 |
+| H3K27me3 | 0.748 | **mean** | **0.611** |
+
+DNase 0.92 (paper ~0.75 on HepG2/IMR-90; ours K562) -> **paper reproduced**. This is the real teacher
+ceiling. NB: our BPNet distillation student reached only ~0.22 student-vs-teacher fidelity, so it
+captures a fraction of an excellent teacher -> big headroom for the dilated student + more data.
+
 ## 5. Practical notes
 - Track names are bare accessions, so selecting "H3K4me3 in K562" requires an
   **accession → (assay, biosample) join** (ENCODE portal API for `ENCSR…`; FANTOM5 sample table for
