@@ -88,10 +88,20 @@ def main():
     n_train_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"trainable params: {n_train_params/1e6:.2f}M  ({'LoRA' if args.lora else 'head-only' if args.freeze_backbone else 'full-FT'})")
 
-    tr_ids, tr_tgt = _prepare(teacher, bd, sample_windows(splits["train"], args.window, n=args.n_train),
-                              args.window, crop_len, log1p_targets=False)
-    te_ids, te_tgt = _prepare(teacher, bd, sample_windows(splits["test"], args.window, n=args.n_test),
-                              args.window, crop_len, log1p_targets=False)
+    # Cache the prepared (tokenized seqs + bigWig targets) — slow over sshfs, and identical across
+    # head-only/LoRA/full-FT/model-size (same NTv3 tokenizer + same windows/tracks). Shared by config.
+    cache = os.path.join(args.data_dir, f"_prep_w{args.window}_tr{args.n_train}_te{args.n_test}.pt")
+    if os.path.exists(cache):
+        print(f"loading prepared-data cache: {cache}")
+        d = torch.load(cache, weights_only=False)
+        tr_ids, tr_tgt, te_ids, te_tgt = d["tr_ids"], d["tr_tgt"], d["te_ids"], d["te_tgt"]
+    else:
+        tr_ids, tr_tgt = _prepare(teacher, bd, sample_windows(splits["train"], args.window, n=args.n_train),
+                                  args.window, crop_len, log1p_targets=False)
+        te_ids, te_tgt = _prepare(teacher, bd, sample_windows(splits["test"], args.window, n=args.n_test),
+                                  args.window, crop_len, log1p_targets=False)
+        torch.save({"tr_ids": tr_ids, "tr_tgt": tr_tgt, "te_ids": te_ids, "te_tgt": te_tgt}, cache)
+        print(f"cached prepared data -> {cache}")
     print(f"train {len(tr_ids)} / test {len(te_ids)} windows")
 
     params = [p for p in model.parameters() if p.requires_grad]
