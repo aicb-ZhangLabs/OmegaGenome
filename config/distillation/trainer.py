@@ -69,6 +69,7 @@ carbon_trainer_config = DistillTrainerConfig(
     batch_size=16,
     lr=1e-4,
     max_len=1000,
+    cache_base_dir=CARBON_OUTPUT_BASE,  # precompute logits/features cache on SSD, not /extra
 )
 carbon_hyperparam_trainer_config = DistillTrainerConfig(
     output_dir=f"{_CARBON_OUT}/hyperparam",
@@ -76,6 +77,7 @@ carbon_hyperparam_trainer_config = DistillTrainerConfig(
     epochs=200,
     batch_size=16,
     max_len=1000,
+    cache_base_dir=CARBON_OUTPUT_BASE,
 )
 carbon_debug_trainer_config = replace(carbon_trainer_config, epochs=2, eval_every_n_epochs=1)
 # Caduceus trainer configurations

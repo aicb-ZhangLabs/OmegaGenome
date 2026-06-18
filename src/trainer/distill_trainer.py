@@ -114,6 +114,9 @@ class DistillTrainerConfig:
     eval_every_n_epochs: int = 5
     num_workers: int = 4
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    # Base dir for the precompute logits/features cache. None -> project_path (legacy /extra). Set to
+    # a fast local disk (SSD) to keep the cache off the degraded /extra NFS.
+    cache_base_dir: Optional[str] = None
 
 
 def train_distill_task(
@@ -161,6 +164,7 @@ def train_distill_task(
 
         from config.env import project_path
 
+        cache_base = config.cache_base_dir or project_path  # SSD when set, else legacy /extra
         train_tlogits, train_tfeatures = precompute_teacher_logits(
             teacher_tokenizer,
             teacher_model,
@@ -173,7 +177,7 @@ def train_distill_task(
             input_prefix=input_prefix,
             add_special_tokens=add_special_tokens,
             # Cache parameters
-            project_path=project_path,
+            project_path=cache_base,
             teacher_parent_dir=teacher_parent_dir,
             task_name=task_name,
             teacher_ckpt=teacher_ckpt,
