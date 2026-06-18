@@ -90,24 +90,28 @@ def main():
 
     # Cache the prepared (tokenized seqs + bigWig targets) — slow over sshfs, and identical across
     # head-only/LoRA/full-FT/model-size (same NTv3 tokenizer + same windows/tracks). Shared by config.
-    cache = os.path.join(args.data_dir, f"_prep_w{args.window}_tr{args.n_train}_te{args.n_test}.pt")
+    cache = os.path.join(args.data_dir, f"_prep_tvt_w{args.window}_tr{args.n_train}_te{args.n_test}.pt")
     if os.path.exists(cache):
         print(f"loading prepared-data cache: {cache}")
         d = torch.load(cache, weights_only=False)
-        tr_ids, tr_tgt, te_ids, te_tgt = d["tr_ids"], d["tr_tgt"], d["te_ids"], d["te_tgt"]
+        tr_ids, tr_tgt, va_ids, va_tgt, te_ids, te_tgt = (d["tr_ids"], d["tr_tgt"], d["va_ids"],
+                                                          d["va_tgt"], d["te_ids"], d["te_tgt"])
     else:
-        tr_ids, tr_tgt = _prepare(teacher, bd, sample_windows(splits["train"], args.window, n=args.n_train),
-                                  args.window, crop_len, log1p_targets=False)
-        te_ids, te_tgt = _prepare(teacher, bd, sample_windows(splits["test"], args.window, n=args.n_test),
-                                  args.window, crop_len, log1p_targets=False)
-        torch.save({"tr_ids": tr_ids, "tr_tgt": tr_tgt, "te_ids": te_ids, "te_tgt": te_tgt}, cache)
+        prep = lambda split, n: _prepare(teacher, bd, sample_windows(splits[split], args.window, n=n),
+                                         args.window, crop_len, log1p_targets=False)
+        tr_ids, tr_tgt = prep("train", args.n_train)
+        va_ids, va_tgt = prep("val", args.n_test)   # val for model selection (their split)
+        te_ids, te_tgt = prep("test", args.n_test)  # test for final report only
+        torch.save({"tr_ids": tr_ids, "tr_tgt": tr_tgt, "va_ids": va_ids, "va_tgt": va_tgt,
+                    "te_ids": te_ids, "te_tgt": te_tgt}, cache)
         print(f"cached prepared data -> {cache}")
-    print(f"train {len(tr_ids)} / test {len(te_ids)} windows")
+    print(f"train {len(tr_ids)} / val {len(va_ids)} / test {len(te_ids)} windows")
 
     params = [p for p in model.parameters() if p.requires_grad]
     opt = torch.optim.Adam(params, lr=args.lr)
     os.makedirs(args.out, exist_ok=True)
-    best = -1.0
+    best_val = -1.0
+    best_state = None  # trainable params (LoRA adapters + head) at the best-VAL epoch
     perm = torch.randperm(len(tr_ids))
     for ep in range(args.epochs):
         model.train()
@@ -121,20 +125,34 @@ def main():
             loss.backward()
             opt.step()
             tot += loss.item()
-        mean_r, _ = _evaluate(model, teacher, te_ids, te_tgt, device, args.batch_size)
-        print(f"epoch {ep:3d}  train_loss={tot / (len(tr_ids) / args.batch_size):.4f}  test_mean_pearson={mean_r:.4f}")
-        if mean_r > best:
-            best = mean_r
-            torch.save(model.head.state_dict(), os.path.join(args.out, "head_best.pt"))
+        val_r, _ = _evaluate(model, teacher, va_ids, va_tgt, device, args.batch_size)  # select on VAL
+        print(f"epoch {ep:3d}  train_loss={tot / (len(tr_ids) / args.batch_size):.4f}  val_mean_pearson={val_r:.4f}")
+        if val_r > best_val:
+            best_val = val_r
+            best_state = {n: p.detach().cpu().clone() for n, p in model.named_parameters() if p.requires_grad}
 
-    mean_r, per = _evaluate(model, teacher, te_ids, te_tgt, device, args.batch_size)
+    # restore best-VAL checkpoint, then report on TEST (no test-set selection bias)
+    if best_state is not None:
+        with torch.no_grad():
+            for n, p in model.named_parameters():
+                if n in best_state:
+                    p.copy_(best_state[n].to(device))
+        torch.save(best_state, os.path.join(args.out, "trainable_best.pt"))
+    test_r, per = _evaluate(model, teacher, te_ids, te_tgt, device, args.batch_size)
+    # aggregate by assay for direct comparison to the paper CSV (ATAC/Histone/RNA/eCLIP/PRO-cap)
+    by_assay = {}
+    for i in range(T):
+        if not np.isnan(per[i]):
+            by_assay.setdefault(meta[i].assay, []).append(per[i])
+    per_assay = {a: float(np.mean(v)) for a, v in by_assay.items()}
     result = {"model": args.model, "mode": "lora" if args.lora else "head" if args.freeze_backbone else "full-FT",
-              "lora_r": args.lora_r if args.lora else None, "loss": args.loss,
-              "n_tracks": T, "best_test_mean_pearson": best, "final_test_mean_pearson": float(mean_r),
+              "lora_r": args.lora_r if args.lora else None, "loss": args.loss, "n_tracks": T,
+              "best_val_mean_pearson": best_val, "test_mean_pearson": float(test_r),
+              "test_pearson_by_assay": per_assay,
               "per_track_pearson": {meta[i].file_id: (None if np.isnan(per[i]) else float(per[i])) for i in range(T)}}
     with open(os.path.join(args.out, "ntv3_finetune_result.json"), "w") as f:
         json.dump(result, f, indent=2)
-    print(f"\nbest test mean Pearson (log1p): {best:.4f} | tracks: {T}")
+    print(f"\nbest-val mean Pearson {best_val:.4f} -> TEST mean Pearson (log1p) {test_r:.4f} | tracks: {T}")
 
 
 if __name__ == "__main__":
