@@ -84,8 +84,29 @@ def test_loss_metric_integration():
            f"output finite (train={mode})")
 
 
+def test_apply_lora():
+    from src.model.ntv3_finetune import NTV3_LORA_TARGETS, apply_lora
+
+    ok(NTV3_LORA_TARGETS == ["linear", "mha_output", "fc1", "fc2"], "audited LoRA targets")
+
+    class Stub(nn.Module):  # has an 'fc1' linear (a LoRA target) + a non-target 'other'
+        def __init__(self):
+            super().__init__()
+            self.fc1 = nn.Linear(8, 8)
+            self.other = nn.Linear(8, 8)
+
+        def forward(self, x):
+            return self.other(self.fc1(x))
+
+    peft_m = apply_lora(Stub(), r=4, alpha=8)
+    tr = [n for n, p in peft_m.named_parameters() if p.requires_grad]
+    ok(tr and all("lora" in n.lower() for n in tr), "only LoRA adapters trainable")
+    ok(any("fc1" in n for n in tr), "LoRA applied to the fc1 target")
+
+
 if __name__ == "__main__":
-    tests = [test_shape_crop_nonneg, test_grad_full_ft, test_freeze_backbone, test_loss_metric_integration]
+    tests = [test_shape_crop_nonneg, test_grad_full_ft, test_freeze_backbone, test_loss_metric_integration,
+             test_apply_lora]
     failed = 0
     for fn in tests:
         try:

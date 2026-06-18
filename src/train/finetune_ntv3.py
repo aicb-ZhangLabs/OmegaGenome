@@ -16,7 +16,7 @@ import numpy as np
 import torch
 
 from src.data.ntv3_benchmark import BenchmarkData, load_splits, load_track_meta, sample_windows
-from src.model.ntv3_finetune import NTV3_CROP_FRAC, NTv3FineTune
+from src.model.ntv3_finetune import NTV3_CROP_FRAC, NTv3FineTune, apply_lora
 from src.model.ntv3_teacher import NTV3_650M_POST, NTv3Teacher, NTv3TeacherConfig
 from src.trainer.track_distill import _teacher_to_btl, track_distill_loss
 from src.trainer.track_metrics import per_track_pearson
@@ -63,7 +63,12 @@ def main():
     ap.add_argument("--batch_size", type=int, default=2)
     ap.add_argument("--loss", default="poisson", choices=["mse", "poisson", "pearson", "mse+pearson"])
     ap.add_argument("--freeze_backbone", action="store_true", help="head-only (cheap) vs full fine-tune")
+    ap.add_argument("--lora", action="store_true", help="LoRA fine-tune (cheap; ~1%% params) vs full-FT")
+    ap.add_argument("--lora_r", type=int, default=16)
+    ap.add_argument("--lora_alpha", type=int, default=32)
     args = ap.parse_args()
+    if args.lora and args.freeze_backbone:
+        raise SystemExit("--lora and --freeze_backbone are mutually exclusive (LoRA needs trainable adapters)")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     splits = load_splits(os.path.join(args.data_dir, "human/splits.bed"))
@@ -76,7 +81,12 @@ def main():
           f"mode={'head-only' if args.freeze_backbone else 'full-FT'}")
 
     teacher = NTv3Teacher(NTv3TeacherConfig(model_name_or_path=args.model, species="human"), device=device)
-    model = NTv3FineTune(teacher.model, teacher.model.config.embed_dim, T, args.freeze_backbone).to(device)
+    backbone = teacher.model
+    if args.lora:
+        backbone = apply_lora(backbone, r=args.lora_r, alpha=args.lora_alpha)
+    model = NTv3FineTune(backbone, teacher.model.config.embed_dim, T, freeze_backbone=args.freeze_backbone).to(device)
+    n_train_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"trainable params: {n_train_params/1e6:.2f}M  ({'LoRA' if args.lora else 'head-only' if args.freeze_backbone else 'full-FT'})")
 
     tr_ids, tr_tgt = _prepare(teacher, bd, sample_windows(splits["train"], args.window, n=args.n_train),
                               args.window, crop_len, log1p_targets=False)
@@ -108,7 +118,8 @@ def main():
             torch.save(model.head.state_dict(), os.path.join(args.out, "head_best.pt"))
 
     mean_r, per = _evaluate(model, teacher, te_ids, te_tgt, device, args.batch_size)
-    result = {"model": args.model, "freeze_backbone": args.freeze_backbone, "loss": args.loss,
+    result = {"model": args.model, "mode": "lora" if args.lora else "head" if args.freeze_backbone else "full-FT",
+              "lora_r": args.lora_r if args.lora else None, "loss": args.loss,
               "n_tracks": T, "best_test_mean_pearson": best, "final_test_mean_pearson": float(mean_r),
               "per_track_pearson": {meta[i].file_id: (None if np.isnan(per[i]) else float(per[i])) for i in range(T)}}
     with open(os.path.join(args.out, "ntv3_finetune_result.json"), "w") as f:

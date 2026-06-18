@@ -20,6 +20,22 @@ import torch.nn.functional as F
 # 2048-bp input gives a 768-bp bigwig output, 768/2048 = 0.375).
 NTV3_CROP_FRAC = 0.375
 
+# NTv3 transformer-tower linears (per audit): Q/K/V (`linear`), attn-out (`mha_output`), FFN (fc1/fc2).
+NTV3_LORA_TARGETS = ["linear", "mha_output", "fc1", "fc2"]
+
+
+def apply_lora(backbone, r: int = 16, alpha: int = 32, dropout: float = 0.05):
+    """Wrap the NTv3 backbone with PEFT LoRA on the transformer linears (base frozen, adapters train).
+
+    Cheap alternative to full fine-tune: trains ~1% of params. Returns the PEFT-wrapped backbone,
+    which forwards identically (``out.embedding`` preserved) but with LoRA deltas applied.
+    """
+    from peft import LoraConfig, get_peft_model
+
+    cfg = LoraConfig(r=r, lora_alpha=alpha, lora_dropout=dropout,
+                     target_modules=NTV3_LORA_TARGETS, bias="none")
+    return get_peft_model(backbone, cfg)
+
 
 def central_crop(x: torch.Tensor, out_len: int) -> torch.Tensor:
     """Crop the length axis (dim 1) of ``[B, L, C]`` to the centered ``out_len``."""
