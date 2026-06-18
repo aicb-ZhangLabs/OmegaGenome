@@ -40,11 +40,11 @@ def _prepare(teacher, bd, coords, window, crop_len, log1p_targets):
 def _evaluate(model, teacher, ids, tgt, device, bs):
     """Per-track Pearson with the paper's log(1+x) on both prediction and target."""
     model.eval()
+    sp_full = teacher.model.encode_species(["human"] * bs).to(device)  # constant -> compute once
     preds, tgts = [], []
     for i in range(0, len(ids), bs):
         b = ids[i : i + bs].to(device)
-        sp = teacher.model.encode_species(["human"] * b.shape[0]).to(device)
-        out = model(b, sp)  # [B, T, L_out]
+        out = model(b, sp_full[: b.shape[0]])  # [B, T, L_out]
         preds.append(np.log1p(np.clip(out.float().cpu().numpy(), 0.0, None)))
         tgts.append(np.log1p(np.clip(_teacher_to_btl(tgt[i : i + bs]).numpy(), 0.0, None)))
     return per_track_pearson(np.concatenate(preds), np.concatenate(tgts))
@@ -70,6 +70,7 @@ def main():
                     help="node-local dir to stage genome+bigWigs into (fast prep; e.g. $SLURM_TMPDIR)")
     ap.add_argument("--prep_only", action="store_true",
                     help="build + cache the prepared data, then exit (run on a fast-IO node like galaxy)")
+    ap.add_argument("--wandb", action="store_true", help="log train/val/test curves to wandb (online)")
     args = ap.parse_args()
     if args.lora and args.freeze_backbone:
         raise SystemExit("--lora and --freeze_backbone are mutually exclusive (LoRA needs trainable adapters)")
@@ -125,6 +126,13 @@ def main():
     params = [p for p in model.parameters() if p.requires_grad]
     opt = torch.optim.Adam(params, lr=args.lr)
     os.makedirs(args.out, exist_ok=True)
+    run = None
+    if args.wandb:
+        import wandb
+
+        run = wandb.init(project="ntv3_benchmark_finetune", config=vars(args),
+                         name=f"{'lora-r%d' % args.lora_r if args.lora else 'head' if args.freeze_backbone else 'fullft'}")
+    sp_full = teacher.model.encode_species(["human"] * args.batch_size).to(device)  # hoisted (constant)
     best_val = -1.0
     best_state = None  # trainable params (LoRA adapters + head) at the best-VAL epoch
     perm = torch.randperm(len(tr_ids))
@@ -134,14 +142,16 @@ def main():
         for i in range(0, len(tr_ids), args.batch_size):
             idx = perm[i : i + args.batch_size]
             b = tr_ids[idx].to(device)
-            sp = teacher.model.encode_species(["human"] * b.shape[0]).to(device)
             opt.zero_grad()
-            loss = track_distill_loss(model(b, sp), tr_tgt[idx].to(device), args.loss)
+            loss = track_distill_loss(model(b, sp_full[: b.shape[0]]), tr_tgt[idx].to(device), args.loss)
             loss.backward()
             opt.step()
             tot += loss.item()
+        train_loss = tot / (len(tr_ids) / args.batch_size)
         val_r, _ = _evaluate(model, teacher, va_ids, va_tgt, device, args.batch_size)  # select on VAL
-        print(f"epoch {ep:3d}  train_loss={tot / (len(tr_ids) / args.batch_size):.4f}  val_mean_pearson={val_r:.4f}")
+        print(f"epoch {ep:3d}  train_loss={train_loss:.4f}  val_mean_pearson={val_r:.4f}", flush=True)
+        if run:
+            run.log({"epoch": ep, "train_loss": train_loss, "val_pearson": val_r})
         if val_r > best_val:
             best_val = val_r
             best_state = {n: p.detach().cpu().clone() for n, p in model.named_parameters() if p.requires_grad}
@@ -167,6 +177,9 @@ def main():
               "per_track_pearson": {meta[i].file_id: (None if np.isnan(per[i]) else float(per[i])) for i in range(T)}}
     with open(os.path.join(args.out, "ntv3_finetune_result.json"), "w") as f:
         json.dump(result, f, indent=2)
+    if run:
+        run.log({"test_mean_pearson": float(test_r), **{f"test/{a}": v for a, v in per_assay.items()}})
+        run.finish()
     print(f"\nbest-val mean Pearson {best_val:.4f} -> TEST mean Pearson (log1p) {test_r:.4f} | tracks: {T}")
 
 

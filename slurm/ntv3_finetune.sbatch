@@ -30,7 +30,7 @@ DATA="$SSD/ntv3_benchmark_data"
 # node-local staging dir for fast prep (real local disk, NOT the sshfs mount)
 STAGE="${SLURM_TMPDIR:-/tmp/ntv3_stage_$USER}"
 
-"$PV" -m src.train.finetune_ntv3 --data_dir "$DATA" --model InstaDeepAI/NTv3_650M_post \
+"$PV" -u -m src.train.finetune_ntv3 --data_dir "$DATA" --model InstaDeepAI/NTv3_650M_post \
       --out "$SSD/ntv3_targets/ntv3_finetune" --stage_dir "$STAGE" \
       --window 16384 --n_train 2000 --n_test 400 \
       --epochs 20 --lr 1e-4 --batch_size 2 --loss poisson "$@"
