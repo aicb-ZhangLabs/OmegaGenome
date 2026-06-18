@@ -61,8 +61,11 @@ def main():
           f"(offset {offset}); ground truth read at 1bp over the crop")
     truth = ground_truth_targets(bw_paths, crop_coords, nbins=L_out)  # [N, L_out, T] @ 1bp
 
-    # per-track Pearson: NTv3 prediction vs measured signal; [N, L, T] -> [N, T, L]
-    mean_r, per = per_track_pearson(pred.permute(0, 2, 1).numpy(), np.transpose(truth, (0, 2, 1)))
+    # Paper eval procedure (methods): predictions unscaled to raw, then BOTH pred and truth
+    # log(1+x) transformed before Pearson. [N, L, T] -> [N, T, L].
+    lp = np.log1p(np.clip(pred.permute(0, 2, 1).numpy(), 0.0, None))
+    lt = np.log1p(np.clip(np.transpose(truth, (0, 2, 1)), 0.0, None))
+    mean_r, per = per_track_pearson(lp, lt)
     os.makedirs(args.out, exist_ok=True)
     result = {
         "model": args.model,
