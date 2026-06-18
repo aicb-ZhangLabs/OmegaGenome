@@ -32,6 +32,10 @@ class GLMConfig:
     input_prefix: str = ""
     add_special_tokens: bool = True
 
+    # Load dtype for the teacher ("bfloat16"/"float16"/None=fp32). Large teachers (Carbon-3B) need
+    # bf16 to fit + it matches how they were fine-tuned. None keeps existing teachers at fp32.
+    torch_dtype: Optional[str] = None
+
     # LoRA-specific fields
     base_model_path: Optional[str] = None  # Base model for LoRA adapters
     is_lora: Optional[bool] = None  # Auto-detect if None
@@ -65,6 +69,8 @@ def build_glm(config: GLMConfig):
     """
     model_path = config.ckpt_path if config.ckpt_path else config.model_name_or_path
 
+    _dtype = getattr(torch, config.torch_dtype) if config.torch_dtype else None  # None = fp32
+
     if config.is_lora:
         print(f"Loading LoRA adapter from: {model_path}")
 
@@ -87,6 +93,7 @@ def build_glm(config: GLMConfig):
             num_labels=config.num_labels,
             output_hidden_states=config.output_hidden_states,
             trust_remote_code=config.trust_remote_code,
+            torch_dtype=_dtype,
         )
 
         # Load LoRA adapter
@@ -108,6 +115,7 @@ def build_glm(config: GLMConfig):
             num_labels=config.num_labels,
             output_hidden_states=config.output_hidden_states,
             trust_remote_code=config.trust_remote_code,
+            torch_dtype=_dtype,
         )
 
     # Some autoregressive tokenizers (e.g. Carbon) define no pad token, which breaks batched

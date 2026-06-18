@@ -44,6 +44,7 @@ carbon_3b = GLMConfig(
     output_hidden_states=True,
     input_prefix="<dna>",
     add_special_tokens=False,
+    torch_dtype="bfloat16",  # 3B teacher: bf16 to fit memory + matches its LoRA fine-tune dtype
 )
 carbon_8b = replace(carbon_3b, model_name_or_path="HuggingFaceBio/Carbon-8B")
 carbon_500m = replace(carbon_3b, model_name_or_path="HuggingFaceBio/Carbon-500M")

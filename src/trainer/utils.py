@@ -441,8 +441,10 @@ def precompute_teacher_logits(
 
                 features_list.append(hidden.cpu())
 
-    logits = torch.cat(logits_list, dim=0).numpy() if needs_logits else None
-    features = torch.cat(features_list, dim=0).numpy() if needs_features else None
+    # .float() so a bf16 teacher's outputs are cached as fp32 (bf16 npy + bf16 in the KL/MSE would
+    # lose precision / mismatch the fp32 student).
+    logits = torch.cat(logits_list, dim=0).float().numpy() if needs_logits else None
+    features = torch.cat(features_list, dim=0).float().numpy() if needs_features else None
 
     # ===== SAVE TO CACHE =====
     if cache_enabled:
