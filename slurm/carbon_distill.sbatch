@@ -20,6 +20,7 @@ REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
 cd "$REPO"
 source slurm/env_setup.sh
 export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export WANDB_INIT_TIMEOUT=300  # laniakea->wandb.ai can be slow; avoid 90s init timeout
 PY="$REPO/.venv_carbon_portable/bin/python"
 
 CONFIG="${1:-carbon-smoke}"
