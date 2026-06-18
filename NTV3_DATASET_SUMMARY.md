@@ -51,6 +51,20 @@ These map to the canonical sequence-to-function assay taxonomy used by **Enforme
 - **Chosen subset (see NTV3_MULTITRACK_PLAN §4c):** 6 histone marks + DNase + CAGE in K562 (v1),
   expanding to K562/GM12878/HepG2 (v2) — picked to answer reviewer R1.1a/b/c + R2.1a.
 
+## 5b. NTv3's OWN reported performance (the teacher ceiling — from the paper)
+
+Source: NTv3 paper PDF (`instadeep.com/.../NT_v3.pdf`, extracted text). These are **NTv3-vs-measured-
+signal** PCC (the teacher's quality), NOT our student-vs-teacher fidelity — different targets.
+- **DNase-seq, base-resolution PCC:** NTv3-650M-post = **0.753 (HepG2), 0.755 (IMR-90)** vs
+  ChromBPNet 0.704 / 0.717. So the per-bp teacher ceiling is **~0.75 for DNase**.
+- **vs Borzoi:** at Borzoi's native 32bp regime, NTv3 beats Borzoi by **up to +3%** on CAGE/ChIP/ATAC/
+  DNase (RNA-seq −0.5%). At base resolution NTv3 *matches* Borzoi on DNase/ChIP, *beats* on ATAC/CAGE/RNA.
+- **Model-size scaling (teacher, fine-tuned per task):** 8M < 100M < 650M < 650M-post, monotonic.
+  NOTE: this is the TEACHER's own quality scaling — distinct from our distillation, where 650M-teacher
+  ≈ 100M-teacher (the small *student* is the bottleneck, not the teacher).
+- **Data regime:** NTv3 fine-tunes **genome-wide** (Borzoi's regime ~whole genome), 32kb→1Mb context;
+  longer context helps, especially expression/distal modalities. Benchmark = 106 tasks, 32kb, base-res.
+
 ## 5. Practical notes
 - Track names are bare accessions, so selecting "H3K4me3 in K562" requires an
   **accession → (assay, biosample) join** (ENCODE portal API for `ENCSR…`; FANTOM5 sample table for
