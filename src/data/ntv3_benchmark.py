@@ -34,7 +34,11 @@ def load_splits(path: str) -> Dict[str, List[Coord]]:
 
 
 def sample_windows(intervals: List[Coord], window: int, stride: int = None, n: int = None) -> List[Coord]:
-    """Tile ``intervals`` into ``window``-bp windows (default non-overlapping). Optional cap ``n``."""
+    """Tile ``intervals`` into ``window``-bp windows (default non-overlapping). Optional cap ``n``.
+
+    NOTE: this is the zero-shot teacher-eval data path. The benchmark *fine-tuning* path uses the
+    faithful ``GenomeBigWigDataset`` (dense overlap across all regions) instead — see ``ntv3_ft_data``.
+    """
     stride = stride or window
     coords: List[Coord] = []
     for chrom, start, end in intervals:

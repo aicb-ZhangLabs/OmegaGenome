@@ -1,112 +1,145 @@
-"""Audit of NTv3FineTune (the benchmark fine-tuning head) — stub backbone, no heavy NTv3 load.
+"""Audit of the faithful NTv3 benchmark fine-tuning pipeline (CPU-only; no heavy NTv3 load).
 
-Angles: (1) output shape + central-crop correctness, (2) softplus non-negativity, (3) grad flow in
-full fine-tune (head + backbone), (4) freeze_backbone (backbone frozen, head trainable + gets grads),
-(5) loss/metric integration + numerical stability.
+Covers the official-notebook port across angles: (1) crop_center fraction/centering, (2) LinearHead
+shape + non-negativity, (3) Poisson-multinomial loss shape/finiteness/optimum, (4) TracksMetrics
+pooled Pearson, (5) target scaling (x/mean + softclip), (6) region-budget sampler, (7) the dense
+GenomeBigWigDataset on a synthetic genome+bigWig, (8) optimizer/scheduler warmup->decay shape.
 """
 
+import os
 import sys
-import types
+import tempfile
 
 import numpy as np
 import torch
-import torch.nn as nn
 
-from src.model.ntv3_finetune import NTV3_CROP_FRAC, NTv3FineTune, central_crop
-from src.trainer.track_distill import track_distill_loss
-from src.trainer.track_metrics import per_track_pearson
+from src.data.ntv3_ft_data import (GenomeBigWigDataset, crop_center, make_target_scaling_fn,
+                                    sample_regions_for_total_length)
+from src.model.ntv3_finetune import LinearHead
+from src.trainer.ntv3_optim import build_optimizer_and_scheduler
+from src.trainer.track_losses import poisson_multinomial_loss
+from src.trainer.track_metrics import TracksMetrics
 
 _n = 0
 
 
-def ok(c, m):
+def ok(cond, msg):
     global _n
-    assert c, "FAIL: " + m
     _n += 1
+    assert cond, msg
 
 
-class _StubBackbone(nn.Module):
-    """Returns an object with `.embedding` [B, L_full, embed_dim]; trainable so backbone grads test."""
-
-    def __init__(self, embed_dim, l_full):
-        super().__init__()
-        self.l_full = l_full
-        self.proj = nn.Embedding(8, embed_dim)
-
-    def forward(self, input_ids, species_ids):
-        return types.SimpleNamespace(embedding=self.proj(input_ids))  # [B, L_full, embed_dim]
+def test_crop_center():
+    x = torch.arange(8).view(1, 8, 1).float()  # length 8
+    c = crop_center(x, 0.375)  # offset=int(8*0.625//2)=2, len=4
+    ok(c.shape == (1, 4, 1), f"crop shape {c.shape}")
+    ok(c[0, :, 0].tolist() == [2, 3, 4, 5], f"crop centered {c[0,:,0].tolist()}")
+    ok(crop_center(np.arange(8).reshape(1, 8, 1), 0.375).shape == (1, 4, 1), "numpy crop ok")
 
 
-def _model(embed_dim=16, l_full=800, num_tracks=5, freeze=False):
-    return NTv3FineTune(_StubBackbone(embed_dim, l_full), embed_dim, num_tracks, freeze_backbone=freeze)
+def test_linear_head():
+    h = LinearHead(16, 5)
+    y = h(torch.randn(2, 10, 16))
+    ok(y.shape == (2, 10, 5), f"head shape {y.shape}")
+    ok((y >= 0).all(), "softplus non-negative")
 
 
-def test_shape_crop_nonneg():
-    m = _model(l_full=800, num_tracks=5)
-    out = m(torch.randint(0, 8, (2, 800)), torch.zeros(2, dtype=torch.long))
-    l_out = round(800 * NTV3_CROP_FRAC)  # 300
-    ok(tuple(out.shape) == (2, 5, l_out), f"shape [B,T,L_out] (got {tuple(out.shape)})")
-    ok(bool((out >= 0).all()), "softplus -> non-negative")
-    x = torch.arange(10).view(1, 10, 1).float()
-    ok(central_crop(x, 4)[0, :, 0].tolist() == [3, 4, 5, 6], "central_crop centers correctly")
+def test_poisson_multinomial_loss():
+    torch.manual_seed(0)
+    targets = torch.rand(2, 12, 3) * 5
+    perfect = poisson_multinomial_loss(targets.clone(), targets.clone())
+    far = poisson_multinomial_loss(torch.rand(2, 12, 3) * 50, targets)
+    ok(torch.isfinite(perfect) and torch.isfinite(far), "loss finite")
+    ok(perfect.item() < far.item(), "loss lower when prediction matches target")
+    pred = (torch.rand(2, 12, 3) * 5).requires_grad_(True)
+    poisson_multinomial_loss(pred, targets).backward()
+    ok(pred.grad is not None and torch.isfinite(pred.grad).all(), "grad finite")
 
 
-def test_grad_full_ft():
-    m = _model(freeze=False)
-    m(torch.randint(0, 8, (2, 800)), torch.zeros(2, dtype=torch.long)).pow(2).mean().backward()
-    ok(all(p.grad is not None for p in m.head_parameters()), "head params get grads")
-    ok(any(p.grad is not None and p.grad.abs().sum() > 0 for p in m.backbone.parameters()),
-       "backbone gets grads in full fine-tune")
+def test_tracks_metrics():
+    m = TracksMetrics(["a", "b"], device="cpu")
+    pred = torch.randn(20, 2)
+    m.update(pred, pred.clone(), loss=0.5)  # perfectly correlated
+    out = m.compute()
+    ok(abs(out["a/pearson"] - 1.0) < 1e-6 and abs(out["mean/pearson"] - 1.0) < 1e-6,
+       f"perfect corr -> 1.0, got {out['mean/pearson']}")
+    ok(abs(out["loss"] - 0.5) < 1e-9, "loss recorded")
 
 
-def test_freeze_backbone():
-    m = _model(freeze=True)
-    ok(all(not p.requires_grad for p in m.backbone.parameters()), "backbone frozen (no requires_grad)")
-    ok(all(p.requires_grad for p in m.head_parameters()), "head trainable")
-    m(torch.randint(0, 8, (2, 800)), torch.zeros(2, dtype=torch.long)).pow(2).mean().backward()
-    ok(all(p.grad is not None for p in m.head_parameters()), "head still gets grads when frozen")
-    ok(all(p.grad is None for p in m.backbone.parameters()), "frozen backbone gets NO grads")
+def test_target_scaling():
+    fn = make_target_scaling_fn(np.array([2.0, 4.0]))
+    x = torch.tensor([[2.0, 4.0], [40.0, 4.0]])  # row1 -> [1,1]; row2 col0 -> 20 (>10 clip)
+    y = fn(x)
+    ok(abs(y[0, 0] - 1.0) < 1e-6 and abs(y[0, 1] - 1.0) < 1e-6, "below-clip = x/mean")
+    expected = 2.0 * (20.0 * 10.0) ** 0.5 - 10.0
+    ok(abs(y[1, 0].item() - expected) < 1e-4, f"softclip >10: {y[1,0].item()} vs {expected}")
 
 
-def test_loss_metric_integration():
-    m = _model(num_tracks=4)
-    out = m(torch.randint(0, 8, (3, 800)), torch.zeros(3, dtype=torch.long))  # [3,4,L_out]
-    l_out = out.shape[-1]
-    target = torch.rand(3, l_out, 4) * 5  # [B, L_out, T] non-negative
-    for kind in ("mse", "poisson", "pearson"):
-        loss = track_distill_loss(out, target, kind)
-        ok(torch.isfinite(loss) and loss.ndim == 0, f"loss '{kind}' finite scalar")
-    mr, per = per_track_pearson(out.detach().numpy(), np.transpose(target.numpy(), (0, 2, 1)))
-    ok(len(per) == 4 and np.isfinite(mr), "per_track_pearson over output finite")
-    for mode in (True, False):
-        m.train(mode)
-        ok(torch.isfinite(m(torch.randint(0, 8, (1, 800)), torch.zeros(1, dtype=torch.long))).all(),
-           f"output finite (train={mode})")
+def test_sample_regions_budget():
+    regions = [("chr1", 0, 100), ("chr2", 0, 100), ("chr3", 0, 1000)]
+    s = sample_regions_for_total_length(regions, 250)
+    ok(sum(e - st for _, st, e in s) == 250, f"budget met: {s}")
+    ok(s[0] == ("chr1", 0, 100) and s[2][0] == "chr3", "accumulates across regions in order")
 
 
-def test_apply_lora():
-    from src.model.ntv3_finetune import NTV3_LORA_TARGETS, apply_lora
+def _write_synth_genome(d, length=4000):
+    fasta = os.path.join(d, "genome.fasta")
+    with open(fasta, "w") as f:
+        f.write(">chr1\n")
+        seq = "ACGT" * (length // 4)
+        for i in range(0, len(seq), 80):
+            f.write(seq[i:i + 80] + "\n")
+    import pyBigWig
+    bw_path = os.path.join(d, "t0.bigwig")
+    bw = pyBigWig.open(bw_path, "w")
+    bw.addHeader([("chr1", length)])
+    bw.addEntries("chr1", [0], values=[3.0], span=length)  # constant signal
+    bw.close()
+    return fasta, [bw_path]
 
-    ok(NTV3_LORA_TARGETS == ["linear", "mha_output", "fc1", "fc2"], "audited LoRA targets")
 
-    class Stub(nn.Module):  # has an 'fc1' linear (a LoRA target) + a non-target 'other'
-        def __init__(self):
-            super().__init__()
-            self.fc1 = nn.Linear(8, 8)
-            self.other = nn.Linear(8, 8)
+class _StubTokenizer:
+    def __call__(self, seq, padding=None, truncation=None, max_length=None, return_tensors=None):
+        return {"input_ids": torch.zeros(1, max_length, dtype=torch.long)}
 
-        def forward(self, x):
-            return self.other(self.fc1(x))
 
-    peft_m = apply_lora(Stub(), r=4, alpha=8)
-    tr = [n for n, p in peft_m.named_parameters() if p.requires_grad]
-    ok(tr and all("lora" in n.lower() for n in tr), "only LoRA adapters trainable")
-    ok(any("fc1" in n for n in tr), "LoRA applied to the fc1 target")
+def test_genome_bigwig_dataset():
+    with tempfile.TemporaryDirectory() as d:
+        fasta, bw_paths = _write_synth_genome(d, length=4000)
+        regions = [("chr1", 0, 4000)]
+        fn = make_target_scaling_fn(np.array([3.0]))  # mean=3 -> constant signal scales to 1.0
+        ds = GenomeBigWigDataset(fasta, bw_paths, regions, sequence_length=1000, tokenizer=_StubTokenizer(),
+                                 transform_fn=fn, overlap=0.0, keep_target_center_fraction=0.375)
+        ok(len(ds) == 4, f"4 non-overlapping 1000bp windows in 4000bp, got {len(ds)}")
+        s = ds[0]
+        l_out = 1000 - 2 * int(1000 * 0.625 // 2)
+        ok(s["tokens"].shape == (1000,), f"tokens {s['tokens'].shape}")
+        ok(s["bigwig_targets"].shape == (l_out, 1), f"targets {s['bigwig_targets'].shape}")
+        ok(torch.allclose(s["bigwig_targets"], torch.ones(l_out, 1), atol=1e-4), "scaled constant -> 1.0")
+        ds2 = GenomeBigWigDataset(fasta, bw_paths, regions, 1000, _StubTokenizer(), fn, overlap=0.9)
+        ok(len(ds2) > len(ds), f"overlap increases windows: {len(ds2)} > {len(ds)}")
+
+
+def test_optimizer_scheduler():
+    model = torch.nn.Linear(4, 4)
+    opt, sched = build_optimizer_and_scheduler(model, initial_lr=1e-5, end_lr=5e-5, weight_decay=0.01,
+                                               num_warmup=10, num_steps=100)
+    ok(abs(opt.param_groups[0]["lr"] - 1e-5) < 1e-7, "starts near initial lr")
+    for _ in range(10):
+        opt.step()
+        sched.step()
+    peak = opt.param_groups[0]["lr"]
+    ok(abs(peak - 5e-5) < 5e-6, f"reaches peak after warmup, got {peak}")
+    for _ in range(89):
+        opt.step()
+        sched.step()
+    ok(opt.param_groups[0]["lr"] < peak, "decays after warmup")
 
 
 if __name__ == "__main__":
-    tests = [test_shape_crop_nonneg, test_grad_full_ft, test_freeze_backbone, test_loss_metric_integration,
-             test_apply_lora]
+    tests = [test_crop_center, test_linear_head, test_poisson_multinomial_loss, test_tracks_metrics,
+             test_target_scaling, test_sample_regions_budget, test_genome_bigwig_dataset,
+             test_optimizer_scheduler]
     failed = 0
     for fn in tests:
         try:
