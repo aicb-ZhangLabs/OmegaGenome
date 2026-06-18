@@ -37,3 +37,9 @@ basic_distillation_slurm = SlurmConfig(
     use_packed_code=True,
     exclude_code_folders=exclude_code_folders,
 )
+
+# Inline (mode="run") variant — runs the distillation in-process instead of submitting a SLURM job.
+# Use inside an sbatch that already holds a GPU (e.g. the smoke), so there's no nested submission.
+from dataclasses import replace as _replace  # noqa: E402
+
+run_distillation_slurm = _replace(basic_distillation_slurm, mode="run")

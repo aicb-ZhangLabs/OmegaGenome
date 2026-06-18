@@ -17,10 +17,10 @@ from ..config_schema import (
 )
 from ..glm import carbon_3b_lora
 from ..bpnet import deploy_120k_bpnet_config
-from ..trainer import carbon_trainer_config, carbon_hyperparam_trainer_config
+from ..trainer import carbon_trainer_config, carbon_hyperparam_trainer_config, carbon_debug_trainer_config
 from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import carbon_vanilla_mse_raw, carbon_vanilla_mse_l2norm
-from ...slurm import basic_distillation_slurm
+from ...slurm import basic_distillation_slurm, run_distillation_slurm
 from ..paths import CARBON_TEACHER_DIR
 
 # Parent dir of the 18 `{task}_finetuned/` LoRA adapters. Machine-specific value lives in ONE place
@@ -90,8 +90,23 @@ carbon_base_hyperparam_l2norm_config = DistillationHyperparamExperimentConfig(
     **_GRID,
 )
 
+# 1-task smoke (inline, 2 epochs) — validates teacher LoRA load -> precompute -> student train
+# end-to-end before the full 36 + 1152-job launches. mode="run" so it runs in-process (no submit).
+carbon_smoke_config = DistillationExperimentConfig(
+    task_names=["H3K4me3"],
+    teacher_config=carbon_3b_lora,
+    teacher_parent_dir=CARBON_PARENT_PATH,
+    model_type="glm",
+    student_config=deploy_120k_bpnet_config,
+    distillation_config=carbon_vanilla_mse_raw,
+    trainer_config=carbon_debug_trainer_config,
+    dataset_config=nucletide_transformer_revised_benchmark,
+    slurm_config=run_distillation_slurm,
+)
+
 # Registries (picked by name via tyro on the distill / distill_hyperparam CLIs).
 experiment_configs = {
+    "carbon-smoke": carbon_smoke_config,
     "carbon-raw": carbon_raw_config,
     "carbon-l2norm": carbon_l2norm_config,
 }
