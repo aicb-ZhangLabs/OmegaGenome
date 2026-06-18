@@ -437,9 +437,10 @@ def evaluate_and_log_teacher(
 
         return result
 
+    _teacher_bs = getattr(config.trainer_config, "teacher_batch_size", None) or config.trainer_config.batch_size
     test_loader = DataLoader(
         test_dataset,
-        batch_size=config.trainer_config.batch_size,
+        batch_size=_teacher_bs,
         shuffle=False,
         num_workers=config.trainer_config.num_workers,
         collate_fn=collate_fn,

@@ -145,7 +145,7 @@ class SlurmGPUManager:
         self,
         preferred_nodes: list = None,
         check_interval: int = 30,
-        max_wait: int = 3600,
+        max_wait: int = 14400,  # 3600,
     ) -> Optional[str]:
         """
         Wait until a node has available GPU capacity.

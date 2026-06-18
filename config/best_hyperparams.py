@@ -519,14 +519,18 @@ METHOD_BEST_HYPERPARAMS: Dict[str, Dict[str, Dict[str, DistillHyperparams]]] = {
 # ============================================================
 # BEST HYPERPARAMETERS PER MODEL SIZE (splice_sites_all)
 # ============================================================
+# Performance summary from experiments:
 #  model_size    mcc distill_method  temperature  weight_ce  weight_kl  weight_mse  dkd_alpha  dkd_beta
 #        pico 0.2992        vanilla       0.5000     0.5000     1.0000           1          1         8
 # ultra_small 0.5942        vanilla       0.5000     0.5000     0.5000           0          1         8
 # extra_small 0.8401        vanilla       4.0000     0.5000     1.0000           1          1         8
 #    original 0.9078        vanilla       4.0000     0.5000     0.5000           0          1         8
-# extra_large 0.8612        vanilla       1.5000     0.5000     1.0000           5          1         8
+# extra_large 0.8612        vanilla       1.5000     0.5000     1.0000           5          1         8  <-- BROKEN (dilation cap 6)
 #       large 0.9540        vanilla       0.5000     0.5000     0.0000           1          1         8
 #     xxlarge 0.9505        vanilla       0.5000     0.5000     0.0000           0          1         8
+#
+# NOTE: extra_large has WORSE performance than original due to dilation cap issue!
+# Use extra_large_fix instead, which removes the dilation cap.
 
 SIZE_BEST_HYPERPARAMS: Dict[str, Dict[str, Dict[str, DistillHyperparams]]] = {
     # =========== NT Teacher ===========
@@ -561,6 +565,9 @@ SIZE_BEST_HYPERPARAMS: Dict[str, Dict[str, Dict[str, DistillHyperparams]]] = {
                 weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
             ),
             "extra_large": DistillHyperparams(
+                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
+            ),
+            "extra_large_fix": DistillHyperparams(
                 weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
             ),
             "large": DistillHyperparams(
@@ -601,6 +608,9 @@ SIZE_BEST_HYPERPARAMS: Dict[str, Dict[str, Dict[str, DistillHyperparams]]] = {
             "extra_large": DistillHyperparams(
                 weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
             ),
+            "extra_large_fix": DistillHyperparams(
+                weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
+            ),
             "large": DistillHyperparams(
                 weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
             ),
@@ -608,7 +618,8 @@ SIZE_BEST_HYPERPARAMS: Dict[str, Dict[str, Dict[str, DistillHyperparams]]] = {
                 weight_ce=0.5, weight_kl=0.5, temperature=2.0, distill_method="vanilla"
             ),
         },
-        "splice_sites_all": {  # Data: pico | Temp=0.5, CE=0.5, KL=1.0, MSE=1.0
+        "splice_sites_all": {
+            # Data: pico | Temp=0.5, CE=0.5, KL=1.0, MSE=1.0
             "pico": DistillHyperparams(
                 weight_ce=0.5,
                 weight_kl=1.0,
@@ -641,11 +652,22 @@ SIZE_BEST_HYPERPARAMS: Dict[str, Dict[str, Dict[str, DistillHyperparams]]] = {
                 distill_method="vanilla",
             ),
             # Data: extra_large | Temp=1.5, CE=0.5, KL=1.0, MSE=5.0
+            # NOTE: This model has poor performance due to dilation cap issue
             "extra_large": DistillHyperparams(
                 weight_ce=0.5,
                 weight_kl=1.0,
                 weight_mse=5.0,
                 temperature=1.5,
+                distill_method="vanilla",
+            ),
+            # NEW: extra_large_fix - Uses same hyperparams as original (which works well)
+            # The architectural fix (removing dilation cap) is the key improvement
+            # Start with hyperparams similar to large/xxlarge which also perform well
+            "extra_large_fix": DistillHyperparams(
+                weight_ce=0.5,
+                weight_kl=0.25,  # Same as large/xxlarge
+                weight_mse=0.0,
+                temperature=1.5,  # Same as large/xxlarge
                 distill_method="vanilla",
             ),
             # Data: large | Temp=0.5, CE=0.5, KL=0.0, MSE=1.0
@@ -716,12 +738,24 @@ def get_size_hyperparams(
     Get best hyperparameters for a specific teacher/task/size combination.
 
     Falls back to defaults if not found.
+
+    Note: For extra_large_fix, if not explicitly defined, uses extra_large hyperparams
+    as a starting point (the architectural fix is the main improvement).
     """
     # Try exact match
     if teacher in SIZE_BEST_HYPERPARAMS:
         if task in SIZE_BEST_HYPERPARAMS[teacher]:
             if size in SIZE_BEST_HYPERPARAMS[teacher][task]:
                 return SIZE_BEST_HYPERPARAMS[teacher][task][size]
+            # Fallback for extra_large_fix if not explicitly defined
+            if (
+                size == "extra_large_fix"
+                and "extra_large" in SIZE_BEST_HYPERPARAMS[teacher][task]
+            ):
+                print(
+                    f"Warning: Using extra_large hyperparams for extra_large_fix ({teacher}/{task})"
+                )
+                return SIZE_BEST_HYPERPARAMS[teacher][task]["extra_large"]
 
     # Fallback to vanilla default
     print(f"Warning: Using default hyperparams for {teacher}/{task}/{size}")

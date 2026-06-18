@@ -70,6 +70,7 @@ carbon_trainer_config = DistillTrainerConfig(
     lr=1e-4,
     max_len=1000,
     cache_base_dir=CARBON_OUTPUT_BASE,  # precompute logits/features cache on SSD, not /extra
+    teacher_batch_size=4,  # 3B teacher forward at seq~1000 needs a small batch (attn O(seq^2))
 )
 carbon_hyperparam_trainer_config = DistillTrainerConfig(
     output_dir=f"{_CARBON_OUT}/hyperparam",
@@ -78,6 +79,7 @@ carbon_hyperparam_trainer_config = DistillTrainerConfig(
     batch_size=16,
     max_len=1000,
     cache_base_dir=CARBON_OUTPUT_BASE,
+    teacher_batch_size=4,
 )
 carbon_debug_trainer_config = replace(carbon_trainer_config, epochs=2, eval_every_n_epochs=1)
 # Caduceus trainer configurations

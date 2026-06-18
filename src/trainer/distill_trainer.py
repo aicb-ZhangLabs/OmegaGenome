@@ -117,6 +117,10 @@ class DistillTrainerConfig:
     # Base dir for the precompute logits/features cache. None -> project_path (legacy /extra). Set to
     # a fast local disk (SSD) to keep the cache off the degraded /extra NFS.
     cache_base_dir: Optional[str] = None
+    # Batch size for the TEACHER forward (precompute + teacher eval). None -> batch_size. A large
+    # teacher (Carbon-3B) at seq~1000 needs a small batch (attention is O(seq^2)); the student trains
+    # at the larger batch_size separately.
+    teacher_batch_size: Optional[int] = None
 
 
 def train_distill_task(
@@ -165,11 +169,12 @@ def train_distill_task(
         from config.env import project_path
 
         cache_base = config.cache_base_dir or project_path  # SSD when set, else legacy /extra
+        teacher_bs = config.teacher_batch_size or config.batch_size  # small batch for the 3B forward
         train_tlogits, train_tfeatures = precompute_teacher_logits(
             teacher_tokenizer,
             teacher_model,
             X_train,
-            config.batch_size,
+            teacher_bs,
             config.device,
             config.max_len,
             needs_logits=needs_logits,  # NEW: explicit logits flag
