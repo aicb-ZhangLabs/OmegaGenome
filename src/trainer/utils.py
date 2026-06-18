@@ -306,6 +306,13 @@ def precompute_teacher_logits(
     # Debug flag to print structure once
     debug_printed = False
 
+    # Defensive: the model forward needs pad_token_id to pool batched sequences (autoregressive
+    # teachers ship none). build_glm sets this, but the teacher-eval that also sets it can be cache-
+    # skipped, so re-assert here right before the forward loop.
+    if hasattr(model, "config") and getattr(model.config, "pad_token_id", None) is None \
+            and getattr(tokenizer, "pad_token_id", None) is not None:
+        model.config.pad_token_id = tokenizer.pad_token_id
+
     print(f"Computing teacher outputs for {len(sequences)} sequences...")
     for i in tqdm(
         range(0, len(sequences), batch_size), total=len(sequences) // batch_size

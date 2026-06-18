@@ -15,8 +15,9 @@ from ..config_schema import (
     DistillationExperimentConfig,
     DistillationHyperparamExperimentConfig,
 )
-from ..glm import carbon_3b_lora
+from ..glm import carbon_3b_lora, nt_2b5
 from ..bpnet import deploy_120k_bpnet_config
+from .nt import NT_PARENT_PATH
 from ..trainer import carbon_trainer_config, carbon_hyperparam_trainer_config, carbon_debug_trainer_config
 from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import carbon_vanilla_mse_raw, carbon_vanilla_mse_l2norm
@@ -104,10 +105,26 @@ carbon_smoke_config = DistillationExperimentConfig(
     slurm_config=run_distillation_slurm,
 )
 
+# ISOLATION SMOKE: an EXISTING teacher (NT-2.5B) through the exact shared code paths the Carbon
+# changes touch (build_glm dtype/pad, get_best_checkpoint dispatch, tokenize_teacher_inputs, precompute
+# + eval). NT's neutral config (no <dna>, add_special_tokens=True, fp32) must run end-to-end unaffected.
+nt_iso_smoke_config = DistillationExperimentConfig(
+    task_names=["H3K9me3"],
+    teacher_config=nt_2b5,
+    teacher_parent_dir=NT_PARENT_PATH,
+    model_type="nt",
+    student_config=deploy_120k_bpnet_config,
+    distillation_config=carbon_vanilla_mse_raw,  # kl+mse>0 -> exercises both precompute paths
+    trainer_config=carbon_debug_trainer_config,
+    dataset_config=nucletide_transformer_revised_benchmark,
+    slurm_config=run_distillation_slurm,
+)
+
 # Registries (picked by name via tyro on the distill / distill_hyperparam CLIs).
 # Values are (description, config) tuples — tyro's overridable_config_cli indexes [1] for the config.
 experiment_configs = {
     "carbon-smoke": ("Carbon->deploy_120k 1-task inline smoke (H3K4me3, 2 epochs)", carbon_smoke_config),
+    "nt-iso-smoke": ("NT-2.5B isolation smoke: proves Carbon changes don't break NT", nt_iso_smoke_config),
     "carbon-raw": ("Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, raw MSE", carbon_raw_config),
     "carbon-l2norm": ("Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, L2-norm MSE", carbon_l2norm_config),
 }

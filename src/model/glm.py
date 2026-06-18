@@ -119,13 +119,15 @@ def build_glm(config: GLMConfig):
         )
 
     # Some autoregressive tokenizers (e.g. Carbon) define no pad token, which breaks batched
-    # tokenization in eval/precompute. Use eos as pad (padding is masked by attention_mask, so it
-    # does not change predictions) and sync the model's pad_token_id for sequence-classification
-    # pooling (it locates the last non-pad token).
+    # tokenization. Use eos as pad (masked by attention_mask -> predictions unchanged).
     if tokenizer.pad_token is None and tokenizer.eos_token is not None:
         tokenizer.pad_token = tokenizer.eos_token
-        if getattr(model.config, "pad_token_id", None) is None:
-            model.config.pad_token_id = tokenizer.pad_token_id
+    # Independently, the MODEL needs pad_token_id for batched sequence-classification pooling (it
+    # locates the last non-pad token). Set it whenever the model lacks one but the tokenizer has it —
+    # NOT gated on the tokenizer having just been patched (the tokenizer may already carry a pad token
+    # while the model config's pad_token_id is None, which still crashes the forward at batch > 1).
+    if getattr(model.config, "pad_token_id", None) is None and getattr(tokenizer, "pad_token_id", None) is not None:
+        model.config.pad_token_id = tokenizer.pad_token_id
 
     return tokenizer, model
 
