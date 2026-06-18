@@ -78,8 +78,16 @@ def ground_truth_targets(bigwig_paths: List[str], coords, nbins: int, workers: i
         try:
             for i, (chrom, start, end) in enumerate(coords):
                 c = chrom if chrom in bw.chroms() else chrom.replace("chr", "")  # chr1 vs 1
-                vals = bw.stats(c, start, end, type="mean", nBins=nbins)
-                out[i, :, j] = np.nan_to_num([v if v is not None else 0.0 for v in vals])
+                # bw.values() -> raw per-bp array (one C call); np handles NaN + binning vectorized.
+                # This replaces stats(nBins)+Python list-comp (the ~95K x 6144 GIL-bound loop).
+                raw = np.nan_to_num(np.asarray(bw.values(c, start, end), dtype=np.float32))
+                if raw.shape[0] == nbins:  # base-resolution (our case): direct
+                    out[i, :, j] = raw
+                elif raw.shape[0] % nbins == 0:  # even downsample
+                    out[i, :, j] = raw.reshape(nbins, -1).mean(axis=1)
+                else:  # uneven bins (rare): mean over linspace edges
+                    e = np.linspace(0, raw.shape[0], nbins + 1).astype(int)
+                    out[i, :, j] = [raw[e[k]:e[k + 1]].mean() if e[k + 1] > e[k] else 0.0 for k in range(nbins)]
         finally:
             bw.close()
 
