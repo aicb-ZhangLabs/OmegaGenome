@@ -56,6 +56,8 @@ def _parse_args():
     ap.add_argument("--log_every_n_steps", type=int, default=50)
     ap.add_argument("--validate_every_n_steps", type=int, default=500)
     ap.add_argument("--num_validation_samples", type=int, default=1000)
+    ap.add_argument("--max_test_samples", type=int, default=None,
+                    help="cap test windows (default None = all test regions, per notebook; smoke caps it)")
     ap.add_argument("--num_workers", type=int, default=16)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--use_lora", action="store_true", help="cheap LoRA core instead of full fine-tune")
@@ -94,6 +96,7 @@ def main():
         args.num_steps_training, args.num_steps_warmup = 6, 2
         args.validate_every_n_steps, args.num_validation_samples = 3, 8
         args.num_accumulation_gradient, args.num_workers, args.log_every_n_steps = 2, 2, 2
+        args.max_test_samples = 8  # cap test too (full test set is huge; smoke just checks the path)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -119,7 +122,7 @@ def main():
     val_ds, val_loader = _make_loader(fasta, bw_paths, regions_by_split, regions_by_split["val"],
                                       args, tokenizer, transform_fn, 0.0, args.num_validation_samples, False)
     test_ds, test_loader = _make_loader(fasta, bw_paths, regions_by_split, regions_by_split["test"],
-                                        args, tokenizer, transform_fn, 0.0, None, False)
+                                        args, tokenizer, transform_fn, 0.0, args.max_test_samples, False)
     print(f"windows: train {len(train_ds)} / val {len(val_ds)} / test {len(test_ds)}", flush=True)
 
     model = NTv3BigWigModel(args.model, T, species_str=args.species,
