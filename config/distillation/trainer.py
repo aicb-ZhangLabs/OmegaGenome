@@ -1,6 +1,20 @@
+import os
 from dataclasses import replace
 from src.trainer.distill_trainer import DistillTrainerConfig
 from ..env import output_path
+
+
+def _ssd_base():
+    """Galaxy SSD base for student checkpoints (faster + avoids the degraded /extra NFS). Prefers
+    the sshfs mount (login/laniakea/voyager), then galaxy-native, then a node-agnostic /home fallback
+    so a node without the mount never silently writes to local /tmp."""
+    for base in ("/tmp/galaxy_srv_disk00/pengchx3", "/srv/disk00/sshfs/pengchx3"):
+        if os.path.isdir(base):
+            return base
+    return "/home/pengchx3"
+
+
+_CARBON_OUT = f"{_ssd_base()}/carbon_distillation"
 
 trainer_config = DistillTrainerConfig(
     output_dir=f"{output_path}/distillation",
@@ -56,8 +70,9 @@ nt_different_size_original_trainer_config = DistillTrainerConfig(
 nt_debug_trainer_config = replace(nt_trainer_config, epochs=2, eval_every_n_epochs=1)
 
 # Carbon-3B -> deploy_120k BPNet distillation (same 18-task NT-revised data, so max_len=1000).
+# Student checkpoints land on the galaxy SSD (_CARBON_OUT), not the degraded /extra NFS.
 carbon_trainer_config = DistillTrainerConfig(
-    output_dir=f"{output_path}/carbon_distillation/deploy_120k",
+    output_dir=f"{_CARBON_OUT}/deploy_120k",
     wandb_project="OmegaGenome-Carbon-Distill",
     epochs=200,
     batch_size=16,
@@ -65,7 +80,7 @@ carbon_trainer_config = DistillTrainerConfig(
     max_len=1000,
 )
 carbon_hyperparam_trainer_config = DistillTrainerConfig(
-    output_dir=f"{output_path}/carbon_distillation/hyperparam",
+    output_dir=f"{_CARBON_OUT}/hyperparam",
     wandb_project="OmegaGenome-Carbon-Distill-HyperParam",
     epochs=200,
     batch_size=16,
