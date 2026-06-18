@@ -164,6 +164,32 @@ NTv3's `ntv3_tracks_pipeline.py`). That join is the one data step before trainin
   pyBigWig) rather than student-vs-teacher fidelity.
 - Lesson: the 30-min CPU proof caught the failure before burning a voyager H100 — keep proofs small-first.
 
+### NTv3 Benchmark fine-tuning reproduction (2026-06-18) — 34 held-out human tracks, their HF data
+
+Fine-tune NTv3-650M-post on the **paper's own benchmark dataset** (`InstaDeepAI/NTv3_benchmark_dataset`,
+34 functional tracks, their `splits.bed` train/val/test), val-select / test-report, paper log1p PCC.
+n_train=2000, n_test=400, 16 kb window, 20 epochs, Poisson loss. Jobs 237440 (full-FT) / 237441 (LoRA r64).
+
+| config | best_val | **TEST mean** | ATAC | Histone | PRO-cap | eCLIP | polyA RNA | total RNA |
+|---|---|---|---|---|---|---|---|---|
+| **LoRA r=64** (lr 1e-4) | 0.402 | **0.423** | 0.559 | 0.566 | 0.417 | 0.235 | 0.672 | 0.482 |
+| full-FT (lr 1e-4) | 0.105 | **0.157** | 0.418 | 0.424 | 0.124 | 0.032 | -0.00 | -0.00 |
+| *paper NTv3 (target)* | — | — | *0.759* | *0.717* | — | — | — | — |
+| *paper BPNet-6M (baseline)* | — | — | *0.571* | *0.520* | — | — | — | — |
+
+**Findings (honest):**
+1. **LoRA ≫ full-FT (0.423 vs 0.157)** — an inversion that flags a *training* problem, not a code bug
+   (LoRA passes through the *same* data/eval path, so the pipeline is sound). `lr=1e-4` is fine for
+   low-rank adapters but **far too high for the full 650M backbone**: it destabilized pretrained
+   features (RNA-seq/eCLIP collapsed to ~0; best_val 0.105). Full-FT of a large FM needs ~1e-5 + warmup.
+2. **Not yet a paper match.** LoRA r64 reaches **ATAC 0.559 / Histone 0.566 ≈ the BPNet-6M baseline**
+   (0.571/0.520) but **~0.15–0.20 below NTv3's reported fine-tuning** (0.759/0.717). LoRA does well on
+   RNA-seq (0.67/0.48) — the assays full-FT destroyed.
+3. **Likely gap drivers:** (a) full-FT LR (above); (b) **data/compute scale** — we use 2000 windows /
+   20 epochs; the paper fine-tunes over the full benchmark training regions with a longer schedule.
+4. **Next experiments:** full-FT @ lr 1e-5 + warmup (should top LoRA), then scale n_train + epochs for
+   the strongest config. Tracking as they run.
+
 ## 6. Student architecture: BPNet → DilatedTrackNet (design logic)
 
 Code: `src/model/bpnet_regressor.py` (v1 student) and `src/model/dilated_track_net.py` (the upgrade).
