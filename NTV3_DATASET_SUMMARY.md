@@ -93,6 +93,27 @@ NTv3-650M-post vs ENCODE "signal p-value", K562, 400 chr8 windows (16 kb -> cent
   like-for-like (e.g., NTv3 on HepG2 DNase -> compare to their 0.753). Metric aggregation (pooled
   per-track PCC) IS sound. Our BPNet student reaches only ~0.22 student-vs-teacher fidelity regardless.
 
+## 5d. THEIR benchmark dataset IS open-sourced on HF (2026-06-17) — use it for real reproduction
+
+`InstaDeepAI/NTv3_benchmark_dataset` (HF dataset) provides everything needed for a faithful eval,
+per species:
+- `human/functional_tracks/*.bigwig` — their EXACT ground-truth tracks (34 human, `ENCSR..._M/_P` strands)
+- `human/splits.bed` — the EXACT train/val/test split -> **leakage-free** eval (fixes the chr8 risk)
+- `human/genome.fasta` — exact sequences
+- `benchmark_metadata.tsv` — per-track **mean/std** (for normalization) + assay type
+- Results: `InstaDeepAI/ntv3_benchmark` space -> `data/ntv3_benchmark_results.csv` = per-(model,track)
+  Pearson/MCC for NTv2-500M, **BPNet arch. 6M**, NTv3 650M (pre/pos), etc. -> the numbers to match.
+
+**Paper eval procedure (methods, line ~1471):** predictions unscaled to raw, then BOTH pred and
+truth **log(1+x)** transformed before Pearson. The benchmark is a **fine-tuning suite** (README:
+"fine-tuning") -> reproducing its numbers means fine-tuning per task, distinct from NTv3's native
+zero-shot track output (what we distill).
+
+**=> Switch our eval to their data**: use `human/splits.bed` test regions + their `functional_tracks`
+bigwigs + mean/std + log1p, compare to the CSV. The CSV's **BPNet-6M baseline is directly comparable
+to our BPNet student.** My earlier ad-hoc ENCODE/chr8 eval (0.61/0.92) is superseded by this. GPU work
+(fine-tune/eval) deferred until LoRA finishes.
+
 ## 5. Practical notes
 - Track names are bare accessions, so selecting "H3K4me3 in K562" requires an
   **accession → (assay, biosample) join** (ENCODE portal API for `ENCSR…`; FANTOM5 sample table for
