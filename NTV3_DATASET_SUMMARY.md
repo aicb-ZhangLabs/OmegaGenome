@@ -96,6 +96,35 @@ NTv3-650M-post vs ENCODE "signal p-value", K562, 400 chr8 windows (16 kb -> cent
   like-for-like (e.g., NTv3 on HepG2 DNase -> compare to their 0.753). Metric aggregation (pooled
   per-track PCC) IS sound. Our BPNet student reaches only ~0.22 student-vs-teacher fidelity regardless.
 
+### 5c-broad. BROADENED zero-shot native eval (2026-06-18) — 22 tracks × 3 cell lines
+
+Same eval, widened from 9 K562 tracks to **22 native tracks across K562 / HepG2 / GM12878** (DNase +
+8 histone marks), to characterize the teacher across cell types and the full histone panel.
+NTv3-650M-post, 200 chr10 windows (16 kb -> central 6144 bp @ 1 bp), **log1p (paper metric)**.
+Manifest: `config/distillation/ntv3_native_broad.json`. Job 237475.
+
+**Overall mean PCC = 0.489** (22 tracks). Note: chr10 (NOT chr8) — less leakage-prone than §5c.
+
+| by cell line | log1p PCC (n) | | by assay | log1p PCC (n) |
+|---|---|---|---|---|
+| HepG2 | 0.511 (8) | | DNase-seq | **0.711** (1) |
+| K562 | 0.494 (7) | | H3K4me1 | 0.624 (3) |
+| GM12878 | 0.460 (7) | | H3K27ac | 0.560 (1) |
+| | | | H3K4me2 | 0.553 (3) |
+| | | | H3K9ac | 0.517 (3) |
+| | | | H3K4me3 | 0.484 (3) |
+| | | | H3K36me3 | 0.419 (3) |
+| | | | H3K27me3 | 0.366 (3) |
+| | | | H3K9me3 | 0.302 (2) |
+
+**Reading it:** DNase (0.711) ≈ the paper's ~0.75 anchor; **active/sharp marks** (H3K4me1/2/3, H3K27ac,
+H3K9ac: 0.48-0.62) predict well; **broad repressive domains** (H3K27me3, H3K9me3: 0.30-0.37) are the
+weakest — expected, they are diffuse/noisy at 1 bp and hardest to localize. Cell lines are comparable
+(0.46-0.51), so the teacher generalizes across cell types, not just K562. Best single track HepG2
+H3K4me1 = 0.765; worst HepG2 H3K27me3 = 0.124 / GM12878 H3K27me3 = 0.166 / K562 H3K9me3 = 0.130.
+Same caveats as §5c (single replicate per track, GT normalization unverified, native-track zero-shot
+≠ the held-out *benchmark* which requires fine-tuning — see §5d/§5e).
+
 ## 5d. THEIR benchmark dataset IS open-sourced on HF (2026-06-17) — use it for real reproduction
 
 `InstaDeepAI/NTv3_benchmark_dataset` (HF dataset) provides everything needed for a faithful eval,
