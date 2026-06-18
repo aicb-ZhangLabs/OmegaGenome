@@ -10,7 +10,9 @@ import tempfile
 
 import numpy as np
 
-from src.data.ntv3_benchmark import BenchmarkData, load_splits, load_track_meta, sample_windows
+from src.data.ntv3_benchmark import (
+    BenchmarkData, load_splits, load_track_meta, sample_windows, stage_to_local,
+)
 
 _n = 0
 
@@ -77,8 +79,28 @@ def test_missing_bigwig_guard():
             ok(True, "missing bigWig raises FileNotFoundError")
 
 
+def test_stage_to_local():
+    with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as dst:
+        _fixture(src)
+        # rename tracks/T1.bigwig to the expected functional_tracks layout
+        os.makedirs(f"{src}/human/functional_tracks", exist_ok=True)
+        os.rename(f"{src}/tracks/T1.bigwig", f"{src}/human/functional_tracks/T1.bigwig")
+        os.makedirs(f"{src}/human", exist_ok=True)
+        os.rename(f"{src}/genome.fasta", f"{src}/human/genome.fasta")
+        os.rename(f"{src}/splits.bed", f"{src}/human/splits.bed")
+        os.rename(f"{src}/meta.tsv", f"{src}/benchmark_metadata.tsv")
+        out = stage_to_local(src, dst, "human")
+        ok(out == dst, "returns stage dir")
+        ok(os.path.exists(f"{dst}/human/functional_tracks/T1.bigwig"), "bigWig staged")
+        ok(os.path.exists(f"{dst}/human/genome.fasta"), "genome staged")
+        ok(os.path.exists(f"{dst}/benchmark_metadata.tsv"), "metadata staged")
+        m1 = os.path.getmtime(f"{dst}/human/functional_tracks/T1.bigwig")
+        stage_to_local(src, dst, "human")  # idempotent: same-size files not recopied
+        ok(os.path.getmtime(f"{dst}/human/functional_tracks/T1.bigwig") == m1, "idempotent (no recopy)")
+
+
 if __name__ == "__main__":
-    tests = [test_splits_and_windows, test_meta_and_data, test_missing_bigwig_guard]
+    tests = [test_splits_and_windows, test_meta_and_data, test_missing_bigwig_guard, test_stage_to_local]
     failed = 0
     for fn in tests:
         try:

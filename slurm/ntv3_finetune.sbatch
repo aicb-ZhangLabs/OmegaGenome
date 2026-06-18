@@ -27,8 +27,11 @@ PV=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_po
 SSD=/tmp/galaxy_srv_disk00/pengchx3
 mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3
 DATA="$SSD/ntv3_benchmark_data"
+# node-local staging dir for fast prep (real local disk, NOT the sshfs mount)
+STAGE="${SLURM_TMPDIR:-/tmp/ntv3_stage_$USER}"
 
 "$PV" -m src.train.finetune_ntv3 --data_dir "$DATA" --model InstaDeepAI/NTv3_650M_post \
-      --out "$SSD/ntv3_targets/ntv3_finetune" --window 16384 --n_train 2000 --n_test 400 \
+      --out "$SSD/ntv3_targets/ntv3_finetune" --stage_dir "$STAGE" \
+      --window 16384 --n_train 2000 --n_test 400 \
       --epochs 20 --lr 1e-4 --batch_size 2 --loss poisson "$@"
 echo "=== done: $SSD/ntv3_targets/ntv3_finetune/ntv3_finetune_result.json ==="

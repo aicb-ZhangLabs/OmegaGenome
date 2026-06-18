@@ -15,7 +15,7 @@ import os
 import numpy as np
 import torch
 
-from src.data.ntv3_benchmark import BenchmarkData, load_splits, load_track_meta, sample_windows
+from src.data.ntv3_benchmark import BenchmarkData, load_splits, load_track_meta, sample_windows, stage_to_local
 from src.model.ntv3_finetune import NTV3_CROP_FRAC, NTv3FineTune, apply_lora
 from src.model.ntv3_teacher import NTV3_650M_POST, NTv3Teacher, NTv3TeacherConfig
 from src.trainer.track_distill import _teacher_to_btl, track_distill_loss
@@ -66,6 +66,8 @@ def main():
     ap.add_argument("--lora", action="store_true", help="LoRA fine-tune (cheap; ~1%% params) vs full-FT")
     ap.add_argument("--lora_r", type=int, default=16)
     ap.add_argument("--lora_alpha", type=int, default=32)
+    ap.add_argument("--stage_dir", default=None,
+                    help="node-local dir to stage genome+bigWigs into (fast prep; e.g. $SLURM_TMPDIR)")
     args = ap.parse_args()
     if args.lora and args.freeze_backbone:
         raise SystemExit("--lora and --freeze_backbone are mutually exclusive (LoRA needs trainable adapters)")
@@ -73,8 +75,6 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     splits = load_splits(os.path.join(args.data_dir, "human/splits.bed"))
     meta = load_track_meta(os.path.join(args.data_dir, "benchmark_metadata.tsv"), "human")
-    bd = BenchmarkData(os.path.join(args.data_dir, "human/genome.fasta"),
-                       os.path.join(args.data_dir, "human/functional_tracks"), meta)
     T = len(meta)
     crop_len = round(args.window * NTV3_CROP_FRAC)
     print(f"tracks={T} window={args.window} crop_len(L_out)={crop_len} device={device} "
@@ -97,6 +97,12 @@ def main():
         tr_ids, tr_tgt, va_ids, va_tgt, te_ids, te_tgt = (d["tr_ids"], d["tr_tgt"], d["va_ids"],
                                                           d["va_tgt"], d["te_ids"], d["te_tgt"])
     else:
+        read_dir = args.data_dir
+        if args.stage_dir:
+            print(f"staging genome+bigWigs node-local -> {args.stage_dir} (fast prep) ...")
+            read_dir = stage_to_local(args.data_dir, args.stage_dir, "human")
+        bd = BenchmarkData(os.path.join(read_dir, "human/genome.fasta"),
+                           os.path.join(read_dir, "human/functional_tracks"), meta)
         prep = lambda split, n: _prepare(teacher, bd, sample_windows(splits[split], args.window, n=n),
                                          args.window, crop_len, log1p_targets=False)
         tr_ids, tr_tgt = prep("train", args.n_train)

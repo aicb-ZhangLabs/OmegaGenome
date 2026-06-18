@@ -47,6 +47,30 @@ def sample_windows(intervals: List[Coord], window: int, stride: int = None, n: i
     return coords
 
 
+def stage_to_local(data_dir: str, stage_dir: str, species: str = "human") -> str:
+    """Copy a species' genome(+.fai) + functional_tracks bigWigs + splits + metadata to fast local
+    storage (e.g. node-local /tmp), so per-window bigWig reads aren't sshfs-latency-bound.
+
+    Returns ``stage_dir`` (use it as the data_dir). Idempotent — skips files already present with a
+    matching size, so a re-run or a shared stage dir doesn't recopy.
+    """
+    import shutil
+
+    rels = [f"{species}/genome.fasta", f"{species}/genome.fasta.fai", f"{species}/splits.bed",
+            "benchmark_metadata.tsv"]
+    ft = os.path.join(data_dir, species, "functional_tracks")
+    if os.path.isdir(ft):
+        rels += [f"{species}/functional_tracks/{f}" for f in sorted(os.listdir(ft)) if f.endswith(".bigwig")]
+    for rel in rels:
+        src, dst = os.path.join(data_dir, rel), os.path.join(stage_dir, rel)
+        if not os.path.exists(src):
+            continue
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        if not (os.path.exists(dst) and os.path.getsize(dst) == os.path.getsize(src)):
+            shutil.copy2(src, dst)
+    return stage_dir
+
+
 @dataclass
 class TrackMeta:
     file_id: str
