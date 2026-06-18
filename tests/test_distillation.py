@@ -153,6 +153,49 @@ def test_teacher_tokenization_isolation():
        "defaults (NT/DNABERT2): no prefix, add_special_tokens=True (unchanged behavior)")
 
 
+def test_get_best_checkpoint_dispatch():
+    """Per-teacher checkpoint dispatch is correct AND isolated: NT uses its finetuned_models/.../
+    model-best_mcc layout; Carbon-LoRA (GLM) uses {task}_finetuned/adapter. An NT-typed lookup must
+    NOT be hijacked by a stray adapter dir (the bug an over-eager top-level carbon check could cause)."""
+    from src.model.glm import get_best_checkpoint
+
+    with tempfile.TemporaryDirectory() as d:
+        # NT layout (dir name must satisfy the NT branch's existing `mcc_score<digits>` regex)
+        nt = os.path.join(d, "nt")
+        os.makedirs(os.path.join(nt, "finetuned_models", "H3K4me3_finetuned", "model-best_mcc_score0.9078"))
+        ckpt, _ = get_best_checkpoint(nt, "H3K4me3", "NT")
+        ok(ckpt is not None and "finetuned_models" in ckpt, "NT layout -> NT path")
+
+        # Carbon-LoRA (GLM) layout
+        carbon = os.path.join(d, "carbon")
+        os.makedirs(os.path.join(carbon, "H3K4me3_finetuned"))
+        open(os.path.join(carbon, "H3K4me3_finetuned", "adapter_config.json"), "w").write("{}")
+        ckpt2, _ = get_best_checkpoint(carbon, "H3K4me3", "GLM")
+        ok(ckpt2 is not None and ckpt2.endswith("H3K4me3_finetuned"), "Carbon-LoRA -> GLM path")
+
+        # ISOLATION: NT-typed lookup ignores a stray adapter dir, still uses the NT layout
+        os.makedirs(os.path.join(nt, "H3K4me3_finetuned"))
+        open(os.path.join(nt, "H3K4me3_finetuned", "adapter_config.json"), "w").write("{}")
+        ckpt3, _ = get_best_checkpoint(nt, "H3K4me3", "NT")
+        ok(ckpt3 is not None and "finetuned_models" in ckpt3, "NT type ignores stray adapter -> NT layout")
+
+
+def test_teacher_configs_formatting():
+    """Every teacher config carries the right formatting: non-Carbon teachers stay neutral (no <dna>,
+    add_special_tokens=True, fp32), so the Carbon additions can't change their behavior; Carbon sets
+    its required <dna>/add_special=False/bf16."""
+    from config.distillation.glm import nt_2b5, caduceus, enformer, dna_bert_v2, carbon_3b, carbon_3b_lora
+
+    for name, cfg in [("nt_2b5", nt_2b5), ("caduceus", caduceus), ("enformer", enformer),
+                      ("dna_bert_v2", dna_bert_v2)]:
+        ok(cfg.input_prefix == "" and cfg.add_special_tokens is True and cfg.torch_dtype is None,
+           f"{name}: neutral (prefix='', add_special=True, dtype=None)")
+    ok(carbon_3b.input_prefix == "<dna>" and carbon_3b.add_special_tokens is False
+       and carbon_3b.torch_dtype == "bfloat16", "carbon_3b: <dna> + add_special=False + bf16")
+    ok(carbon_3b_lora.is_lora is True and carbon_3b_lora.input_prefix == "<dna>"
+       and carbon_3b_lora.torch_dtype == "bfloat16", "carbon_3b_lora: inherits formatting + is_lora")
+
+
 def test_end_to_end_loss():
     cfg = DistillationModelConfig(weight_ce=0.5, weight_kl=0.5, weight_mse=0.2,
                                   temperature=2.0, distill_method="vanilla")
@@ -175,7 +218,8 @@ def test_end_to_end_loss():
 if __name__ == "__main__":
     tests = [test_logit_standard_parity, test_kl_variants_sane, test_mse_raw,
              test_mse_l2norm_scale_invariant, test_mse_skipped, test_teacher_discovery,
-             test_deploy_120k_student, test_teacher_tokenization_isolation, test_end_to_end_loss]
+             test_deploy_120k_student, test_teacher_tokenization_isolation,
+             test_get_best_checkpoint_dispatch, test_teacher_configs_formatting, test_end_to_end_loss]
     failed = 0
     for fn in tests:
         try:

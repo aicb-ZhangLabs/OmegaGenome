@@ -310,9 +310,10 @@ def precompute_teacher_logits(
     for i in tqdm(
         range(0, len(sequences), batch_size), total=len(sequences) // batch_size
     ):
+        batch = sequences[i : i + batch_size]  # kept for downstream debug refs (len(batch), etc.)
         tok = tokenize_teacher_inputs(
             tokenizer,
-            sequences[i : i + batch_size],
+            batch,
             max_length,
             input_prefix=input_prefix,
             add_special_tokens=add_special_tokens,

@@ -134,13 +134,10 @@ def get_best_checkpoint(parent_path: str, task_name: str, model_type: str = "def
     """Find best checkpoint for a task - supports Carbon-LoRA, GLM, and NT directory structures."""
     import re
 
-    # Carbon-LoRA layout (finetune_teacher save): {parent}/{task}_finetuned/ with the PEFT adapter
-    # (adapter_config.json) directly inside — no `checkpoint-N` / `model-best_mcc` subdir. Checked
-    # first so the consolidated teacher dir (carbon_teachers/carbon_3b_lora) resolves correctly.
-    lora_dir = os.path.join(parent_path, f"{task_name}_finetuned")
-    if os.path.isfile(os.path.join(lora_dir, "adapter_config.json")):
-        return lora_dir, -1.0
-
+    # Explicit per-teacher dispatch (clearer + each layout is isolated):
+    #   NT   -> {parent}/finetuned_models/{task}_finetuned/model-best_mcc_score_X/
+    #   GLM  -> Carbon-LoRA {parent}/{task}_finetuned/ (PEFT adapter), else {parent}/{task}/checkpoint-N/
+    # (Enformer/Caduceus never reach here — find_teacher_checkpoint routes them to their own finders.)
     if "NT" in model_type or "nucleotide" in parent_path.lower():
         # NT checkpoint structure: finetuned_models/{task}_finetuned/model-best*mcc_score*
         task_dir = os.path.join(parent_path, "finetuned_models", f"{task_name}_finetuned")
@@ -161,6 +158,11 @@ def get_best_checkpoint(parent_path: str, task_name: str, model_type: str = "def
                     continue
         return best_dir, best_score
     else:
+        # GLM family. Carbon-LoRA teachers save the PEFT adapter directly under {task}_finetuned/
+        # (adapter_config.json present); the original GLM layout is {parent}/{task}/checkpoint-N/.
+        lora_dir = os.path.join(parent_path, f"{task_name}_finetuned")
+        if os.path.isfile(os.path.join(lora_dir, "adapter_config.json")):
+            return lora_dir, -1.0
         # Original GLM checkpoint structure
         return orig_get_best_checkpoint(parent_path, task_name), -1.0
 
