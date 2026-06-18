@@ -73,7 +73,7 @@ def _make_loader(fasta, bw_paths, regions, split_regions, args, tokenizer, trans
                              keep_target_center_fraction=args.keep_target_center_fraction,
                              limit_num_samples=limit)
     return ds, DataLoader(ds, batch_size=args.mini_batch_size, shuffle=shuffle,
-                          num_workers=args.num_workers, drop_last=shuffle)
+                          num_workers=args.num_workers)  # no drop_last (matches notebook)
 
 
 @torch.no_grad()

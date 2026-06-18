@@ -32,5 +32,5 @@ DATA="$SSD/ntv3_benchmark_data"
 STAGE="${SLURM_TMPDIR:-/tmp/ntv3_stage_$USER}"
 
 "$PV" -u -m src.train.finetune_ntv3 --data_dir "$DATA" --model InstaDeepAI/NTv3_650M_post \
-      --out "$SSD/ntv3_targets/ntv3_finetune_faithful" --stage_dir "$STAGE" --wandb "$@"
+      --out "$SSD/ntv3_targets/ntv3_finetune_faithful" --stage_dir "$STAGE" --wandb --compile "$@"
 echo "=== done: $SSD/ntv3_targets/ntv3_finetune_faithful/ntv3_finetune_result.json ==="
