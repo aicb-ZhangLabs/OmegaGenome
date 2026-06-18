@@ -110,6 +110,15 @@ def build_glm(config: GLMConfig):
             trust_remote_code=config.trust_remote_code,
         )
 
+    # Some autoregressive tokenizers (e.g. Carbon) define no pad token, which breaks batched
+    # tokenization in eval/precompute. Use eos as pad (padding is masked by attention_mask, so it
+    # does not change predictions) and sync the model's pad_token_id for sequence-classification
+    # pooling (it locates the last non-pad token).
+    if tokenizer.pad_token is None and tokenizer.eos_token is not None:
+        tokenizer.pad_token = tokenizer.eos_token
+        if getattr(model.config, "pad_token_id", None) is None:
+            model.config.pad_token_id = tokenizer.pad_token_id
+
     return tokenizer, model
 
 
