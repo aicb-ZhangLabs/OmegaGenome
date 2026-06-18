@@ -68,6 +68,8 @@ def main():
     ap.add_argument("--lora_alpha", type=int, default=32)
     ap.add_argument("--stage_dir", default=None,
                     help="node-local dir to stage genome+bigWigs into (fast prep; e.g. $SLURM_TMPDIR)")
+    ap.add_argument("--prep_only", action="store_true",
+                    help="build + cache the prepared data, then exit (run on a fast-IO node like galaxy)")
     args = ap.parse_args()
     if args.lora and args.freeze_backbone:
         raise SystemExit("--lora and --freeze_backbone are mutually exclusive (LoRA needs trainable adapters)")
@@ -81,12 +83,6 @@ def main():
           f"mode={'head-only' if args.freeze_backbone else 'full-FT'}")
 
     teacher = NTv3Teacher(NTv3TeacherConfig(model_name_or_path=args.model, species="human"), device=device)
-    backbone = teacher.model
-    if args.lora:
-        backbone = apply_lora(backbone, r=args.lora_r, alpha=args.lora_alpha)
-    model = NTv3FineTune(backbone, teacher.model.config.embed_dim, T, freeze_backbone=args.freeze_backbone).to(device)
-    n_train_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"trainable params: {n_train_params/1e6:.2f}M  ({'LoRA' if args.lora else 'head-only' if args.freeze_backbone else 'full-FT'})")
 
     # Cache the prepared (tokenized seqs + bigWig targets) — slow over sshfs, and identical across
     # head-only/LoRA/full-FT/model-size (same NTv3 tokenizer + same windows/tracks). Shared by config.
@@ -112,6 +108,19 @@ def main():
                     "te_ids": te_ids, "te_tgt": te_tgt}, cache)
         print(f"cached prepared data -> {cache}")
     print(f"train {len(tr_ids)} / val {len(va_ids)} / test {len(te_ids)} windows")
+
+    if args.prep_only:
+        print("--prep_only: prepared-data cache written; exiting before model build / training.")
+        return
+
+    # build the model only now (prep above needs just the tokenizer; this lets prep run on a
+    # fast-IO node like galaxy without touching the GPU)
+    backbone = teacher.model
+    if args.lora:
+        backbone = apply_lora(backbone, r=args.lora_r, alpha=args.lora_alpha)
+    model = NTv3FineTune(backbone, teacher.model.config.embed_dim, T, freeze_backbone=args.freeze_backbone).to(device)
+    n_train_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"trainable params: {n_train_params/1e6:.2f}M  ({'LoRA' if args.lora else 'head-only' if args.freeze_backbone else 'full-FT'})")
 
     params = [p for p in model.parameters() if p.requires_grad]
     opt = torch.optim.Adam(params, lr=args.lr)

@@ -58,22 +58,31 @@ def prepare_bigwigs(manifest: dict, cache_dir: str) -> List[str]:
     return paths
 
 
-def ground_truth_targets(bigwig_paths: List[str], coords, nbins: int) -> np.ndarray:
-    """[N, nbins, T] binned-mean measured signal over the windows for each track's bigWig."""
-    import pyBigWig  # lazy: module imports without pyBigWig installed
+def ground_truth_targets(bigwig_paths: List[str], coords, nbins: int, workers: int = 8) -> np.ndarray:
+    """[N, nbins, T] binned-mean measured signal over the windows for each track's bigWig.
 
-    bws = [pyBigWig.open(p) if p else None for p in bigwig_paths]  # None = missing track -> zeros
-    out = np.zeros((len(coords), nbins, len(bws)), dtype=np.float32)
-    try:
-        for i, (chrom, start, end) in enumerate(coords):
-            for j, bw in enumerate(bws):
-                if bw is None:
-                    continue
+    Reads are parallelized over tracks (one thread per bigWig, each with its own handle, writing a
+    disjoint output column -> no races). Combined with node-local staging this turns the prep from
+    hours (sshfs-latency-bound) into minutes. ``None`` paths -> zero column (missing track).
+    """
+    import pyBigWig  # lazy: module imports without pyBigWig installed
+    from concurrent.futures import ThreadPoolExecutor
+
+    out = np.zeros((len(coords), nbins, len(bigwig_paths)), dtype=np.float32)
+
+    def _read_track(j: int) -> None:
+        path = bigwig_paths[j]
+        if path is None:
+            return  # leave zeros
+        bw = pyBigWig.open(path)
+        try:
+            for i, (chrom, start, end) in enumerate(coords):
                 c = chrom if chrom in bw.chroms() else chrom.replace("chr", "")  # chr1 vs 1
                 vals = bw.stats(c, start, end, type="mean", nBins=nbins)
                 out[i, :, j] = np.nan_to_num([v if v is not None else 0.0 for v in vals])
-    finally:
-        for bw in bws:
-            if bw is not None:
-                bw.close()
+        finally:
+            bw.close()
+
+    with ThreadPoolExecutor(max_workers=max(1, min(workers, len(bigwig_paths)))) as ex:
+        list(ex.map(_read_track, range(len(bigwig_paths))))
     return out
