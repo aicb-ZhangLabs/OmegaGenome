@@ -406,16 +406,17 @@ def evaluate_and_log_teacher(
 
     # Collate function for teacher
     def collate_fn(batch):
-        texts = [_prefix + item["text"] for item in batch]
-        labels = [item["label"] for item in batch]
+        from ..trainer.utils import tokenize_teacher_inputs
 
-        encoded = teacher_tokenizer(
-            texts,
-            padding="max_length",
-            truncation=True,
-            max_length=config.trainer_config.max_len,
+        labels = [item["label"] for item in batch]
+        # Same helper as precompute: applies prefix + add_special_tokens (HF tokenizers only), so a
+        # custom-tokenizer teacher (Enformer) isn't passed an unsupported kwarg.
+        encoded = tokenize_teacher_inputs(
+            teacher_tokenizer,
+            [item["text"] for item in batch],
+            config.trainer_config.max_len,
+            input_prefix=_prefix,
             add_special_tokens=_add_special,
-            return_tensors="pt",
         )
 
         # FIX: Handle missing attention_mask

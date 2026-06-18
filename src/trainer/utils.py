@@ -11,6 +11,24 @@ from typing import Tuple, Optional
 
 import torch.nn as nn
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoConfig
+from transformers import PreTrainedTokenizerBase
+
+
+def tokenize_teacher_inputs(tokenizer, sequences, max_length, input_prefix="", add_special_tokens=True):
+    """Tokenize raw DNA for a teacher, applying its input formatting consistently.
+
+    - ``input_prefix`` is prepended to each sequence (e.g. Carbon's "<dna>"); a no-op when "".
+    - ``add_special_tokens`` is passed ONLY to real HF tokenizers (``PreTrainedTokenizerBase``). Custom
+      dummy tokenizers (e.g. Enformer's) don't accept that kwarg, so passing it would raise TypeError.
+      This keeps the call safe for every teacher (NT / DNABERT2 / Carbon / Caduceus / Enformer).
+
+    Returns the tokenizer encoding (``input_ids`` [+ ``attention_mask``]).
+    """
+    texts = [input_prefix + s for s in sequences] if input_prefix else list(sequences)
+    kwargs = dict(padding="max_length", truncation=True, max_length=max_length, return_tensors="pt")
+    if isinstance(tokenizer, PreTrainedTokenizerBase):
+        kwargs["add_special_tokens"] = add_special_tokens
+    return tokenizer(texts, **kwargs)
 
 
 def orig_get_best_checkpoint(parent_dir, task_name):
@@ -292,14 +310,12 @@ def precompute_teacher_logits(
     for i in tqdm(
         range(0, len(sequences), batch_size), total=len(sequences) // batch_size
     ):
-        batch = [input_prefix + s for s in sequences[i : i + batch_size]]
-        tok = tokenizer(
-            batch,
-            padding="max_length",
-            truncation=True,
-            max_length=max_length,
+        tok = tokenize_teacher_inputs(
+            tokenizer,
+            sequences[i : i + batch_size],
+            max_length,
+            input_prefix=input_prefix,
             add_special_tokens=add_special_tokens,
-            return_tensors="pt",
         )
         # input_ids = tok.input_ids.to(device)
 

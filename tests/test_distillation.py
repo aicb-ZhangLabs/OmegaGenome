@@ -121,6 +121,38 @@ def test_deploy_120k_student():
     ok(sa.shape == ta.shape, f"MSE alignment shapes match: {sa.shape} vs {ta.shape}")
 
 
+def test_teacher_tokenization_isolation():
+    """tokenize_teacher_inputs must apply prefix + add_special_tokens for HF tokenizers, but NOT pass
+    add_special_tokens to custom tokenizers (e.g. Enformer's) that don't accept it — so the Carbon
+    formatting can't break the other teachers."""
+    from transformers import PreTrainedTokenizerBase
+    from src.trainer.utils import tokenize_teacher_inputs
+
+    class CustomTok:  # mimics EnformerTokenizer: no add_special_tokens / **kwargs
+        def __call__(self, sequences, padding="max_length", truncation=True, max_length=1024, return_tensors="pt"):
+            return {"input_ids": torch.zeros(len(sequences), max_length, dtype=torch.long)}
+
+    # custom tokenizer: must not crash (add_special_tokens NOT forwarded)
+    enc = tokenize_teacher_inputs(CustomTok(), ["ACGT", "TTGG"], max_length=8,
+                                  input_prefix="<dna>", add_special_tokens=False)
+    ok(enc["input_ids"].shape == (2, 8), "custom tokenizer handled without add_special_tokens kwarg")
+
+    class StubHF(PreTrainedTokenizerBase):
+        captured = {}
+        def __call__(self, texts, **kw):
+            type(self).captured = {"texts": texts, **kw}
+            return {"input_ids": torch.zeros(len(texts), kw["max_length"], dtype=torch.long)}
+
+    t = StubHF.__new__(StubHF)
+    tokenize_teacher_inputs(t, ["ACGT"], max_length=8, input_prefix="<dna>", add_special_tokens=False)
+    ok(StubHF.captured["texts"] == ["<dna>ACGT"], "HF tokenizer gets the prefix")
+    ok(StubHF.captured.get("add_special_tokens") is False, "HF tokenizer gets add_special_tokens")
+    t2 = StubHF.__new__(StubHF)
+    tokenize_teacher_inputs(t2, ["ACGT"], max_length=8)  # defaults = other teachers
+    ok(StubHF.captured["texts"] == ["ACGT"] and StubHF.captured.get("add_special_tokens") is True,
+       "defaults (NT/DNABERT2): no prefix, add_special_tokens=True (unchanged behavior)")
+
+
 def test_end_to_end_loss():
     cfg = DistillationModelConfig(weight_ce=0.5, weight_kl=0.5, weight_mse=0.2,
                                   temperature=2.0, distill_method="vanilla")
@@ -143,7 +175,7 @@ def test_end_to_end_loss():
 if __name__ == "__main__":
     tests = [test_logit_standard_parity, test_kl_variants_sane, test_mse_raw,
              test_mse_l2norm_scale_invariant, test_mse_skipped, test_teacher_discovery,
-             test_deploy_120k_student, test_end_to_end_loss]
+             test_deploy_120k_student, test_teacher_tokenization_isolation, test_end_to_end_loss]
     failed = 0
     for fn in tests:
         try:
