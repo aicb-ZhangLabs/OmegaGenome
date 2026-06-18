@@ -22,8 +22,10 @@ from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import carbon_vanilla_mse_raw, carbon_vanilla_mse_l2norm
 from ...slurm import basic_distillation_slurm
 
-# Consolidated Carbon-3B LoRA teachers on the galaxy SSD ({task}_finetuned/ adapters).
-CARBON_PARENT_PATH = "/tmp/galaxy_srv_disk00/pengchx3/carbon_teachers/carbon_3b_lora"
+# Consolidated Carbon-3B LoRA teachers ({task}_finetuned/ adapters). On /home: node-agnostic
+# (reachable identically on galaxy/laniakea/voyager) and the teacher is read once per task at
+# precompute time, so the slower-than-SSD FS doesn't affect training throughput.
+CARBON_PARENT_PATH = "/home/pengchx3/carbon_teachers/carbon_3b_lora"
 
 CARBON_TASKS = [
     "H3K27me3", "H3K36me3", "H4K20me1", "H2AFZ", "H3K27ac", "H3K4me1", "H3K4me2", "H3K4me3",
