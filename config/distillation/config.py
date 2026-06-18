@@ -12,6 +12,7 @@ from .experiments import caduceus
 from .experiments import caduceus_hyperparam
 from .experiments import enformer
 from .experiments import enformer_hyperparam
+from .experiments import carbon
 
 # Combine all configs
 configs = {
@@ -20,6 +21,7 @@ configs = {
     **nt_different_size.experiment_configs,
     **caduceus.experiment_configs,
     **enformer.experiment_configs,
+    **carbon.experiment_configs,
 }
 
 # Hyperparameter search configs
@@ -30,4 +32,5 @@ hyperparam_configs = {
     **caduceus_hyperparam.experiment_configs,
     **nt_different_size.small_medium_large_bpnet_experiment_configs,
     **enformer_hyperparam.experiment_configs,
+    **carbon.hyperparam_experiment_configs,
 }

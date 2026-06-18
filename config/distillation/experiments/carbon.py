@@ -87,3 +87,13 @@ carbon_base_hyperparam_l2norm_config = DistillationHyperparamExperimentConfig(
     slurm_config=basic_distillation_slurm,
     **_GRID,
 )
+
+# Registries (picked by name via tyro on the distill / distill_hyperparam CLIs).
+experiment_configs = {
+    "carbon-raw": carbon_raw_config,
+    "carbon-l2norm": carbon_l2norm_config,
+}
+hyperparam_experiment_configs = {
+    "carbon-base-raw": carbon_base_hyperparam_raw_config,
+    "carbon-base-l2norm": carbon_base_hyperparam_l2norm_config,
+}
