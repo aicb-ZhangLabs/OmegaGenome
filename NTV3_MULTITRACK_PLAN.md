@@ -172,23 +172,27 @@ n_train=2000, n_test=400, 16 kb window, 20 epochs, Poisson loss. Jobs 237440 (fu
 
 | config | best_val | **TEST mean** | ATAC | Histone | PRO-cap | eCLIP | polyA RNA | total RNA |
 |---|---|---|---|---|---|---|---|---|
-| **LoRA r=64** (lr 1e-4) | 0.402 | **0.423** | 0.559 | 0.566 | 0.417 | 0.235 | 0.672 | 0.482 |
-| full-FT (lr 1e-4) | 0.105 | **0.157** | 0.418 | 0.424 | 0.124 | 0.032 | -0.00 | -0.00 |
+| **full-FT (lr 1e-5)** | 0.408 | **0.440** | 0.543 | 0.572 | 0.445 | 0.289 | 0.602 | 0.469 |
+| LoRA r=64 (lr 1e-4) | 0.402 | 0.423 | 0.559 | 0.566 | 0.417 | 0.235 | 0.672 | 0.482 |
+| full-FT (lr 1e-4) | 0.105 | 0.157 | 0.418 | 0.424 | 0.124 | 0.032 | -0.00 | -0.00 |
 | *paper NTv3 (target)* | — | — | *0.759* | *0.717* | — | — | — | — |
 | *paper BPNet-6M (baseline)* | — | — | *0.571* | *0.520* | — | — | — | — |
 
 **Findings (honest):**
-1. **LoRA ≫ full-FT (0.423 vs 0.157)** — an inversion that flags a *training* problem, not a code bug
-   (LoRA passes through the *same* data/eval path, so the pipeline is sound). `lr=1e-4` is fine for
-   low-rank adapters but **far too high for the full 650M backbone**: it destabilized pretrained
-   features (RNA-seq/eCLIP collapsed to ~0; best_val 0.105). Full-FT of a large FM needs ~1e-5 + warmup.
-2. **Not yet a paper match.** LoRA r64 reaches **ATAC 0.559 / Histone 0.566 ≈ the BPNet-6M baseline**
-   (0.571/0.520) but **~0.15–0.20 below NTv3's reported fine-tuning** (0.759/0.717). LoRA does well on
-   RNA-seq (0.67/0.48) — the assays full-FT destroyed.
-3. **Likely gap drivers:** (a) full-FT LR (above); (b) **data/compute scale** — we use 2000 windows /
-   20 epochs; the paper fine-tunes over the full benchmark training regions with a longer schedule.
-4. **Next experiments:** full-FT @ lr 1e-5 + warmup (should top LoRA), then scale n_train + epochs for
-   the strongest config. Tracking as they run.
+1. **LoRA ≫ full-FT @ lr 1e-4 (0.423 vs 0.157), CONFIRMED as an LR problem.** `lr=1e-4` is fine for
+   low-rank adapters but far too high for the full 650M backbone (destabilized features; RNA/eCLIP→0).
+   **Dropping to lr 1e-5 recovered full-FT 0.157 → 0.440 (+0.28)** — RNA/eCLIP collapse gone, and full-FT
+   now edges LoRA (0.440 vs 0.423). LoRA passes the *same* data/eval path, so the pipeline was always
+   sound; the LoRA>full-FT inversion was pure optimization. Lesson: full-FT of a large FM needs ~1e-5.
+2. **Not yet a paper match.** Best config (full-FT lr 1e-5) reaches **ATAC 0.543 / Histone 0.572 ≈ the
+   BPNet-6M baseline** (0.571/0.520) but still **~0.15–0.18 below NTv3's reported fine-tuning**
+   (0.759/0.717). LoRA & full-FT(1e-5) are now within 0.02 of each other — the LR was the big lever, not
+   the adapter-vs-full choice.
+3. **Remaining gap driver = data/compute scale.** With LR fixed, the residual ~0.15 gap most plausibly
+   reflects training budget: we use 2000 windows / 20 epochs; the paper fine-tunes over the full
+   benchmark training regions with a longer schedule. Testing this next.
+4. **Next experiments:** scale n_train (2000→8000) + epochs for full-FT lr 1e-5 (the now-best config)
+   to probe the data-scale hypothesis toward the paper's 0.72–0.76. Tracking as they run.
 
 ## 6. Student architecture: BPNet → DilatedTrackNet (design logic)
 
