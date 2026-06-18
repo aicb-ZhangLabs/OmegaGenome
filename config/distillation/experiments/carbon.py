@@ -21,11 +21,11 @@ from ..trainer import carbon_trainer_config, carbon_hyperparam_trainer_config
 from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import carbon_vanilla_mse_raw, carbon_vanilla_mse_l2norm
 from ...slurm import basic_distillation_slurm
+from ..paths import CARBON_TEACHER_DIR
 
-# Consolidated Carbon-3B LoRA teachers ({task}_finetuned/ adapters). On /home: node-agnostic
-# (reachable identically on galaxy/laniakea/voyager) and the teacher is read once per task at
-# precompute time, so the slower-than-SSD FS doesn't affect training throughput.
-CARBON_PARENT_PATH = "/home/pengchx3/carbon_teachers/carbon_3b_lora"
+# Parent dir of the 18 `{task}_finetuned/` LoRA adapters. Machine-specific value lives in ONE place
+# (config/distillation/paths.py, env-overridable via CARBON_TEACHER_DIR) for easy reproduction.
+CARBON_PARENT_PATH = CARBON_TEACHER_DIR
 
 CARBON_TASKS = [
     "H3K27me3", "H3K36me3", "H4K20me1", "H2AFZ", "H3K27ac", "H3K4me1", "H3K4me2", "H3K4me3",

@@ -1,20 +1,11 @@
-import os
 from dataclasses import replace
 from src.trainer.distill_trainer import DistillTrainerConfig
 from ..env import output_path
+from .paths import CARBON_OUTPUT_BASE
 
-
-def _ssd_base():
-    """Galaxy SSD base for student checkpoints (faster + avoids the degraded /extra NFS). Prefers
-    the sshfs mount (login/laniakea/voyager), then galaxy-native, then a node-agnostic /home fallback
-    so a node without the mount never silently writes to local /tmp."""
-    for base in ("/tmp/galaxy_srv_disk00/pengchx3", "/srv/disk00/sshfs/pengchx3"):
-        if os.path.isdir(base):
-            return base
-    return "/home/pengchx3"
-
-
-_CARBON_OUT = f"{_ssd_base()}/carbon_distillation"
+# Student-checkpoint base (galaxy SSD by default, /home fallback) — machine-specific value lives in
+# ONE place (config/distillation/paths.py, env-overridable via CARBON_OUTPUT_BASE).
+_CARBON_OUT = f"{CARBON_OUTPUT_BASE}/carbon_distillation"
 
 trainer_config = DistillTrainerConfig(
     output_dir=f"{output_path}/distillation",
