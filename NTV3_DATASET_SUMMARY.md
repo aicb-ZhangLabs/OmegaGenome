@@ -73,15 +73,18 @@ eval/benchmark/preprocessing code; their GitHub `notebooks/` has only inference 
 GitHub v3 doc); aligning ground truth to that region at 1 bp took the mean from **0.197 -> 0.611**.
 The jump proves the alignment was the bug and that NTv3 is a strong teacher.
 
+**Second fix (paper metric):** the paper computes Pearson after **log(1+x) on BOTH** prediction and
+truth (methods, line ~1471). With log1p, **DNase = 0.742 ≈ the paper's 0.75** anchor.
+
 NTv3-650M-post vs ENCODE "signal p-value", K562, 400 chr8 windows (16 kb -> central 6144 bp @ 1 bp):
 
-| track | Pearson | track | Pearson |
-|---|---|---|---|
-| DNase-seq | 0.916 | H2AFZ | 0.481 |
-| H3K4me2 | 0.819 | H3K4me1 | 0.413 |
-| H3K4me3 | 0.807 | H3K36me3 | 0.279 |
-| H3K9ac | 0.779 | H3K9me3 | 0.257 |
-| H3K27me3 | 0.748 | **mean** | **0.611** |
+| track | raw PCC | **log1p (paper metric)** | track | raw | log1p |
+|---|---|---|---|---|---|
+| DNase-seq | 0.916 | **0.742** | H3K4me2 | 0.819 | 0.522 |
+| H3K27me3 | 0.748 | 0.785 | H3K4me3 | 0.807 | 0.467 |
+| H3K9ac | 0.779 | 0.527 | H3K4me1 | 0.413 | 0.356 |
+| H2AFZ | 0.481 | 0.291 | H3K36me3 | 0.279 | 0.206 |
+| H3K9me3 | 0.257 | 0.243 | **MEAN** | **0.611** | **0.460** |
 
 **CAVEATS — do NOT call this a paper reproduction:**
 - DNase **0.92 != paper 0.75** (different cell line: K562 vs their HepG2/IMR-90).
@@ -113,6 +116,26 @@ zero-shot track output (what we distill).
 bigwigs + mean/std + log1p, compare to the CSV. The CSV's **BPNet-6M baseline is directly comparable
 to our BPNet student.** My earlier ad-hoc ENCODE/chr8 eval (0.61/0.92) is superseded by this. GPU work
 (fine-tune/eval) deferred until LoRA finishes.
+
+## 5e. PAPER BENCHMARK TARGETS (the reproduction goal) — from their results CSV (2026-06-17)
+
+Extracted from `InstaDeepAI/ntv3_benchmark` -> `data/ntv3_benchmark_results.csv` (mean Pearson per
+assay over the human functional tracks). This is what our fine-tuned NTv3 must match and what our
+distilled student must beat (vs **BPNet-6M**, the architecture closest to our student):
+
+| assay (human) | NTv3-650M (post) | NTv3-650M (pre) | **BPNet-6M** | NTv2-500M |
+|---|---|---|---|---|
+| ATAC-seq | **0.759** | 0.698 | 0.571 | 0.497 |
+| Histone ChIP-seq | **0.717** | 0.659 | 0.520 | 0.532 |
+| RNA-seq | **0.695** | 0.677 | 0.330 | 0.452 |
+| eCLIP | **0.584** | 0.565 | 0.283 | 0.397 |
+| PRO-cap | **0.508** | 0.453 | 0.398 | 0.215 |
+
+- Other baselines in the CSV: Caduceus-7M, Evo2-1B, HyenaDNA-7M, Residual-CNN-44M/700k, NTv3-8M/100M (pre).
+- Our targets: fine-tuned NTv3-650M -> ~these numbers; distilled student -> **beat BPNet-6M** (0.52-0.57).
+- NB: for our 9 K562 *native* tracks (§5c), the paper only reports DNase precisely (~0.75); the
+  benchmark Histone-ChIP 0.717 is a *fine-tuned, held-out-track* number, not directly comparable to
+  our zero-shot native histone eval.
 
 ## 5. Practical notes
 - Track names are bare accessions, so selecting "H3K4me3 in K562" requires an
