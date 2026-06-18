@@ -54,6 +54,24 @@ nt_different_size_original_trainer_config = DistillTrainerConfig(
     max_len=1000,
 )
 nt_debug_trainer_config = replace(nt_trainer_config, epochs=2, eval_every_n_epochs=1)
+
+# Carbon-3B -> deploy_120k BPNet distillation (same 18-task NT-revised data, so max_len=1000).
+carbon_trainer_config = DistillTrainerConfig(
+    output_dir=f"{output_path}/carbon_distillation/deploy_120k",
+    wandb_project="OmegaGenome-Carbon-Distill",
+    epochs=200,
+    batch_size=16,
+    lr=1e-4,
+    max_len=1000,
+)
+carbon_hyperparam_trainer_config = DistillTrainerConfig(
+    output_dir=f"{output_path}/carbon_distillation/hyperparam",
+    wandb_project="OmegaGenome-Carbon-Distill-HyperParam",
+    epochs=200,
+    batch_size=16,
+    max_len=1000,
+)
+carbon_debug_trainer_config = replace(carbon_trainer_config, epochs=2, eval_every_n_epochs=1)
 # Caduceus trainer configurations
 caduceus_trainer_config = DistillTrainerConfig(
     output_dir=f"{output_path}/caduceus_distillation/vanilla_original",

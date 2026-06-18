@@ -47,3 +47,13 @@ carbon_3b = GLMConfig(
 )
 carbon_8b = replace(carbon_3b, model_name_or_path="HuggingFaceBio/Carbon-8B")
 carbon_500m = replace(carbon_3b, model_name_or_path="HuggingFaceBio/Carbon-500M")
+
+# Carbon-3B LoRA *teacher* config for distillation: loads the base model + a per-task LoRA adapter
+# (the consolidated teachers). merge_lora=True for fast precompute; base_model_path explicit so
+# loading doesn't rely on adapter_config auto-detection.
+carbon_3b_lora = replace(
+    carbon_3b,
+    is_lora=True,
+    base_model_path="HuggingFaceBio/Carbon-3B",
+    merge_lora=True,
+)
