@@ -10,7 +10,7 @@ cd /home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
 SB=/pkg/slurm/22.05.3/bin
 SPECS="${1:?need specs file}"
 HFSSD=/tmp/galaxy_srv_disk00/pengchx3/hf_cache_shared
-LAN_CAP=6; VOY_CAP=0  # voyager reserved for ntv3 finetune
+LAN_CAP=7; VOY_CAP=0  # voyager reserved for ntv3 finetune
 count_node(){
   local node="$1" r pd=0 j rn
   r=$("$SB/squeue" -u pengchx3 -w "$node" -h -t R 2>/dev/null | wc -l)
