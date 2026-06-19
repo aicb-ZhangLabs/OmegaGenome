@@ -510,10 +510,15 @@ def precompute_teacher_logits(
                                 _keys = list(_dd.keys())
                                 print(f"[leak] dict type={type(_dd).__module__}.{type(_dd).__name__} "
                                       f"len={len(_dd)} sample_keys={_keys[:3]}", flush=True)
-                                for _owner in _gc.get_referrers(_dd):
-                                    _on = type(_owner).__name__
-                                    if _on not in ("frame", "list"):
-                                        print(f"[leak]   dict owned by: {type(_owner).__module__}.{_on}", flush=True)
+                                import types as _types
+                                for _cell in _gc.get_referrers(_dd):
+                                    if type(_cell).__name__ != "cell":
+                                        continue
+                                    for _fn in _gc.get_referrers(_cell):
+                                        if isinstance(_fn, _types.FunctionType):
+                                            _c = _fn.__code__
+                                            print(f"[leak]   closure fn: {_fn.__module__}.{_fn.__qualname__} "
+                                                  f"@ {_c.co_filename}:{_c.co_firstlineno}", flush=True)
             if _b % 50 == 0 and torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 print(f"[precompute] batch {_b}: GPU mem {torch.cuda.memory_allocated()/1e9:.2f}GB", flush=True)
