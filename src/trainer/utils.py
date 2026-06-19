@@ -321,6 +321,19 @@ def precompute_teacher_logits(
     if hasattr(model, "config") and hasattr(model.config, "use_cache"):
         model.config.use_cache = False
 
+    # Strip forward hooks from the teacher. A hook (wandb.watch / accelerate / leftover PEFT) captures
+    # each forward's `hidden_states` tuple into a closure defaultdict that is never flushed during
+    # precompute, so the 31-layer activations accumulate ~128MB/batch and OOM ~batch 350. The teacher
+    # is frozen and only used here, so removing its hooks is safe.
+    _removed = 0
+    if hasattr(model, "modules"):
+        for _m in model.modules():
+            if getattr(_m, "_forward_hooks", None):
+                _m._forward_hooks.clear()
+                _removed += 1
+    if _removed:
+        print(f"[precompute] cleared forward hooks on {_removed} teacher modules", flush=True)
+
     if torch.cuda.is_available():
         print(f"[precompute] GPU mem after model load: {torch.cuda.memory_allocated()/1e9:.2f}GB "
               f"(reserved {torch.cuda.memory_reserved()/1e9:.2f}GB)", flush=True)
