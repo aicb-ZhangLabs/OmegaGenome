@@ -19,6 +19,14 @@ set -euo pipefail
 REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
 cd "$REPO"
 source slurm/env_setup.sh
+# Optional HF-cache override (e.g. big base-model downloads -> SSD, not the tight /home quota).
+# Submit with: sbatch --export=ALL,HF_OVERRIDE=/tmp/galaxy_srv_disk00/pengchx3/hf_cache_shared ...
+if [ -n "${HF_OVERRIDE:-}" ]; then
+  export HF_HOME="$HF_OVERRIDE" HF_HUB_CACHE="$HF_OVERRIDE/hub" HUGGINGFACE_HUB_CACHE="$HF_OVERRIDE/hub" \
+         HF_DATASETS_CACHE="$HF_OVERRIDE/datasets" TRANSFORMERS_CACHE="$HF_OVERRIDE/hub" HF_ASSETS_CACHE="$HF_OVERRIDE/assets"
+  mkdir -p "$HF_OVERRIDE/hub" "$HF_OVERRIDE/datasets" "$HF_OVERRIDE/assets"
+  echo "HF cache overridden -> $HF_OVERRIDE"
+fi
 export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
 export WANDB_INIT_TIMEOUT=300
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True  # reduce fragmentation OOM
