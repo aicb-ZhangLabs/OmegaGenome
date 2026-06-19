@@ -313,6 +313,17 @@ def precompute_teacher_logits(
             and getattr(tokenizer, "pad_token_id", None) is not None:
         model.config.pad_token_id = tokenizer.pad_token_id
 
+    # Eval mode (deterministic features; the teacher eval set this but can be cache-skipped). Also
+    # disable the causal-LM KV cache: with use_cache=True a SequenceClassification forward can still
+    # build/keep a per-position cache that balloons memory.
+    if hasattr(model, "eval"):
+        model.eval()
+    if hasattr(model, "config") and hasattr(model.config, "use_cache"):
+        model.config.use_cache = False
+
+    if torch.cuda.is_available():
+        print(f"[precompute] GPU mem after model load: {torch.cuda.memory_allocated()/1e9:.2f}GB "
+              f"(reserved {torch.cuda.memory_reserved()/1e9:.2f}GB)", flush=True)
     print(f"Computing teacher outputs for {len(sequences)} sequences...")
     for i in tqdm(
         range(0, len(sequences), batch_size), total=len(sequences) // batch_size
