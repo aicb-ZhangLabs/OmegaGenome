@@ -331,8 +331,22 @@ def precompute_teacher_logits(
             if getattr(_m, "_forward_hooks", None):
                 _m._forward_hooks.clear()
                 _removed += 1
-    if _removed:
-        print(f"[precompute] cleared forward hooks on {_removed} teacher modules", flush=True)
+    # GLOBAL forward hooks (register_module_forward_hook) fire for EVERY module process-wide -> they
+    # also wrap the teacher. They live here, not on the modules, so the per-module clear above misses
+    # them. Identify + clear (these are the wandb.watch/log-tracking closures hoarding hidden_states).
+    import torch.nn.modules.module as _modmod
+    for _name, _d in (("forward", _modmod._global_forward_hooks),
+                      ("forward_pre", _modmod._global_forward_pre_hooks),
+                      ("backward", _modmod._global_backward_hooks)):
+        for _h in list(_d.values()):
+            _fn = getattr(_h, "__wrapped__", _h)
+            _c = getattr(_fn, "__code__", None)
+            print(f"[precompute] GLOBAL {_name} hook: {getattr(_fn,'__qualname__','?')} "
+                  f"@ {getattr(_c,'co_filename','?')}:{getattr(_c,'co_firstlineno','?')}", flush=True)
+        if _d:
+            _d.clear()
+            _removed += 1
+    print(f"[precompute] cleared hooks (per-module + global groups touched={_removed})", flush=True)
 
     if torch.cuda.is_available():
         print(f"[precompute] GPU mem after model load: {torch.cuda.memory_allocated()/1e9:.2f}GB "
