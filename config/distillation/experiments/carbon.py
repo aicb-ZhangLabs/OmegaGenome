@@ -120,10 +120,26 @@ nt_iso_smoke_config = DistillationExperimentConfig(
     slurm_config=run_distillation_slurm,
 )
 
+# Voyager (80GB) hedge of the smoke — DISTINCT cache_base_dir + output_dir so it can't collide with
+# the laniakea carbon-smoke (same teacher+task would otherwise share the precompute cache path).
+from dataclasses import replace as _replace
+from ..paths import CARBON_OUTPUT_BASE as _COB
+from ..trainer import _CARBON_OUT as _CO
+
+carbon_smoke_vy_config = _replace(
+    carbon_smoke_config,
+    trainer_config=_replace(
+        carbon_debug_trainer_config,
+        output_dir=f"{_CO}/smoke_vy",
+        cache_base_dir=f"{_COB}/smoke_vy",
+    ),
+)
+
 # Registries (picked by name via tyro on the distill / distill_hyperparam CLIs).
 # Values are (description, config) tuples — tyro's overridable_config_cli indexes [1] for the config.
 experiment_configs = {
     "carbon-smoke": ("Carbon->deploy_120k 1-task inline smoke (H3K4me3, 2 epochs)", carbon_smoke_config),
+    "carbon-smoke-vy": ("Voyager hedge of carbon-smoke (distinct cache/output paths)", carbon_smoke_vy_config),
     "nt-iso-smoke": ("NT-2.5B isolation smoke: proves Carbon changes don't break NT", nt_iso_smoke_config),
     "carbon-raw": ("Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, raw MSE", carbon_raw_config),
     "carbon-l2norm": ("Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, L2-norm MSE", carbon_l2norm_config),
