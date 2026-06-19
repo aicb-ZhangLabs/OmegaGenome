@@ -8,7 +8,7 @@ SB=/pkg/slurm/22.05.3/bin
 CONFIG="${1:-carbon-raw}"; shift || true
 TASKS=("$@")
 HFSSD=/tmp/galaxy_srv_disk00/pengchx3/hf_cache_shared
-LAN_CAP=6; VOY_CAP=3
+LAN_CAP=6; VOY_CAP=0  # voyager reserved for ntv3 finetune
 # Optional multi-seed: SEED=N env -> appends --random-state N (training seed; cache self-validates).
 SEED_ARGS=(); [ -n "${SEED:-}" ] && SEED_ARGS=(--random-state "$SEED")
 declare -A JOBS   # node -> "id id ..."

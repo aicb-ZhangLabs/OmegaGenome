@@ -7,7 +7,9 @@ has a matching raw final_summary.json. Usage: python slurm/gen_hp_specs.py [--ou
 import argparse, glob, json, os, sys
 sys.path.insert(0, ".")
 from itertools import product
-from config.distillation.experiments.carbon import carbon_hp_raw_focused_config as C
+# Use the BASE config's full grid for the HP search (kl[0,.25,.5,1] x mse[0,1,2,5] x T[.5,1,1.5,2,4]
+# = 80 combos x 18 tasks = 1440). carbon_hp_raw_focused_config remains available as the focused option.
+from config.distillation.experiments.carbon import carbon_base_hyperparam_raw_config as C
 
 BASE = "/tmp/galaxy_srv_disk00/pengchx3/carbon_distillation"
 
