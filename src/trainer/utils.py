@@ -504,11 +504,16 @@ def precompute_teacher_logits(
                       f"top: {_shapes.most_common(4)}", flush=True)
                 _sample = next((o for o in _cuda if tuple(o.shape) == (4, 168, 3072)), None)
                 if _sample is not None:
-                    _r1 = [r for r in _gc.get_referrers(_sample) if r is not _cuda]
-                    print(f"[leak] referrers of (4,168,3072): {[type(r).__name__ for r in _r1][:6]}", flush=True)
-                    for _r in _r1[:3]:
-                        _r2 = [r for r in _gc.get_referrers(_r) if r is not _r1]
-                        print(f"[leak]   -> {type(_r).__name__} held by: {[type(r).__name__ for r in _r2][:6]}", flush=True)
+                    for _tup in [r for r in _gc.get_referrers(_sample) if isinstance(r, tuple)][:1]:
+                        for _dd in _gc.get_referrers(_tup):
+                            if isinstance(_dd, dict):
+                                _keys = list(_dd.keys())
+                                print(f"[leak] dict type={type(_dd).__module__}.{type(_dd).__name__} "
+                                      f"len={len(_dd)} sample_keys={_keys[:3]}", flush=True)
+                                for _owner in _gc.get_referrers(_dd):
+                                    _on = type(_owner).__name__
+                                    if _on not in ("frame", "list"):
+                                        print(f"[leak]   dict owned by: {type(_owner).__module__}.{_on}", flush=True)
             if _b % 50 == 0 and torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 print(f"[precompute] batch {_b}: GPU mem {torch.cuda.memory_allocated()/1e9:.2f}GB", flush=True)
