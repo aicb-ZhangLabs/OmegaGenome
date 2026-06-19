@@ -519,40 +519,19 @@ def precompute_teacher_logits(
             # reclaimed (del locals()[name] is a no-op in CPython, so we must rebind the names).
             del out
             hs = last_hidden = hidden = logits = input_ids = attention_mask = tok = None
-            _b = i // batch_size
-            if _b in (20, 80) and torch.cuda.is_available():
-                import gc as _gc
-                from collections import Counter as _C
-                _gc.collect()
-                _cuda = [o for o in _gc.get_objects() if torch.is_tensor(o) and o.is_cuda]
-                _shapes = _C(tuple(o.shape) for o in _cuda)
-                _tot = sum(o.numel() * o.element_size() for o in _cuda) / 1e9
-                print(f"[leak] batch {_b}: {len(_cuda)} cuda tensors, {_tot:.2f}GB live; "
-                      f"top: {_shapes.most_common(4)}", flush=True)
-                _sample = next((o for o in _cuda if tuple(o.shape) == (4, 168, 3072)), None)
-                if _sample is not None:
-                    for _tup in [r for r in _gc.get_referrers(_sample) if isinstance(r, tuple)][:1]:
-                        for _dd in _gc.get_referrers(_tup):
-                            if isinstance(_dd, dict):
-                                _keys = list(_dd.keys())
-                                print(f"[leak] dict type={type(_dd).__module__}.{type(_dd).__name__} "
-                                      f"len={len(_dd)} sample_keys={_keys[:3]}", flush=True)
-                                import types as _types
-                                # Robust: scan ALL function objects for the one whose closure holds _dd.
-                                for _o in _gc.get_objects():
-                                    if isinstance(_o, _types.FunctionType) and _o.__closure__:
-                                        for _cl in _o.__closure__:
-                                            try:
-                                                _cc = _cl.cell_contents
-                                            except ValueError:
-                                                continue
-                                            if _cc is _dd:
-                                                _c = _o.__code__
-                                                print(f"[leak]   closure fn: {_o.__module__}.{_o.__qualname__} "
-                                                      f"@ {_c.co_filename}:{_c.co_firstlineno}", flush=True)
-            if _b % 50 == 0 and torch.cuda.is_available():
+            # ROOT-CAUSE FIX: transformers' output_hidden_states recorder (check_model_inputs in
+            # transformers/utils/generic.py) monkey-patches each LlamaDecoderLayer.forward with a
+            # capture-wrapper closure that holds THIS call's 31-layer hidden_states tuple. It "restores"
+            # the forwards after the call but the wrappers (and their GPU tensors) are not reclaimed
+            # between our batches -> ~128MB/batch leak -> OOM ~batch 350 (independent of GPU size/dtype/
+            # batch). Drop any instance-level `forward` override so the wrapper + its tensors are freed;
+            # transformers re-installs a fresh one on the next forward.
+            for _m in model.modules():
+                if "forward" in vars(_m):
+                    del _m.__dict__["forward"]
+            if (i // batch_size) % 200 == 0 and torch.cuda.is_available():
                 torch.cuda.empty_cache()
-                print(f"[precompute] batch {_b}: GPU mem {torch.cuda.memory_allocated()/1e9:.2f}GB", flush=True)
+                print(f"[precompute] batch {i//batch_size}: GPU mem {torch.cuda.memory_allocated()/1e9:.2f}GB", flush=True)
 
     # .float() so a bf16 teacher's outputs are cached as fp32 (bf16 npy + bf16 in the KL/MSE would
     # lose precision / mismatch the fp32 student).
