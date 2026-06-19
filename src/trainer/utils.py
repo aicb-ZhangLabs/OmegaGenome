@@ -391,7 +391,16 @@ def precompute_teacher_logits(
                     if needs_logits:
                         logits_list.append(logits.cpu())
                 continue  # Skip the standard HF model handling below
+            if i == 0 and torch.cuda.is_available():
+                print(f"[precompute] input_ids shape={tuple(input_ids.shape)} "
+                      f"mem before fwd={torch.cuda.memory_allocated()/1e9:.2f}GB", flush=True)
             out = model(input_ids=input_ids, attention_mask=attention_mask)
+            if i == 0 and torch.cuda.is_available():
+                _attrs = [a for a in ("logits", "hidden_states", "attentions", "past_key_values")
+                          if getattr(out, a, None) is not None] if not isinstance(out, torch.Tensor) else ["<Tensor>"]
+                _nhs = len(out.hidden_states) if (not isinstance(out, torch.Tensor) and getattr(out, "hidden_states", None)) else 0
+                print(f"[precompute] mem after fwd={torch.cuda.memory_allocated()/1e9:.2f}GB "
+                      f"out_attrs={_attrs} n_hidden_states={_nhs}", flush=True)
 
             # Handle both wrapped models (returns Tensor) and standard HF models
             if isinstance(out, torch.Tensor):
