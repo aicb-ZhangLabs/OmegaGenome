@@ -31,6 +31,27 @@ def tokenize_teacher_inputs(tokenizer, sequences, max_length, input_prefix="", a
     return tokenizer(texts, **kwargs)
 
 
+def _free_capture_wrappers(model):
+    """Drop transformers' output_hidden_states capture-wrappers from a model's layers.
+
+    transformers' ``check_model_inputs`` (utils/generic.py) monkey-patches each layer's ``forward`` with
+    a closure (``def wrapped_forward``) that collects the layer's ``hidden_states`` for that call. Across
+    our many sequential teacher forwards (precompute + teacher eval) the wrappers nest / aren't freed, so
+    the per-call hidden_states accumulate on GPU (~128MB/batch for a 3B Llama) and OOM. Removing the
+    instance-level ``forward`` override restores the pristine class method (transformers reinstalls a
+    fresh wrapper on the next forward). Precisely targets ONLY that wrapper, so it is a safe no-op for
+    teachers that don't use it (NT / Caduceus / Enformer / DNABERT2) or that set a legitimate instance
+    forward.
+    """
+    if not hasattr(model, "modules"):
+        return
+    for _m in model.modules():
+        _f = vars(_m).get("forward")
+        _fc = getattr(_f, "__code__", None)
+        if _fc is not None and _fc.co_name == "wrapped_forward" and "generic.py" in _fc.co_filename:
+            del _m.__dict__["forward"]
+
+
 def orig_get_best_checkpoint(parent_dir, task_name):
     task_dir = os.path.join(parent_dir, task_name)
     if not os.path.isdir(task_dir):
@@ -492,13 +513,7 @@ def precompute_teacher_logits(
             # between our batches -> ~128MB/batch leak -> OOM ~batch 350 (independent of GPU size/dtype/
             # batch). Drop any instance-level `forward` override so the wrapper + its tensors are freed;
             # transformers re-installs a fresh one on the next forward.
-            for _m in model.modules():
-                _f = vars(_m).get("forward")
-                _fc = getattr(_f, "__code__", None)
-                # Only strip transformers' own capture wrapper (def wrapped_forward in utils/generic.py),
-                # never a teacher's legitimate instance-level forward (e.g. Enformer/Caduceus wrappers).
-                if _fc is not None and _fc.co_name == "wrapped_forward" and "generic.py" in _fc.co_filename:
-                    del _m.__dict__["forward"]
+            _free_capture_wrappers(model)
             if (i // batch_size) % 200 == 0 and torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 print(f"[precompute] batch {i//batch_size}: GPU mem {torch.cuda.memory_allocated()/1e9:.2f}GB", flush=True)
@@ -567,6 +582,11 @@ def evaluate_teacher_mcc(teacher_model, teacher_tokenizer, test_dataloader, devi
 
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
+
+            # Same transformers output_hidden_states wrapper leak as precompute: free per batch, else a
+            # fresh-eval (uncached) task OOMs before precompute even starts.
+            del outputs, logits
+            _free_capture_wrappers(teacher_model)
 
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
