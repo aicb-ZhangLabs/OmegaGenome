@@ -153,11 +153,21 @@ def main():
     # Pure bookkeeping — the per-step training math is unchanged; training continues its trajectory.
     if os.path.exists(latest_path):
         ckpt = torch.load(latest_path, map_location=device)
-        model.load_state_dict(ckpt["model"])
+        # strict=False: the saved state_dict carries rotary_embedding cos_cached/sin_cached buffers that
+        # a freshly-built (pre-forward) model doesn't register, so they appear as "unexpected keys" and
+        # crash a strict load. They are derived buffers (recomputed from positions on first forward), so
+        # skipping them is safe; all trainable params + persistent buffers still load. Guard that nothing
+        # REAL is missing (only rotary-cache keys may be).
+        _info = model.load_state_dict(ckpt["model"], strict=False)
+        _real_missing = [k for k in _info.missing_keys
+                         if not any(t in k for t in ("rotary", "cos_cached", "sin_cached"))]
+        if _real_missing:
+            raise RuntimeError(f"resume: real missing keys (not rotary cache): {_real_missing[:8]}")
         optimizer.load_state_dict(ckpt["optimizer"])
         scheduler.load_state_dict(ckpt["scheduler"])
         start_step, best_val = ckpt["step"], ckpt["best_val"]
-        print(f"RESUMED from {latest_path} at step {start_step} (best_val={best_val:.4f})", flush=True)
+        print(f"RESUMED from {latest_path} at step {start_step} (best_val={best_val:.4f}); "
+              f"load skipped {len(_info.unexpected_keys)} rotary-cache keys", flush=True)
 
     def _save_latest(step):
         torch.save({"model": model.state_dict(), "optimizer": optimizer.state_dict(),
