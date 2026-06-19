@@ -118,6 +118,11 @@ def build_glm(config: GLMConfig):
             dtype=_dtype,
         )
 
+    # Force the load dtype. trust_remote_code models (Carbon) can ignore from_pretrained's dtype and
+    # stay fp32 (-> 12GB weights -> OOM), so cast explicitly. No-op when _dtype is None (other teachers).
+    if _dtype is not None:
+        model = model.to(_dtype)
+
     # Some autoregressive tokenizers (e.g. Carbon) define no pad token, which breaks batched
     # tokenization. Use eos as pad (masked by attention_mask -> predictions unchanged).
     if tokenizer.pad_token is None and tokenizer.eos_token is not None:
