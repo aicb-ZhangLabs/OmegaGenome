@@ -91,6 +91,28 @@ carbon_base_hyperparam_l2norm_config = DistillationHyperparamExperimentConfig(
     **_GRID,
 )
 
+# Focused grid (18 combos vs full 80) — explores the impactful knobs around the current default
+# (T=2.0, w_mse=0.2, w_kl=0.5) incl. logits-only (w_mse=0) and feature-heavy (w_mse=1). 18x18=324 runs.
+_GRID_FOCUSED = dict(
+    weight_ces=[0.5],
+    weight_kls=[0.5, 1.0],
+    weight_mses=[0.0, 0.2, 1.0],
+    temperatures=[1.0, 2.0, 4.0],
+    zscores=[False],
+)
+carbon_hp_raw_focused_config = DistillationHyperparamExperimentConfig(
+    task_names=CARBON_TASKS,
+    teacher_config=carbon_3b_lora,
+    teacher_parent_dir=CARBON_PARENT_PATH,
+    model_type="glm",
+    student_config=deploy_120k_bpnet_config,
+    distillation_config=carbon_vanilla_mse_raw,
+    trainer_config=carbon_hyperparam_trainer_config,
+    dataset_config=nucletide_transformer_revised_benchmark,
+    slurm_config=basic_distillation_slurm,
+    **_GRID_FOCUSED,
+)
+
 # 1-task smoke (inline, 2 epochs) — validates teacher LoRA load -> precompute -> student train
 # end-to-end before the full 36 + 1152-job launches. mode="run" so it runs in-process (no submit).
 carbon_smoke_config = DistillationExperimentConfig(
@@ -147,4 +169,5 @@ experiment_configs = {
 hyperparam_experiment_configs = {
     "carbon-base-raw": ("Carbon->deploy_120k base vanilla HP sweep (raw MSE)", carbon_base_hyperparam_raw_config),
     "carbon-base-l2norm": ("Carbon->deploy_120k base vanilla HP sweep (L2-norm MSE)", carbon_base_hyperparam_l2norm_config),
+    "carbon-hp-raw": ("Carbon->deploy_120k FOCUSED HP sweep (raw, 18 combos x 18 tasks=324)", carbon_hp_raw_focused_config),
 }
