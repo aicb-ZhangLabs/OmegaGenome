@@ -145,15 +145,24 @@ def _save_cache(
     """
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save arrays
-    if logits is not None:  # <--- FIX: Add check
-        np.save(cache_dir / "train_logits.npy", logits)
-    if features is not None:
-        np.save(cache_dir / "train_features.npy", features)
+    # Atomic writes (tmp + os.replace): two configs sharing a teacher+task (e.g. carbon-raw and
+    # carbon-l2norm) can precompute the same cache concurrently; a half-written .npy would corrupt the
+    # consumer. os.replace is atomic on the same filesystem, so a reader sees either old or complete new.
+    def _atomic_npy(path, arr):
+        tmp = str(path) + f".tmp.{os.getpid()}"
+        np.save(tmp, arr)
+        os.replace(tmp + ".npy" if not tmp.endswith(".npy") else tmp, path)  # np.save appends .npy
 
-    # Save metadata
-    with open(cache_dir / "metadata.json", "w") as f:
+    if logits is not None:
+        _atomic_npy(cache_dir / "train_logits.npy", logits)
+    if features is not None:
+        _atomic_npy(cache_dir / "train_features.npy", features)
+
+    # Save metadata (atomic too)
+    _meta_tmp = cache_dir / f"metadata.json.tmp.{os.getpid()}"
+    with open(_meta_tmp, "w") as f:
         json.dump(metadata, f, indent=2)
+    os.replace(_meta_tmp, cache_dir / "metadata.json")
 
     print(f"✓ Cached teacher outputs to: {cache_dir}")
 
