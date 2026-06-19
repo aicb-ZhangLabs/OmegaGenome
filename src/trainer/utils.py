@@ -465,6 +465,14 @@ def precompute_teacher_logits(
 
                 features_list.append(hidden.cpu())
 
+            # Free the full forward output (with output_hidden_states=True it holds EVERY layer's
+            # hidden state on GPU). Without this the per-batch GPU memory accumulates and OOMs even a
+            # 3B teacher at batch 4 — the teacher *eval* avoided it by not extracting features.
+            del out
+            if "hidden" in locals():
+                del hidden
+            torch.cuda.empty_cache()
+
     # .float() so a bf16 teacher's outputs are cached as fp32 (bf16 npy + bf16 in the KL/MSE would
     # lose precision / mismatch the fp32 student).
     logits = torch.cat(logits_list, dim=0).float().numpy() if needs_logits else None
