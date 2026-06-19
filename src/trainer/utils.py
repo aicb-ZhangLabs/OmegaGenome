@@ -492,9 +492,19 @@ def precompute_teacher_logits(
             # reclaimed (del locals()[name] is a no-op in CPython, so we must rebind the names).
             del out
             hs = last_hidden = hidden = logits = input_ids = attention_mask = tok = None
-            if (i // batch_size) % 50 == 0 and torch.cuda.is_available():
+            _b = i // batch_size
+            if _b in (20, 80) and torch.cuda.is_available():
+                import gc as _gc
+                from collections import Counter as _C
+                _gc.collect()
+                _cuda = [o for o in _gc.get_objects() if torch.is_tensor(o) and o.is_cuda]
+                _shapes = _C(tuple(o.shape) for o in _cuda)
+                _tot = sum(o.numel() * o.element_size() for o in _cuda) / 1e9
+                print(f"[leak] batch {_b}: {len(_cuda)} cuda tensors, {_tot:.2f}GB live; "
+                      f"top: {_shapes.most_common(4)}", flush=True)
+            if _b % 50 == 0 and torch.cuda.is_available():
                 torch.cuda.empty_cache()
-                print(f"[precompute] batch {i//batch_size}: GPU mem {torch.cuda.memory_allocated()/1e9:.2f}GB", flush=True)
+                print(f"[precompute] batch {_b}: GPU mem {torch.cuda.memory_allocated()/1e9:.2f}GB", flush=True)
 
     # .float() so a bf16 teacher's outputs are cached as fp32 (bf16 npy + bf16 in the KL/MSE would
     # lose precision / mismatch the fp32 student).
