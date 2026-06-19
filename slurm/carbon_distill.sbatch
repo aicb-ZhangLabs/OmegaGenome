@@ -32,7 +32,9 @@ export WANDB_INIT_TIMEOUT=300
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True  # reduce fragmentation OOM
 PY="$REPO/.venv_carbon_portable/bin/python"
 
-CONFIG="${1:-carbon-smoke}"
-echo "=== carbon distillation: $CONFIG (inline) ==="
-"$PY" -m src.train.distill "$CONFIG"
-echo "=== done: $CONFIG ==="
+# Pass ALL args through to the distill CLI so per-task runs work, e.g.:
+#   sbatch slurm/carbon_distill.sbatch carbon-raw --task-names H3K27me3 --slurm-config.mode run
+ARGS=("$@"); [ ${#ARGS[@]} -eq 0 ] && ARGS=(carbon-smoke)
+echo "=== carbon distillation: ${ARGS[*]} (inline) ==="
+"$PY" -m src.train.distill "${ARGS[@]}"
+echo "=== done: ${ARGS[*]} ==="
