@@ -313,44 +313,10 @@ def precompute_teacher_logits(
             and getattr(tokenizer, "pad_token_id", None) is not None:
         model.config.pad_token_id = tokenizer.pad_token_id
 
-    # Eval mode (deterministic features; the teacher eval set this but can be cache-skipped). Also
-    # disable the causal-LM KV cache: with use_cache=True a SequenceClassification forward can still
-    # build/keep a per-position cache that balloons memory.
+    # Eval mode for deterministic features (the teacher eval sets this, but it can be cache-skipped).
     if hasattr(model, "eval"):
         model.eval()
-    if hasattr(model, "config") and hasattr(model.config, "use_cache"):
-        model.config.use_cache = False
 
-    # Strip forward hooks from the teacher. A hook (wandb.watch / accelerate / leftover PEFT) captures
-    # each forward's `hidden_states` tuple into a closure defaultdict that is never flushed during
-    # precompute, so the 31-layer activations accumulate ~128MB/batch and OOM ~batch 350. The teacher
-    # is frozen and only used here, so removing its hooks is safe.
-    _removed = 0
-    if hasattr(model, "modules"):
-        for _m in model.modules():
-            if getattr(_m, "_forward_hooks", None):
-                _m._forward_hooks.clear()
-                _removed += 1
-    # GLOBAL forward hooks (register_module_forward_hook) fire for EVERY module process-wide -> they
-    # also wrap the teacher. They live here, not on the modules, so the per-module clear above misses
-    # them. Identify + clear (these are the wandb.watch/log-tracking closures hoarding hidden_states).
-    import torch.nn.modules.module as _modmod
-    for _name, _d in (("forward", _modmod._global_forward_hooks),
-                      ("forward_pre", _modmod._global_forward_pre_hooks),
-                      ("backward", _modmod._global_backward_hooks)):
-        for _h in list(_d.values()):
-            _fn = getattr(_h, "__wrapped__", _h)
-            _c = getattr(_fn, "__code__", None)
-            print(f"[precompute] GLOBAL {_name} hook: {getattr(_fn,'__qualname__','?')} "
-                  f"@ {getattr(_c,'co_filename','?')}:{getattr(_c,'co_firstlineno','?')}", flush=True)
-        if _d:
-            _d.clear()
-            _removed += 1
-    print(f"[precompute] cleared hooks (per-module + global groups touched={_removed})", flush=True)
-
-    if torch.cuda.is_available():
-        print(f"[precompute] GPU mem after model load: {torch.cuda.memory_allocated()/1e9:.2f}GB "
-              f"(reserved {torch.cuda.memory_reserved()/1e9:.2f}GB)", flush=True)
     print(f"Computing teacher outputs for {len(sequences)} sequences...")
     for i in tqdm(
         range(0, len(sequences), batch_size), total=len(sequences) // batch_size
@@ -527,7 +493,11 @@ def precompute_teacher_logits(
             # batch). Drop any instance-level `forward` override so the wrapper + its tensors are freed;
             # transformers re-installs a fresh one on the next forward.
             for _m in model.modules():
-                if "forward" in vars(_m):
+                _f = vars(_m).get("forward")
+                _fc = getattr(_f, "__code__", None)
+                # Only strip transformers' own capture wrapper (def wrapped_forward in utils/generic.py),
+                # never a teacher's legitimate instance-level forward (e.g. Enformer/Caduceus wrappers).
+                if _fc is not None and _fc.co_name == "wrapped_forward" and "generic.py" in _fc.co_filename:
                     del _m.__dict__["forward"]
             if (i // batch_size) % 200 == 0 and torch.cuda.is_available():
                 torch.cuda.empty_cache()
