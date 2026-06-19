@@ -483,15 +483,18 @@ def precompute_teacher_logits(
                         )
                         hidden = logits
 
-                features_list.append(hidden.cpu())
+                features_list.append(hidden.detach().cpu())
 
-            # Free the full forward output (with output_hidden_states=True it holds EVERY layer's
-            # hidden state on GPU). Without this the per-batch GPU memory accumulates and OOMs even a
-            # 3B teacher at batch 4 — the teacher *eval* avoided it by not extracting features.
+            # Drop EVERY GPU reference to the forward output. output_hidden_states=True returns a
+            # 31-layer tuple (~128MB/batch); `hs`/`last_hidden` alias into it and `hidden` is a VIEW of
+            # last_hidden, so deleting `out` alone leaves the whole tuple alive -> linear GPU growth ->
+            # OOM ~batch 350. Reassigning to None decrements the refcounts so the activations are
+            # reclaimed (del locals()[name] is a no-op in CPython, so we must rebind the names).
             del out
-            if "hidden" in locals():
-                del hidden
-            torch.cuda.empty_cache()
+            hs = last_hidden = hidden = logits = input_ids = attention_mask = tok = None
+            if (i // batch_size) % 50 == 0 and torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                print(f"[precompute] batch {i//batch_size}: GPU mem {torch.cuda.memory_allocated()/1e9:.2f}GB", flush=True)
 
     # .float() so a bf16 teacher's outputs are cached as fp32 (bf16 npy + bf16 in the KL/MSE would
     # lose precision / mismatch the fp32 student).
