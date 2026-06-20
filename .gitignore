@@ -27,3 +27,7 @@ wandb/
 .wandb_cache/
 wandb/
 slurm-*.out
+# machine-specific convenience symlinks (carbon_3b cache/teachers/outputs live on SSD + /home)
+/data/cache/carbon_3b_lora
+/data/finetuned_models/carbon_3b_lora
+/data/carbon_distillation_outputs
