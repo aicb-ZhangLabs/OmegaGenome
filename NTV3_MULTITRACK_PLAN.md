@@ -172,11 +172,16 @@ n_train=2000, n_test=400, 16 kb window, 20 epochs, Poisson loss. Jobs 237440 (fu
 
 | config | best_val | **TEST mean** | ATAC | Histone | PRO-cap | eCLIP | polyA RNA | total RNA |
 |---|---|---|---|---|---|---|---|---|
-| **full-FT (lr 1e-5)** | 0.408 | **0.440** | 0.543 | 0.572 | 0.445 | 0.289 | 0.602 | 0.469 |
-| LoRA r=64 (lr 1e-4) | 0.402 | 0.423 | 0.559 | 0.566 | 0.417 | 0.235 | 0.672 | 0.482 |
-| full-FT (lr 1e-4) | 0.105 | 0.157 | 0.418 | 0.424 | 0.124 | 0.032 | -0.00 | -0.00 |
-| *paper NTv3 (target)* | — | — | *0.759* | *0.717* | — | — | — | — |
-| *paper BPNet-6M (baseline)* | — | — | *0.571* | *0.520* | — | — | — | — |
+| **full-FT lr1e-5 FAITHFUL — FULL data, 19932 steps — seed 0** ⭐ | 0.629 | **0.606** | **0.758** | **0.723** | **0.514** | 0.559 | 0.613 | 0.653 |
+| full-FT (lr 1e-5, 2000-window) | 0.408 | 0.440 | 0.543 | 0.572 | 0.445 | 0.289 | 0.602 | 0.469 |
+| LoRA r=64 (lr 1e-4, 2000-window) | 0.402 | 0.423 | 0.559 | 0.566 | 0.417 | 0.235 | 0.672 | 0.482 |
+| full-FT (lr 1e-4, 2000-window) | 0.105 | 0.157 | 0.418 | 0.424 | 0.124 | 0.032 | -0.00 | -0.00 |
+| *paper NTv3-650M-post (target)* | — | — | *0.759* | *0.717* | *0.508* | *0.584* | *0.695 (combined RNA)* | *↤* |
+| *paper BPNet-6M (baseline)* | — | — | *0.571* | *0.520* | *0.398* | *0.283* | *0.330 (combined RNA)* | *↤* |
+
+(Paper numbers per category from `InstaDeepAI/ntv3_benchmark` -> `ntv3_benchmark_results.csv`, see
+NTV3_DATASET_SUMMARY.md §5d. The paper reports a SINGLE "RNA-seq" PCC (0.695); this benchmark split it
+into polyA + total RNA, so those two columns aren't 1:1 with the paper's combined value — ↤ = same cell.)
 
 **Findings (honest):**
 1. **LoRA ≫ full-FT @ lr 1e-4 (0.423 vs 0.157), CONFIRMED as an LR problem.** `lr=1e-4` is fine for
@@ -193,6 +198,23 @@ n_train=2000, n_test=400, 16 kb window, 20 epochs, Poisson loss. Jobs 237440 (fu
    benchmark training regions with a longer schedule. Testing this next.
 4. **Next experiments:** scale n_train (2000→8000) + epochs for full-FT lr 1e-5 (the now-best config)
    to probe the data-scale hypothesis toward the paper's 0.72–0.76. Tracking as they run.
+5. **✅ PAPER MATCH ACHIEVED (2026-06-19) — full-data faithful run, seed 0.** The faithful port of the
+   official notebook 03 (FULL benchmark training regions, official 19932-step schedule, eff-batch 32,
+   Poisson-multinomial loss, lr 5e-5 square-decay) **closes the gap to the paper** — confirming the
+   data-scale hypothesis (#3). Per-category TEST PCC (n_tracks=34), paper-vs-ours:
+   | category | paper NTv3-650M | seed 0 | |
+   |---|---|---|---|
+   | ATAC-seq | 0.759 | **0.758** | ✅ match |
+   | Histone ChIP-seq | 0.717 | **0.723** | ✅ above |
+   | PRO-cap | 0.508 | **0.514** | ✅ above |
+   | eCLIP | 0.584 | 0.559 | −0.025 |
+   | RNA-seq (combined) | 0.695 | 0.613 / 0.653 (polyA / total) | ~−0.05 |
+   | **mean over 34 tracks** | — | **0.606** | |
+   Match/exceed on 3/5 categories; within ~0.03–0.06 on eCLIP and RNA. **All 34 per-track PCCs are saved
+   in `ntv3_targets/ntv3_ft_faithful_s0/ntv3_finetune_result.json`** (`per_track_pearson`; range 0.341
+   [ENCSR114HGS_M] → 0.913 [ENCSR962OTG], with `test_pearson_by_assay` = the 6 category means above).
+   Resume bug fixed en route: `load_state_dict(strict=False)` to skip derived rotary cos/sin cached
+   buffers (a fresh model doesn't register them). **Seeds 1 & 2 in flight for 3-seed error bars.**
 
 ## 6. Student architecture: BPNet → DilatedTrackNet (design logic)
 
