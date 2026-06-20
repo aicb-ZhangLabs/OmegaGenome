@@ -64,41 +64,103 @@ def create_run_directory(parent_dir, task_name, config: DistillationModelConfig,
     return run_dir
 
 
+# Filesystem-error fragments that indicate a *transient* failure (e.g. an sshfs blip on the
+# shared galaxy SSD that makes torch.save raise "File ... cannot be opened"). These resolve in
+# seconds, so retrying recovers the run. Anything NOT matching (CUDA OOM, shape mismatch, ...)
+# is a real bug and must surface immediately, so we never retry it.
+_TRANSIENT_FS_SIGNATURES = (
+    "cannot be opened",
+    "unable to open file",
+    "Input/output error",
+    "Transport endpoint is not connected",
+    "No such file or directory",
+    "Stale file handle",
+    "Resource temporarily unavailable",
+)
+
+
+def _is_transient_fs_error(err: BaseException) -> bool:
+    """True if ``err`` looks like a recoverable filesystem hiccup (sshfs blip), not a real bug.
+
+    Any ``OSError`` qualifies; a ``RuntimeError`` qualifies only if its message matches a known
+    transient-FS signature (so a CUDA/shape ``RuntimeError`` is NOT swallowed and re-raises fast).
+    """
+    if isinstance(err, OSError):
+        return True
+    msg = str(err)
+    return any(sig in msg for sig in _TRANSIENT_FS_SIGNATURES)
+
+
+def _retry_io(fn, what: str, attempts: int = 4, base_delay: float = 3.0):
+    """Run idempotent I/O closure ``fn``, retrying ONLY transient FS errors with exponential backoff.
+
+    Recovers transient sshfs disconnects on the shared galaxy SSD (the cause of the carbon-distill
+    checkpoint-save failures) — a blip clears in seconds, so backoff 3/9/27s converts the failure
+    into a success without losing the run. Non-transient errors re-raise immediately (no masking).
+    Re-raises the last error if every attempt fails. ``what`` labels the op in the retry log.
+    """
+    last = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return fn()
+        except (RuntimeError, OSError) as e:
+            if not _is_transient_fs_error(e):
+                raise  # real bug -> surface now, don't waste retries
+            last = e
+            if attempt == attempts:
+                break
+            delay = base_delay * (3 ** (attempt - 1))
+            print(
+                f"[io-retry] {what}: attempt {attempt}/{attempts} hit transient FS error "
+                f"({type(e).__name__}: {e}); retrying in {delay:.0f}s",
+                flush=True,
+            )
+            time.sleep(delay)
+    raise last
+
+
 def save_checkpoint(model, epoch, val_mcc, run_dir, is_best=False):
     """
     Save checkpoint with systematic naming: epoch_{num}_valmcc_{score}
     Also maintains a 'best_model' directory for the best checkpoint
+
+    The whole write sequence is wrapped in ``_retry_io`` so a transient sshfs blip on the shared
+    galaxy SSD (which otherwise raises "student.pt cannot be opened" and FAILs the job) is retried
+    instead of crashing. The closure is idempotent — re-running re-creates the dir and overwrites.
     """
     # Format MCC to 4 decimal places
     mcc_str = f"{val_mcc:.4f}".replace(".", "p")  # Replace . with p for filename
     epoch_dir = os.path.join(run_dir, f"epoch_{epoch}_valmcc_{mcc_str}")
-    os.makedirs(epoch_dir, exist_ok=True)
 
-    # Save model
-    model_path = os.path.join(epoch_dir, "student.pt")
-    torch.save(model.state_dict(), model_path)
+    def _do_save():
+        os.makedirs(epoch_dir, exist_ok=True)
 
-    # Save metadata
-    metadata = {
-        "epoch": int(epoch),  # Ensure Python int
-        "val_mcc": float(val_mcc),  # Ensure Python float
-        "timestamp": datetime.now().isoformat(),
-    }
-    with open(os.path.join(epoch_dir, "metadata.json"), "w") as f:
-        json.dump(metadata, f, indent=2)
+        # Save model
+        model_path = os.path.join(epoch_dir, "student.pt")
+        torch.save(model.state_dict(), model_path)
 
-    # If this is the best model, copy to best_model directory
-    if is_best:
-        best_dir = os.path.join(run_dir, "best_model")
-        if os.path.exists(best_dir):
-            shutil.rmtree(best_dir)
-        shutil.copytree(epoch_dir, best_dir)
+        # Save metadata
+        metadata = {
+            "epoch": int(epoch),  # Ensure Python int
+            "val_mcc": float(val_mcc),  # Ensure Python float
+            "timestamp": datetime.now().isoformat(),
+        }
+        with open(os.path.join(epoch_dir, "metadata.json"), "w") as f:
+            json.dump(metadata, f, indent=2)
 
-        # Also save a reference file
-        with open(os.path.join(run_dir, "best_model_info.txt"), "w") as f:
-            f.write(f"Best model: epoch {epoch}, val_mcc {val_mcc:.4f}\n")
-            f.write(f"Location: {epoch_dir}\n")
+        # If this is the best model, copy to best_model directory
+        if is_best:
+            best_dir = os.path.join(run_dir, "best_model")
+            if os.path.exists(best_dir):
+                shutil.rmtree(best_dir)
+            shutil.copytree(epoch_dir, best_dir)
 
+            # Also save a reference file
+            with open(os.path.join(run_dir, "best_model_info.txt"), "w") as f:
+                f.write(f"Best model: epoch {epoch}, val_mcc {val_mcc:.4f}\n")
+                f.write(f"Location: {epoch_dir}\n")
+
+    _retry_io(_do_save, what=f"save_checkpoint epoch {epoch} -> {run_dir}")
     return epoch_dir
 
 

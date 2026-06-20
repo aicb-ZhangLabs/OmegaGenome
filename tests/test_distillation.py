@@ -258,12 +258,61 @@ def test_early_stop_step():
     ok(se == 133, f"patience=100 best@33 -> stop@133 (got {se})")
 
 
+def test_retry_io():
+    """Audit the checkpoint-save retry (distill_trainer._retry_io / _is_transient_fs_error) — must
+    (a) classify sshfs-blip errors as transient but CUDA/logic errors as real, (b) recover a
+    transient-then-success closure, (c) re-raise a NON-transient error IMMEDIATELY (no retry, no
+    masking real bugs), (d) re-raise the last error after exhausting attempts on a persistent blip."""
+    from src.trainer.distill_trainer import _retry_io, _is_transient_fs_error
+
+    # (a) classification — the exact strings seen in the failed jobs are transient
+    ok(_is_transient_fs_error(RuntimeError("File /srv/.../student.pt cannot be opened.")), "save blip transient")
+    ok(_is_transient_fs_error(RuntimeError("unable to open file <.../hf_cache>")), "hf-read blip transient")
+    ok(_is_transient_fs_error(OSError("Transport endpoint is not connected")), "any OSError transient")
+    ok(not _is_transient_fs_error(RuntimeError("CUDA out of memory")), "CUDA OOM is NOT transient")
+    ok(not _is_transient_fs_error(RuntimeError("shapes cannot be multiplied")), "shape error is NOT transient")
+
+    # (b) recovers: fail twice with a blip, then succeed -> returns value, called exactly 3x
+    calls = {"n": 0}
+    def flaky():
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise RuntimeError("student.pt cannot be opened.")
+        return "saved"
+    ok(_retry_io(flaky, "flaky", attempts=4, base_delay=0.0) == "saved", "recovers transient-then-success")
+    ok(calls["n"] == 3, f"stopped retrying once it succeeded (called {calls['n']}x, want 3)")
+
+    # (c) a real bug surfaces on the FIRST attempt — never retried
+    hits = {"n": 0}
+    def real_bug():
+        hits["n"] += 1
+        raise RuntimeError("CUDA out of memory")
+    try:
+        _retry_io(real_bug, "oom", attempts=4, base_delay=0.0)
+        ok(False, "non-transient should have raised")
+    except RuntimeError as e:
+        ok("out of memory" in str(e), "re-raised the real error")
+    ok(hits["n"] == 1, f"non-transient NOT retried (called {hits['n']}x, want 1)")
+
+    # (d) persistent blip -> exhausts attempts then re-raises last
+    tries = {"n": 0}
+    def always_blip():
+        tries["n"] += 1
+        raise OSError("Stale file handle")
+    try:
+        _retry_io(always_blip, "persistent", attempts=3, base_delay=0.0)
+        ok(False, "persistent blip should raise after attempts")
+    except OSError:
+        ok(True, "re-raised after exhausting attempts")
+    ok(tries["n"] == 3, f"tried exactly attempts=3 times (got {tries['n']})")
+
+
 if __name__ == "__main__":
     tests = [test_logit_standard_parity, test_kl_variants_sane, test_mse_raw,
              test_mse_l2norm_scale_invariant, test_mse_skipped, test_teacher_discovery,
              test_deploy_120k_student, test_teacher_tokenization_isolation,
              test_get_best_checkpoint_dispatch, test_teacher_configs_formatting, test_end_to_end_loss,
-             test_early_stop_step]
+             test_early_stop_step, test_retry_io]
     failed = 0
     for fn in tests:
         try:
