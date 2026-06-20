@@ -19,8 +19,13 @@ set -euo pipefail
 REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
 cd "$REPO"
 source slurm/env_setup.sh
-# Optional HF-cache override (e.g. big base-model downloads -> SSD, not the tight /home quota).
-# Submit with: sbatch --export=ALL,HF_OVERRIDE=/tmp/galaxy_srv_disk00/pengchx3/hf_cache_shared ...
+# Node-aware SSD root: the galaxy SSD is an sshfs mount (/tmp/galaxy_srv_disk00) on laniakea/voyager but
+# a LOCAL disk (/srv/disk00/sshfs) on galaxy itself — same physical disk, different path. Pin HF_OVERRIDE
+# to whichever exists so galaxy jobs also find the shared HF cache (no-op on laniakea/voyager where the
+# sshfs path resolves first). CARBON_OUTPUT_BASE (cache+ckpts) is already node-aware via _default_output_base.
+for _b in /tmp/galaxy_srv_disk00/pengchx3 /srv/disk00/sshfs/pengchx3; do [ -d "$_b" ] && { _SSD="$_b"; break; }; done
+[ -n "${_SSD:-}" ] && export HF_OVERRIDE="$_SSD/hf_cache_shared"
+# Optional HF-cache override (big base-model downloads -> SSD, not the tight /home quota).
 if [ -n "${HF_OVERRIDE:-}" ]; then
   export HF_HOME="$HF_OVERRIDE" HF_HUB_CACHE="$HF_OVERRIDE/hub" HUGGINGFACE_HUB_CACHE="$HF_OVERRIDE/hub" \
          HF_DATASETS_CACHE="$HF_OVERRIDE/datasets" TRANSFORMERS_CACHE="$HF_OVERRIDE/hub" HF_ASSETS_CACHE="$HF_OVERRIDE/assets"
