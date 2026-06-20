@@ -215,11 +215,55 @@ def test_end_to_end_loss():
     ok(len(grads) > 0 and all(torch.isfinite(g).all() for g in grads), "student grads finite")
 
 
+def test_early_stop_step():
+    """Audit the early-stop decision (distill_trainer._early_stop_step) — must (a) never stop on a new
+    best, (b) trigger EXACTLY at patience, (c) reset on a late improvement (protect late improvers),
+    (d) be disabled for patience None/<=0, (e) leave the best metric intact."""
+    from src.trainer.distill_trainer import _early_stop_step
+
+    # (d) disabled
+    ok(_early_stop_step(False, 100, None) == (101, False), "patience=None never stops")
+    ok(_early_stop_step(False, 5, 0) == (6, False), "patience=0 never stops")
+    ok(_early_stop_step(False, 5, -1) == (6, False), "patience<0 never stops")
+    # (a) new best resets + never stops
+    ok(_early_stop_step(True, 99, 100) == (0, False), "new best resets counter to 0, no stop")
+    # (b) triggers exactly at patience, not one short
+    ok(_early_stop_step(False, 99, 100) == (100, True), "stops when counter reaches patience")
+    ok(_early_stop_step(False, 98, 100) == (99, False), "no stop one epoch short of patience")
+
+    # full-loop simulation mirroring the trainer (best tracking + counter + break)
+    def simulate(seq, patience):
+        best, eni, stop_ep = -1.0, 0, None
+        for ep, v in enumerate(seq, 1):
+            is_best = v > best
+            eni, stop = _early_stop_step(is_best, eni, patience)
+            if is_best:
+                best = v
+            if stop:
+                stop_ep = ep
+                break
+        return stop_ep, best
+
+    # (e) best at epoch 3, plateau -> patience 5 stops at epoch 8 with best preserved
+    se, best = simulate([.1, .2, .3, .25, .25, .25, .25, .25, .25, .25], 5)
+    ok(se == 8 and abs(best - 0.3) < 1e-9, f"plateau@3,pat5 -> stop@8 best=0.3 (got {se},{best})")
+    # (c) LATE improver: best jumps at epoch 8 (within patience) -> not cut, stops at 13
+    se, best = simulate([.1, .2, .3, .31, .31, .31, .31, .32, .32, .32, .32, .32, .32], 5)
+    ok(se == 13 and abs(best - 0.32) < 1e-9, f"late-best@8,pat5 -> stop@13 (got {se},{best})")
+    # monotonic improving -> never early-stops
+    se, _ = simulate([0.05 * i for i in range(1, 11)], 5)
+    ok(se is None, "monotonic improvement never early-stops")
+    # our HP setting: patience 100, best@33 -> stop@133 (protects everything that improves within 100)
+    se, _ = simulate([0.01 * min(i, 33) for i in range(1, 201)], 100)
+    ok(se == 133, f"patience=100 best@33 -> stop@133 (got {se})")
+
+
 if __name__ == "__main__":
     tests = [test_logit_standard_parity, test_kl_variants_sane, test_mse_raw,
              test_mse_l2norm_scale_invariant, test_mse_skipped, test_teacher_discovery,
              test_deploy_120k_student, test_teacher_tokenization_isolation,
-             test_get_best_checkpoint_dispatch, test_teacher_configs_formatting, test_end_to_end_loss]
+             test_get_best_checkpoint_dispatch, test_teacher_configs_formatting, test_end_to_end_loss,
+             test_early_stop_step]
     failed = 0
     for fn in tests:
         try:

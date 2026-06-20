@@ -102,6 +102,23 @@ def save_checkpoint(model, epoch, val_mcc, run_dir, is_best=False):
     return epoch_dir
 
 
+def _early_stop_step(is_best: bool, epochs_no_improve: int, patience):
+    """One epoch of early-stop bookkeeping (pure -> unit-testable).
+
+    - ``is_best``: did this epoch set a new best val metric?
+    - ``epochs_no_improve``: consecutive non-improving epochs BEFORE this one.
+    - ``patience``: stop after this many consecutive non-improving epochs. None or <=0 -> disabled.
+
+    Returns ``(epochs_no_improve, should_stop)``. A new best resets the counter to 0 (so a late
+    improvement after a long plateau keeps training); ``should_stop`` is True only once the counter
+    REACHES ``patience``. Because the trainer reports the best-val checkpoint, stopping here yields the
+    identical reported metric with less compute.
+    """
+    epochs_no_improve = 0 if is_best else epochs_no_improve + 1
+    should_stop = bool(patience and patience > 0 and epochs_no_improve >= patience)
+    return epochs_no_improve, should_stop
+
+
 @dataclass
 class DistillTrainerConfig:
     output_dir: str
@@ -248,12 +265,12 @@ def train_distill_task(
 
         # Determine if this is the best model
         is_best = val_metrics["mcc"] > best_val_mcc
+        epochs_no_improve, should_stop = _early_stop_step(
+            is_best, epochs_no_improve, config.early_stop_patience
+        )
         if is_best:
             best_val_mcc = val_metrics["mcc"]
             best_epoch = epoch
-            epochs_no_improve = 0
-        else:
-            epochs_no_improve += 1
 
         # Save checkpoint for this epoch
         checkpoint_dir = save_checkpoint(model, epoch, val_metrics["mcc"], run_dir, is_best=is_best)
@@ -297,7 +314,7 @@ def train_distill_task(
         )
 
         # Early stopping (best-val checkpoint already saved -> same reported MCC, less compute).
-        if config.early_stop_patience and epochs_no_improve >= config.early_stop_patience:
+        if should_stop:
             print(f"[{task_name}] EARLY STOP at epoch {epoch}: no val_mcc improvement for "
                   f"{epochs_no_improve} epochs (best {best_val_mcc:.4f} @ epoch {best_epoch})")
             break
@@ -341,7 +358,9 @@ def train_distill_task(
             float(best_test_metrics["mcc"]) if best_test_metrics is not None else None
         ),
         "best_test_f1": (float(best_test_metrics["f1"]) if best_test_metrics is not None else None),
-        "total_epochs": config.epochs,
+        "total_epochs": int(epoch),  # ACTUAL epochs run (< config.epochs if early-stopped)
+        "max_epochs": config.epochs,
+        "early_stopped": bool(epoch < config.epochs),
         "hyperparameters": {
             "weight_ce": distillation_config.weight_ce,
             "weight_kl": distillation_config.weight_kl,
