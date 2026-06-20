@@ -42,6 +42,7 @@ def main():
             f"carbon-raw --task-names {task} "
             f"--distillation-config.weight-ce {ce} --distillation-config.weight-kl {kl} "
             f"--distillation-config.weight-mse {mse} --distillation-config.temperature {temp} "
+            f"--trainer-config.early-stop-patience 60 "  # search: best-val ckpt -> same MCC, ~2x faster
             f"--slurm-config.mode run"
         )
     with open(args.out, "w") as f:

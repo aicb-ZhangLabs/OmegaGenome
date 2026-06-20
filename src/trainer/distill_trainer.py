@@ -121,6 +121,10 @@ class DistillTrainerConfig:
     # teacher (Carbon-3B) at seq~1000 needs a small batch (attention is O(seq^2)); the student trains
     # at the larger batch_size separately.
     teacher_batch_size: Optional[int] = None
+    # Early stopping: stop if val_mcc hasn't improved for this many epochs. None -> disabled (run all
+    # epochs). Since we report the BEST-VAL checkpoint, early-stopping yields the SAME reported MCC with
+    # less compute — used for the HP search; the final best-HP runs keep it None (full schedule).
+    early_stop_patience: Optional[int] = None
 
 
 def train_distill_task(
@@ -203,6 +207,7 @@ def train_distill_task(
 
     best_val_mcc = -1.0
     best_epoch = 0
+    epochs_no_improve = 0
 
     global_step = 0
     start_time = time.time()
@@ -246,6 +251,9 @@ def train_distill_task(
         if is_best:
             best_val_mcc = val_metrics["mcc"]
             best_epoch = epoch
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
 
         # Save checkpoint for this epoch
         checkpoint_dir = save_checkpoint(model, epoch, val_metrics["mcc"], run_dir, is_best=is_best)
@@ -287,6 +295,12 @@ def train_distill_task(
             f"[{task_name}] Epoch {epoch}/{config.epochs} | loss {avg_loss:.4f} | "
             f"val_mcc {val_metrics['mcc']:.4f} {'🌟 NEW BEST!' if is_best else ''}"
         )
+
+        # Early stopping (best-val checkpoint already saved -> same reported MCC, less compute).
+        if config.early_stop_patience and epochs_no_improve >= config.early_stop_patience:
+            print(f"[{task_name}] EARLY STOP at epoch {epoch}: no val_mcc improvement for "
+                  f"{epochs_no_improve} epochs (best {best_val_mcc:.4f} @ epoch {best_epoch})")
+            break
 
     # Final test evaluation
     test_metrics = evaluate(model, test_loader, config.device)
