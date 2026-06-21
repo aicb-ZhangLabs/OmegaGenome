@@ -101,3 +101,34 @@ motivates the HP search.
 - Cap-respecting auto-submitter `slurm/auto_submit_carbon.sh` (self-tracks job IDs; laniakea ≤6,
   voyager ≤3; absolute slurm binary paths for nohup shells). l2norm auto-chained after raw via
   `slurm/chain_l2norm_after_raw.sh`. Student ckpts + cache on galaxy SSD.
+
+## 2026-06-21 — HP search running (raw grid) + downstream pipeline de-risked
+
+### Status
+- **Raw HP grid** (carbon-base-raw): kl{0,.25,.5,1} × mse{0,1,2,5} × T{.5,1,1.5,2,4} = 80/task × 18 = **1440 combos**.
+- Progress **430/1440 (30%)** as of 02:37; ~19 combos/hr across 13 slots (lan 7 + voy 3 + gal 3); ETA ~2 days.
+- Live caps in `slurm/submit_caps.env` (re-read each loop). Early-stop patience 100 reports best-val ckpt.
+
+### Failures: 16 early jobs FAILED — infra, NOT code (fixed + self-healing)
+- Cause: transient **sshfs blips on the shared galaxy SSD** → `torch.save(student.pt)` "File … cannot be
+  opened" (15 on laniakea, 1 on voyager). Galaxy never hits it (local SSD). 0 failures since the fix.
+- Fix `save_checkpoint` now wraps writes in `_retry_io` (retries ONLY transient FS errors 3/9/27s;
+  CUDA/shape errors re-raise immediately). `reconcile_hp.sh` watcher waits for the one-pass submitter
+  to drain, then regenerates ONLY missing combos (resume-aware) until 0 holes. Tests: `test_retry_io`.
+
+### Pipeline de-risked on the 430 partial combos (validated before grid completes)
+- `extract_best_hyperparams.py` ✅ runs end-to-end (best-on-VAL per task, never test; tracks n_candidates).
+  Early signal: on well-covered tasks the grid already BEATS the mse=0.2 baseline on val — e.g. H3K4me3
+  raw 0.6845 (kl.5,mse0,T4, n77), H4K20me1 0.6309 (kl1,mse1,T4), H3K27ac 0.4869 (kl1,mse2,T.5).
+- **Bug found + prevented in the 3-seed aggregation:** `aggregate_carbon_results.py` log-scrapes and
+  defaults a missing `--random-state` to 0, so all ~80 HP-search runs/task (which actually use the
+  config default seed **42**) would collide with the best-HP 3-seed **seed-0** cell → wrong headline.
+  Fix: `final_summary.json` now records `random_state`; new **`slurm/aggregate_3seed.py`** reads
+  final_summaries and selects ONLY runs with `random_state∈{0,1,2}` (HP-search seed-42 excluded, zero
+  contamination). Verified on synthetic data (seed-42 decoy 0.999 + old no-seed 0.888 both excluded).
+
+### Final-phase runbook (when `HP_GRID_COMPLETE` appears / reconciler reports 0 holes)
+1. `python slurm/extract_best_hyperparams.py --out best_hyperparams.json`  (best-on-val per task)
+2. `python slurm/gen_3seed_best_specs.py --best best_hyperparams.json --seeds 0 1 2 --out best_3seed_specs.txt`
+3. `bash slurm/auto_submit_specs.sh best_3seed_specs.txt`  (18×3 = 54 jobs, seeds 0/1/2)
+4. `python slurm/aggregate_3seed.py --best best_hyperparams.json`  → per-task mean±std (the paper table)

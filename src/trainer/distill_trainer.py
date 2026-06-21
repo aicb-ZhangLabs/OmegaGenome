@@ -423,6 +423,9 @@ def train_distill_task(
         "total_epochs": int(epoch),  # ACTUAL epochs run (< config.epochs if early-stopped)
         "max_epochs": config.epochs,
         "early_stopped": bool(epoch < config.epochs),
+        # Training seed — lets the 3-seed aggregator select ONLY the multi-seed runs (random_state in
+        # {0,1,2}) and exclude HP-search runs (which use the config default 42), with zero contamination.
+        "random_state": int(config.random_state),
         "hyperparameters": {
             "weight_ce": distillation_config.weight_ce,
             "weight_kl": distillation_config.weight_kl,
