@@ -307,12 +307,30 @@ def test_retry_io():
     ok(tries["n"] == 3, f"tried exactly attempts=3 times (got {tries['n']})")
 
 
+def test_final_summary_seed_wiring():
+    """Lock the contract that final_summary.json's random_state can actually be populated. The summary
+    is written deep inside train_distill_task, which receives a DistillTrainerConfig that has NO seed
+    field — the seed lives on the top-level DistillationExperimentConfig. So the seed MUST be threaded
+    in as a parameter and the source attr MUST exist; otherwise the run crashes at summary time AFTER
+    full training (the regression this guards). Cheap static contract check (no teacher/GPU needed)."""
+    import inspect
+    from src.trainer.distill_trainer import train_distill_task, DistillTrainerConfig
+    from config.distillation.config_schema import DistillationExperimentConfig
+
+    sig = inspect.signature(train_distill_task).parameters
+    ok("random_state" in sig, "train_distill_task must take random_state (threaded in, not off config)")
+    ok("random_state" in DistillationExperimentConfig.__annotations__,
+       "DistillationExperimentConfig must expose random_state (the call site passes config.random_state)")
+    ok("random_state" not in getattr(DistillTrainerConfig, "__annotations__", {}),
+       "DistillTrainerConfig has no random_state -> reading config.random_state inside the trainer crashes")
+
+
 if __name__ == "__main__":
     tests = [test_logit_standard_parity, test_kl_variants_sane, test_mse_raw,
              test_mse_l2norm_scale_invariant, test_mse_skipped, test_teacher_discovery,
              test_deploy_120k_student, test_teacher_tokenization_isolation,
              test_get_best_checkpoint_dispatch, test_teacher_configs_formatting, test_end_to_end_loss,
-             test_early_stop_step, test_retry_io]
+             test_early_stop_step, test_retry_io, test_final_summary_seed_wiring]
     failed = 0
     for fn in tests:
         try:

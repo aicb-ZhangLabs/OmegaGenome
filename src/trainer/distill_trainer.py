@@ -227,6 +227,7 @@ def train_distill_task(
     resume_from_epoch: int = 0,  # NEW parameter
     input_prefix: str = "",  # teacher input formatting (Carbon "<dna>"); no-op default for others
     add_special_tokens: bool = True,
+    random_state: int = 42,  # training seed (top-level config.random_state); recorded in final_summary
 ):
     # move models to device
     model.to(config.device)
@@ -425,7 +426,7 @@ def train_distill_task(
         "early_stopped": bool(epoch < config.epochs),
         # Training seed — lets the 3-seed aggregator select ONLY the multi-seed runs (random_state in
         # {0,1,2}) and exclude HP-search runs (which use the config default 42), with zero contamination.
-        "random_state": int(config.random_state),
+        "random_state": int(random_state),
         "hyperparameters": {
             "weight_ce": distillation_config.weight_ce,
             "weight_kl": distillation_config.weight_kl,
