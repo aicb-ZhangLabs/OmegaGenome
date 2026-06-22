@@ -76,8 +76,9 @@ Loaded NTv3-100M-post locally via the gated-snapshot bypass (`prepare_local_snap
 `local_files_only`). One CPU forward on 1024 bp returned:
 - `bigwig_tracks_logits` = **`[B, L_out, T]` = `(1, 384, 7362)`** — tracks are the **last dim**
   (7362 for human); subsetting via `index_select(-1, idx)` is correct.
-- **Resolution**: 1024 bp → 384 bins (U-Net downsampling), so align the student to the teacher's
-  `L_out` in the loss (`AdaptiveAvgPool1d`/interpolate), not a fixed `out_resolution`.
+- **Resolution**: **single-nucleotide** (1 bp), NOT downsampled bins — the 384 is just the central
+  crop `L_out = 0.375 × L` (1024 × 0.375 = 384; outer 62.5 % dropped for edge context). So align the
+  student to the teacher's `L_out` (same 0.375 crop), not to a coarser `out_resolution`. See §5 Task I/O.
 - 650M default needs an HF token (gated) or its own local snapshot; runs on H100.
 
 ## 4c. Track subset — recommendation (chosen to fix the major revision)
@@ -176,6 +177,37 @@ fine-tuning it on the paper's own benchmark dataset, then test-reporting per-ass
 - **train:** 19932 steps, eff-batch 32, 32 kb windows, Poisson-multinomial loss, AdamW **lr 5e-5**
   (warmup→square-decay); val-select best checkpoint, report on held-out test
 - **metric:** per-track Pearson, averaged within each assay (the paper's reporting unit)
+
+**Task I/O — exactly what each track task predicts** (one spec shared by all 34 tracks; source of
+truth = `src/train/finetune_ntv3.py`, `src/model/ntv3_finetune.py`, `src/data/ntv3_ft_data.py`):
+
+| Field | Value |
+|---|---|
+| **Model context capacity** | NTv3 supports up to **1 Mb**; this benchmark uses a fixed 32 kb window (below). |
+| **Input length (per window)** | **32,768 bp (32 kb)** — `--sequence_length 32768`. |
+| **Input format** | **single-nucleotide tokens** (1 token/bp: A/C/G/T/N), species-conditioned (human). No k-mer/BPE pooling. |
+| **Output resolution** | **single base-pair (1 bp)** — NTv3 predicts one value *per nucleotide* (not binned). |
+| **Output length** | central **12,288 bp** of the window (`L_out = 0.375 × L`); the outer 62.5 % is dropped because the U-Net edges lack full context (`keep_target_center_fraction = 0.375`). |
+| **Output tensor** | `bigwig_tracks_logits` `[B, 12288, T]`, tracks on the last dim (here **T = 34**). |
+| **Value in each bp** | one **non-negative continuous** number per (bp, track) = predicted **read-coverage signal** at that base. **Range [0, ∞)** — a count/coverage intensity, *not* a probability and *not* a class label. |
+| **Target construction** | raw bigWig per-bp coverage → `nan→0` → center-crop 0.375 → **÷ per-track mean** → smooth-clip values > 10 via `2·√(10x) − 10` (deliberately **not** log1p). |
+| **Loss** | **Poisson-multinomial** = a *scale* term (Poisson on each track's total count) + a *shape* term (multinomial over the per-bp profile) — the standard count-data loss for genomic tracks. |
+| **Metric** | per-track **Pearson r** between predicted and observed per-bp signal, averaged within each assay. |
+
+So every task is the same shape of problem: **given 32 kb of DNA, regress the base-by-base coverage
+signal of one functional assay over the central 12 kb** — a per-bp, non-negative intensity (the same
+readout Enformer/Borzoi predict), differing only in *which molecular event* the reads count:
+
+| Assay | #tracks | What the per-bp value physically measures | Units / range |
+|---|:-:|---|---|
+| **ATAC-seq** | 5 | chromatin **accessibility** — Tn5 insertion density (open chromatin) | read coverage, [0, ∞) |
+| **Histone ChIP-seq** | 4 | **histone-mark enrichment** (e.g. H3K4me3, H3K27ac) along the genome | ChIP read coverage, [0, ∞) |
+| **PRO-cap** | 10 | **transcription initiation** — 5′ ends of nascent capped RNA | capped-5′ read counts, [0, ∞) |
+| **eCLIP** | 10 | **RNA-binding-protein occupancy** — RBP crosslink density | crosslink read coverage, [0, ∞) |
+| **RNA-seq** | 5 (2 polyA + 3 total) | **transcript abundance** — steady-state RNA coverage | read coverage, [0, ∞) |
+
+All five are non-negative coverage signals (hence the shared Poisson-multinomial loss); the human
+benchmark draws these 34 tracks from NTv3's 7,362-track human panel (ENCODE `ENCSR…` accessions).
 
 **RESULT — per-assay TEST PCC, ours (3 seeds, mean ± std) vs the paper** (paper numbers from
 `InstaDeepAI/ntv3_benchmark` → `ntv3_benchmark_results.csv`, see NTV3_DATASET_SUMMARY.md §5d):
