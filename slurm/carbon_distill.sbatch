@@ -8,15 +8,17 @@
 #SBATCH --nodelist=laniakea
 #SBATCH --partition=zhanglab.p
 #SBATCH --gres=gpu:1
-# fair-share bills CPU-time (GPU/mem not in TRESBillingWeights), and the job only uses
-# num_workers=4 dataloaders + main (~5 CPUs; teacher logits are CACHED, so no live teacher CPU).
-# 5 CPUs => no slowdown but ~37% less fair-share charge/job than the old 8. mem kept at 96G for the
-# uncached-teacher precompute path (Carbon-3B load); mem is not billed so it doesn't affect fair-share.
+# Right-sized to MEASURED usage so jobs are small+short => BACKFILL-friendly (slip into short gaps
+# under contention, like a 30-min job does; the old 12h/96G footprint was locked out of every gap).
+# Measured over 2324 runs: peak RAM (MaxRSS) ~6.3G, longest elapsed 1h12m, only ~5 CPUs used
+# (num_workers=4 + main; teacher logits are CACHED). Fair-share bills CPU-time only (GPU/mem not in
+# TRESBillingWeights), so 5 CPUs also cuts fair-share ~37% vs the old 8; --time/--mem don't affect
+# fair-share but smaller/shorter => far better backfill. Margins: mem 24G≈4×peak, time 3h≈2.5×max.
 #SBATCH --cpus-per-task=5
-#SBATCH --mem=96G
+#SBATCH --mem=24G
 #SBATCH --nice=0
 #SBATCH --requeue
-#SBATCH --time=12:00:00
+#SBATCH --time=03:00:00
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
