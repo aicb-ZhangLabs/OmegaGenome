@@ -87,7 +87,35 @@ mkdir -p "/extra/zhanglab0/INDV/pengchx3/OmegaGenome_different_version/OmegaGeno
 ```
 ## Training
 
-### Finetuning
+### Finetuning (Stage 1 — teacher LoRA fine-tune)
+
+Fine-tune a teacher gLM on the 18 NT-benchmark tasks; the resulting **per-task adapters are the
+teachers** that the distillation step (below) distills from. Entry point
+`src.train.finetune_teacher <config> [task] [overrides]` (same tyro + `@slurm_fn` style as `distill`).
+Configs in `config/distillation/teacher_finetune.py`:
+
+| config | meaning |
+|---|---|
+| `carbon_3b` | full 18-task **LoRA** fine-tune of Carbon-3B (defaults: 10 ep, lr 1e-4, cosine, LoRA r16/α32/dropout0.1 on all-linear, early-stop patience 3) |
+| `carbon_3b_debug` | 1-task / 1-epoch smoke |
+| `carbon_3b_fullft` | full fine-tune (no LoRA) |
+| `carbon_8b` | Carbon-8B variant |
+
+```bash
+# (a) SLURM — whole 18-task run, one job:
+sbatch slurm/carbon_finetune.sbatch carbon_3b
+# (b) SLURM — single task (the per-task fan-out form):
+sbatch slurm/carbon_finetune.sbatch carbon_3b H3K4me3
+# (c) smoke (1 task, 1 epoch):
+sbatch slurm/carbon_finetune.sbatch                    # defaults to carbon_3b_debug
+# (d) direct + override anything (tyro): fewer tasks / epochs, or full fine-tune:
+python -m src.train.finetune_teacher carbon_3b --config.epochs 5 --config.task-names H3K4me3 enhancers
+python -m src.train.finetune_teacher carbon_3b --config.use-lora False     # full FT instead of LoRA
+# full help:  python -m src.train.finetune_teacher -h
+```
+The best checkpoint per task (by validation MCC) is saved to `<output_dir>/<task>_finetuned/`
+(`output_dir = $OUTPUT_PATH/teacher_finetune/carbon_3b`). Those adapters are exactly what the
+distillation configs (`carbon-raw`, `carbon-base-raw`, …) load as the teacher in Stage 2 below.
 
 ### Distiallation
 
