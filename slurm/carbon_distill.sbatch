@@ -8,7 +8,11 @@
 #SBATCH --nodelist=laniakea
 #SBATCH --partition=zhanglab.p
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=8
+# fair-share bills CPU-time (GPU/mem not in TRESBillingWeights), and the job only uses
+# num_workers=4 dataloaders + main (~5 CPUs; teacher logits are CACHED, so no live teacher CPU).
+# 5 CPUs => no slowdown but ~37% less fair-share charge/job than the old 8. mem kept at 96G for the
+# uncached-teacher precompute path (Carbon-3B load); mem is not billed so it doesn't affect fair-share.
+#SBATCH --cpus-per-task=5
 #SBATCH --mem=96G
 #SBATCH --nice=0
 #SBATCH --requeue
