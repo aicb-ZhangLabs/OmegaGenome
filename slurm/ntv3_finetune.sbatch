@@ -7,7 +7,7 @@
 # Extra args pass through to src.train.finetune_ntv3 (e.g. --smoke, --sequence_length 4096).
 #SBATCH --job-name=ntv3-finetune
 #SBATCH --nodes=1
-#SBATCH --nodelist=voyager
+#SBATCH --nodelist=voyager,laniakea
 #SBATCH --partition=zhanglab.p
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=16
