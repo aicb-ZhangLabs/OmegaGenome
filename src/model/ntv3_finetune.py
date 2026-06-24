@@ -148,3 +148,21 @@ def build_bigwig_model(model_name: str, num_tracks: int, **kwargs):
                                      local_files_only=kwargs.get("local_files_only", False))
     cls = NTv3PreBigWigModel if _is_pretrained_ckpt(cfg) else NTv3BigWigModel
     return cls(model_name, num_tracks, **kwargs)
+
+
+def load_finetuned_bigwig_teacher(ckpt_path: str, base_model: str, num_tracks: int,
+                                  device="cpu", **kwargs):
+    """Load a FINE-TUNED NTv3 bigWig model as a frozen KD teacher (e.g. the reproduced 650M
+    ``best_model.pth``). Reuses ``build_bigwig_model`` to construct the arch on ``base_model``, then
+    overwrites with the fine-tuned ``state_dict`` (best_model.pth is a raw state_dict). Returns the
+    model on ``device`` in eval mode with grads off — same ``{"bigwig_tracks_logits": [B,L_out,T]}``
+    forward contract, so it drops into the KD loss directly.
+    """
+    model = build_bigwig_model(base_model, num_tracks, **kwargs)
+    sd = torch.load(ckpt_path, map_location="cpu")
+    sd = sd["model"] if isinstance(sd, dict) and "model" in sd else sd
+    model.load_state_dict(sd, strict=True)
+    model = model.to(device).eval()
+    for p in model.parameters():
+        p.requires_grad_(False)
+    return model

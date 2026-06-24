@@ -28,9 +28,10 @@ from torch.utils.data import DataLoader
 
 from src.data.ntv3_benchmark import stage_to_local
 from src.data.ntv3_ft_data import GenomeBigWigDataset, load_benchmark_frames, make_target_scaling_fn
-from src.model.ntv3_finetune import NTV3_CROP_FRAC, build_bigwig_model
+from src.model.ntv3_finetune import NTV3_CROP_FRAC, build_bigwig_model, load_finetuned_bigwig_teacher
 from src.trainer.ntv3_optim import build_optimizer_and_scheduler
 from src.trainer.track_losses import poisson_multinomial_loss
+from src.trainer.track_distill import TrackKDConfig, track_kd_loss
 from src.trainer.track_metrics import TracksMetrics
 
 
@@ -65,6 +66,20 @@ def _parse_args():
     ap.add_argument("--wandb", action="store_true")
     ap.add_argument("--smoke", action="store_true",
                     help="tiny end-to-end run (few steps / val samples) to validate the pipeline")
+    # --- Knowledge distillation (set --teacher to switch from plain finetune/baseline to KD) ---
+    ap.add_argument("--teacher", default=None,
+                    help="finetuned NTv3 bigWig teacher ckpt (e.g. reproduced 650M best_model.pth); "
+                         "None = plain finetune (the baseline)")
+    ap.add_argument("--teacher_base", default="InstaDeepAI/NTv3_650M_post",
+                    help="base arch the teacher ckpt was finetuned from")
+    ap.add_argument("--kd_w_ce", type=float, default=0.5, help="KD ground-truth term weight")
+    ap.add_argument("--kd_w_kl", type=float, default=0.5, help="KD distill (teacher) term weight")
+    ap.add_argument("--kd_w_mse", type=float, default=0.2, help="KD feature term weight (0 = off here)")
+    ap.add_argument("--kd_gt_loss", default="poisson_multinomial",
+                    choices=["poisson_multinomial", "mse", "pearson"])
+    ap.add_argument("--kd_distill_loss", default="poisson_multinomial",
+                    choices=["poisson_multinomial", "mse", "pearson", "teacher_bounded"])
+    ap.add_argument("--kd_multinomial_weight", type=float, default=5.0)
     return ap.parse_args()
 
 
@@ -133,6 +148,16 @@ def main():
     n_train = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"trainable params: {n_train/1e6:.1f}M", flush=True)
 
+    # KD mode: load the frozen finetuned teacher (e.g. reproduced 650M) + build the 3-term loss config.
+    teacher, kd_cfg = None, None
+    if args.teacher:
+        teacher = load_finetuned_bigwig_teacher(args.teacher, args.teacher_base, T, device=device)
+        kd_cfg = TrackKDConfig(w_ce=args.kd_w_ce, w_kl=args.kd_w_kl, w_mse=args.kd_w_mse,
+                               gt_loss=args.kd_gt_loss, distill_loss=args.kd_distill_loss,
+                               multinomial_weight=args.kd_multinomial_weight)
+        print(f"KD: teacher={args.teacher} | w_ce/kl/mse={kd_cfg.w_ce}/{kd_cfg.w_kl}/{kd_cfg.w_mse} "
+              f"gt={kd_cfg.gt_loss} distill={kd_cfg.distill_loss}", flush=True)
+
     optimizer, scheduler = build_optimizer_and_scheduler(
         model, args.initial_learning_rate, args.end_learning_rate, args.weight_decay,
         args.num_steps_warmup, args.num_steps_training)
@@ -183,9 +208,15 @@ def main():
             except StopIteration:
                 train_iter = iter(train_loader)
                 batch = next(train_iter)
-            logits = model(batch["tokens"].to(device))["bigwig_tracks_logits"]
+            tokens = batch["tokens"].to(device)
+            logits = model(tokens)["bigwig_tracks_logits"]
             targets = batch["bigwig_targets"].to(device)
-            loss = poisson_multinomial_loss(logits, targets)
+            if teacher is not None:  # KD: 3-term loss (gt + frozen-teacher + feature); student is [B,L,T]
+                with torch.no_grad():
+                    teacher_logits = teacher(tokens)["bigwig_tracks_logits"]
+                loss, _ = track_kd_loss(logits, teacher_logits, targets, cfg=kd_cfg, student_layout="BLT")
+            else:
+                loss = poisson_multinomial_loss(logits, targets)
             (loss / args.num_accumulation_gradient).backward()
             train_metrics.update(logits, targets, loss.item())
         optimizer.step()
