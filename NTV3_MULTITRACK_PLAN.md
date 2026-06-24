@@ -222,7 +222,18 @@ benchmark draws these 34 tracks from NTv3's 7,362-track human panel (ENCODE `ENC
 | **overall mean** | **34** | — | **0.6064 ± 0.0006** | — | — |
 
 (3 seeds = `ntv3_ft_faithful_s{0,1,2}`; std ≤ 0.003 everywhere → reproduction is **deterministic to 3
-decimals**. Per-track CSVs: `results/ntv3_seed{0,1,2}_per_track.csv`.)
+decimals**. Per-seed per-track CSVs: `results/ntv3_seed{0,1,2}_per_track.csv`.)
+
+**Detailed per-track table (all 34, 3-seed mean±std, WITH the paper assay-target side-by-side):**
+`results/ntv3_650m_per_track_3seed.csv` — columns `track_id, assay, seed0, seed1, seed2, mean, std,
+paper_assay, ours_minus_paper`. Highlights (ours 3-seed mean vs the paper's assay number):
+- **ATAC** ENCSR325NFE 0.832 (+0.073 vs paper 0.759) … ENCSR628PLS 0.650 (−0.109) — wide within-assay spread.
+- **Histone** ENCSR962OTG 0.914 (+0.197!) … ENCSR754DRC 0.603 (−0.114 vs paper 0.717).
+- **PRO-cap** 0.342→0.583; most tracks **above** paper 0.508 except the two ENCSR114HGS (~0.342).
+- **eCLIP** 0.473→0.689 (paper 0.584); **RNA** polyA ENCSR527JGN_P 0.720 vs _M 0.503 (strand asymmetry).
+The paper publishes only **assay-level** means (no per-track), so `paper_assay` is the assay target
+repeated per track — lets you see each track against its assay's paper bar. Assay-level paper-vs-ours
+is the table above.
 
 - **Matches/exceeds the paper on ATAC, Histone, PRO-cap; within ~0.03–0.06 on eCLIP & RNA** — and far
   above the BPNet-6M baseline on every assay. This is a **paper-grade reproduction** of NTv3.
