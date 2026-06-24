@@ -17,16 +17,13 @@
 
 set -euo pipefail
 EXP="${1:-carbon_3b_debug}"   # experiment name from config/distillation/teacher_finetune.py
-TASK="${2:-}"                 # optional single task override (for per-task fan-out)
-BS="${3:-}"                   # optional per_device batch size override (e.g. 4 on 24GB 3090)
 REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
 cd "$REPO"
 source slurm/env_setup.sh
 export OMEGA_FINETUNE_LOCAL=1  # run inline on this GPU instead of re-submitting per task
 
-EXTRA=()
-[ -n "$TASK" ] && EXTRA+=(--task-names "$TASK")
-[ -n "$BS" ] && EXTRA+=(--batch-size "$BS")
-
-echo "Running teacher fine-tune: exp=$EXP task=${TASK:-<all>} bs=${BS:-default}"
-"$PY" -m src.train.finetune_teacher "$EXP" "${EXTRA[@]}"
+# Everything after the config name is passed through as tyro overrides (the CLI uses
+# overridable_config_cli, so overrides are --config.<field>), e.g.:
+#   sbatch slurm/carbon_finetune.sbatch carbon_3b --config.task-names H3K27ac --config.epochs 40
+echo "Running teacher fine-tune: exp=$EXP  overrides=${*:2}"
+"$PY" -m src.train.finetune_teacher "$EXP" "${@:2}"
