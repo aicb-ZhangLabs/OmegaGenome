@@ -302,3 +302,50 @@ Receptive field (the whole point):
 **Hypothesis it tests (not yet confirmed — job was cancelled mid-run):** full-window RF should lift
 the *sharp* marks (H3K4me3/H3K9ac) that the small-RF BPNet can't localize, while holding the broad
 marks. Result pending rerun (`sbatch slurm/ntv3_distill_dilated.sbatch`, reuses cached 8k targets).
+
+## 7. NTv3-650M → small-student distillation (2026-06-24, in progress)
+
+**Goal:** distill the *reproduced* NTv3-650M-post (the §5 paper-match teacher, 0.606) into compact
+students, vs a from-pretrain baseline. Students: **NTv3-8M** (pretrained backbone + fresh 34-track
+head, `NTv3PreBigWigModel`) and **~1M DilatedTrackNet**. 34 benchmark tracks, per-track Pearson.
+
+**Setup (clean, reuse-heavy; classification infra `src/model/distillation.py` UNTOUCHED):**
+- Teacher: `load_finetuned_bigwig_teacher` = `build_bigwig_model(NTv3_650M_post)` + `best_model.pth`
+  (strips the `_orig_mod.` compiled-save prefix; tolerates rotary-cache buffers). Frozen, eval.
+- Student build: `build_bigwig_model` factory — PRE (8M, AutoModelForMaskedLM) vs POST auto-dispatch.
+- KD loss: `track_kd_loss` (3-term regression analog of CE+KL+MSE), **all weights + per-term loss
+  types configurable** (`TrackKDConfig`; defaults 0.5/0.5/0.2, Poisson-multinomial). Distill-term
+  options grounded in SOTA regression-KD: poisson_multinomial (Borzoi/Enigma; multinomial profile =
+  KL analog), teacher_bounded (Chen 2017), mse, pearson.
+- Same `finetune_ntv3` entrypoint: no `--teacher` = baseline; `--teacher <ckpt>` = KD.
+- Audited: `test_track_kd_loss` (26 assert), `test_ntv3_pre_bigwig` (9), CPU + GPU smokes.
+
+### RESULT — 8M baseline (no distillation) ✅ DONE (job 241800, full-FT, seq 32768)
+**test mean Pearson 0.4748** (between BPNet-6M ~0.40 and the 650M teacher 0.606).
+
+| assay | #tracks | 8M baseline | 650M teacher | (Δ to teacher) |
+|---|:-:|:-:|:-:|:-:|
+| Histone ChIP-seq | 4 | 0.580 | 0.723 | −0.143 |
+| ATAC-seq | 5 | 0.567 | 0.758 | −0.191 |
+| total RNA-seq | 3 | 0.566 | 0.653 | −0.087 |
+| polyA plus RNA-seq | 2 | 0.501 | 0.613 | −0.112 |
+| eCLIP | 10 | 0.482 | 0.559 | −0.077 |
+| PRO-cap | 10 | 0.347 | 0.514 | −0.167 |
+| **overall** | **34** | **0.475** | **0.606** | **−0.131** |
+
+Per-track detail (all 34): `results/ntv3_8m_baseline_per_track.csv` (track_id, assay, test_pearson).
+Notable per-track range: ATAC ENCSR325NFE 0.685 (best) … PRO-cap ENCSR114HGS 0.279 (worst); one
+histone track ENCSR962OTG hits 0.847. The KD question: does distilling the 650M lift this 0.475
+toward 0.606 — most headroom on PRO-cap (−0.167) and ATAC (−0.191).
+
+### KD runs — IN PROGRESS (launched 2026-06-24, parallel voyager+laniakea)
+| run | node | seq | gt_loss / distill_loss | status |
+|---|---|---|---|---|
+| `ntv3_8m_kd_pois` (241806) | voyager | 32768 | poisson_mn / poisson_mn | running (headline) |
+| `ntv3_8m_kd_allmse` (241807) | voyager | 32768 | mse / mse | running (ablation) |
+| `ntv3_8m_kd_gtmse` (241808) | laniakea | 16384 | mse / poisson_mn | running (ablation) |
+| `ntv3_8m_kd_distmse` (241809) | laniakea | 16384 | poisson_mn / mse | queued (ablation) |
+
+Each KD result (mean + **per-track** via `per_track_csv.py`) to be appended here on completion, with
+the head-to-head vs the 0.475 baseline (does KD help?) and the Poisson-vs-MSE loss decision. Then add
+the ~1M DilatedTrackNet student.
