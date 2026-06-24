@@ -210,7 +210,50 @@ selection-optimism). The significance-backed headline: **mean best-test MCC 0.59
 - Reproduce: `python slurm/aggregate_3seed.py --best best_hyperparams.json`. Per-run rows (all
   seeds + the full grid) in `results/carbon_grid_results.csv`.
 
-### 2026-06-24 — splice from-scratch baseline + "is distillation helping splice?" (200 epochs)
+### 2026-06-24 — canonical from-scratch BPNet baseline vs our distilled student (apples-to-apples)
+
+**Baseline provenance:** the **0.12M BPNet from-scratch** baseline (`model_size="original"` — also ~0.12M,
+121,159 params; near-identical to `deploy_120k`'s 121,423) was trained in the **original OmegaGenome repo**
+(`OmegaGenome_1-27-clean`), **not** this revise repo, on the **same nt_revised benchmark**. Numbers fetched
+from the figure-pack repo `explcre/dna-llm-distillation-plot` and versioned here at
+`results/baselines_nt_revised/` (`model_comparison_{long,wide}.csv`).
+
+**Same model size (0.12M), same benchmark → clean test of "does distillation help?":**
+
+| task | from-scratch baseline (0.12M) | our distilled (0.12M, 3-seed) | Δ |
+|---|:-:|:-:|:-:|
+| splice_sites_donors | **0.8527** | 0.6266 | **−0.2261** ⚠ |
+| splice_sites_acceptors | 0.8280 | 0.7888 | −0.0392 |
+| splice_sites_all | 0.7571 | 0.7843 | +0.0272 |
+| promoter_tata | 0.7833 | 0.8243 | +0.0410 |
+| promoter_no_tata | 0.6983 | 0.7361 | +0.0378 |
+| promoter_all | 0.6768 | 0.7294 | +0.0526 |
+| H3K4me3 | 0.6238 | 0.6172 | −0.0066 |
+| H4K20me1 | 0.6061 | 0.6071 | +0.0010 |
+| H3K36me3 | 0.5546 | 0.5732 | +0.0186 |
+| H3K27me3 | 0.5497 | 0.5739 | +0.0242 |
+| H3K4me2 | 0.5366 | 0.5272 | −0.0094 |
+| H3K9ac | 0.5213 | 0.5066 | −0.0147 |
+| enhancers | 0.4727 | 0.5055 | +0.0328 |
+| H3K4me1 | 0.4606 | 0.4678 | +0.0072 |
+| H2AFZ | 0.4568 | 0.4934 | +0.0366 |
+| enhancers_types | 0.4530 | 0.4579 | +0.0049 |
+| H3K27ac | 0.4275 | 0.4648 | +0.0373 |
+| H3K9me3 | 0.3295 | 0.4137 | +0.0842 |
+| **mean (18)** | **0.5882** | **0.5943** | **+0.0061** |
+
+- **Distillation matches/beats the same-size from-scratch baseline on 13/18 tasks** (biggest wins
+  H3K9me3 +0.084, promoter_all +0.053, H3K27ac +0.037) → the **distilled 0.12M student slightly
+  exceeds the 0.12M baseline overall (0.5943 vs 0.5882)** while also being the deployable artifact.
+- **⚠ splice_donor is the one real failure: 0.627 distilled vs 0.853 baseline (−0.226).** Same size,
+  same nt_revised data, and the Carbon-3B teacher scores **0.977** on donor → the task is fully
+  learnable; **our pipeline's donor training is underperforming its own from-scratch baseline**, so
+  distillation is *hurting* donor rather than helping. This is a **training-path gap vs the original
+  OmegaGenome repo**, not capacity — the lead suspect to fix (LR schedule / class handling / data
+  collation for the 3-class splice tasks differs between the two repos). acceptor is mildly affected
+  (−0.039); splice_all is actually fine (+0.027).
+
+### 2026-06-24 — splice from-scratch (within this repo, distill path) + "is distillation helping splice?" (200 epochs)
 
 The two splice tasks were flagged as low (acceptor table 0.788, donor 0.627). Pulled the **from-scratch**
 (`ce0.5 / kl0 / mse0`, no teacher) runs already present in the 200-epoch grid (no rerun needed), and

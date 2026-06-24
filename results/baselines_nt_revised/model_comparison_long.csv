@@ -1,0 +1,163 @@
+Task,Model,Score,Model Family,Type
+H3K9ac,BPNet,0.52134,BPNet,Baseline
+H3K9ac,Distilled Nucleotide Transformer,0.51054,Nucleotide Transformer,Student
+H3K9ac,DNABERT-2,0.53237,DNABERT-2,Teacher
+H3K9ac,Distilled DNABERT-2,0.5144,DNABERT-2,Student
+H3K9ac,Enformer,0.63638,Enformer,Teacher
+H3K9ac,Enformer Distilled,0.5362,Enformer,Student
+H3K9ac,Nucleotide Transformer,0.53832327,Nucleotide Transformer,Teacher
+H3K9ac,Caduceus,0.53722,Caduceus,Teacher
+H3K9ac,Distilled Caduceus,0.52166,Caduceus,Student
+H3K27ac,BPNet,0.42754,BPNet,Baseline
+H3K27ac,Distilled Nucleotide Transformer,0.46552,Nucleotide Transformer,Student
+H3K27ac,DNABERT-2,0.51289,DNABERT-2,Teacher
+H3K27ac,Distilled DNABERT-2,0.45663,DNABERT-2,Student
+H3K27ac,Enformer,0.5451,Enformer,Teacher
+H3K27ac,Enformer Distilled,0.4585,Enformer,Student
+H3K27ac,Nucleotide Transformer,0.522573268,Nucleotide Transformer,Teacher
+H3K27ac,Caduceus,0.47796,Caduceus,Teacher
+H3K27ac,Distilled Caduceus,0.46265,Caduceus,Student
+enhancers,BPNet,0.47267,BPNet,Baseline
+enhancers,Distilled Nucleotide Transformer,0.48492,Nucleotide Transformer,Student
+enhancers,DNABERT-2,0.54418,DNABERT-2,Teacher
+enhancers,Distilled DNABERT-2,0.48266,DNABERT-2,Student
+enhancers,Enformer,0.65099,Enformer,Teacher
+enhancers,Enformer Distilled,0.5169,Enformer,Student
+enhancers,Nucleotide Transformer,0.507693649,Nucleotide Transformer,Teacher
+enhancers,Caduceus,0.51375,Caduceus,Teacher
+enhancers,Distilled Caduceus,0.48923,Caduceus,Student
+enhancers_types,BPNet,0.453,BPNet,Baseline
+enhancers_types,Distilled Nucleotide Transformer,0.45937,Nucleotide Transformer,Student
+enhancers_types,DNABERT-2,0.51178,DNABERT-2,Teacher
+enhancers_types,Distilled DNABERT-2,0.46297,DNABERT-2,Student
+enhancers_types,Enformer,0.59294,Enformer,Teacher
+enhancers_types,Enformer Distilled,0.4545,Enformer,Student
+enhancers_types,Nucleotide Transformer,0.473265852,Nucleotide Transformer,Teacher
+enhancers_types,Caduceus,0.49228,Caduceus,Teacher
+enhancers_types,Distilled Caduceus,0.45818,Caduceus,Student
+promoter_all,BPNet,0.67679,BPNet,Baseline
+promoter_all,Distilled Nucleotide Transformer,0.71639,Nucleotide Transformer,Student
+promoter_all,DNABERT-2,0.76396,DNABERT-2,Teacher
+promoter_all,Distilled DNABERT-2,0.71351,DNABERT-2,Student
+promoter_all,Enformer,0.74647,Enformer,Teacher
+promoter_all,Enformer Distilled,0.7422,Enformer,Student
+promoter_all,Nucleotide Transformer,0.73374,Nucleotide Transformer,Teacher
+promoter_all,Caduceus,0.76154,Caduceus,Teacher
+promoter_all,Distilled Caduceus,0.74115,Caduceus,Student
+promoter_tata,BPNet,0.78333,BPNet,Baseline
+promoter_tata,Distilled Nucleotide Transformer,0.8136,Nucleotide Transformer,Student
+promoter_tata,DNABERT-2,0.90582,DNABERT-2,Teacher
+promoter_tata,Distilled DNABERT-2,0.83966,DNABERT-2,Student
+promoter_tata,Enformer,0.76584,Enformer,Teacher
+promoter_tata,Enformer Distilled,0.7937,Enformer,Student
+promoter_tata,Nucleotide Transformer,0.9476,Nucleotide Transformer,Teacher
+promoter_tata,Caduceus,0.81496,Caduceus,Teacher
+promoter_tata,Distilled Caduceus,0.8774,Caduceus,Student
+promoter_no_tata,BPNet,0.69826,BPNet,Baseline
+promoter_no_tata,Distilled Nucleotide Transformer,0.73734,Nucleotide Transformer,Student
+promoter_no_tata,DNABERT-2,0.77019,DNABERT-2,Teacher
+promoter_no_tata,Distilled DNABERT-2,0.72737,DNABERT-2,Student
+promoter_no_tata,Enformer,0.7659,Enformer,Teacher
+promoter_no_tata,Enformer Distilled,0.7151,Enformer,Student
+promoter_no_tata,Nucleotide Transformer,0.7531,Nucleotide Transformer,Teacher
+promoter_no_tata,Caduceus,0.7675,Caduceus,Teacher
+promoter_no_tata,Distilled Caduceus,0.71225,Caduceus,Student
+H3K4me1,BPNet,0.46064,BPNet,Baseline
+H3K4me1,Distilled Nucleotide Transformer,0.4758,Nucleotide Transformer,Student
+H3K4me1,DNABERT-2,0.51208,DNABERT-2,Teacher
+H3K4me1,Distilled DNABERT-2,0.52183,DNABERT-2,Student
+H3K4me1,Enformer,0.56812,Enformer,Teacher
+H3K4me1,Enformer Distilled,0.4701,Enformer,Student
+H3K4me1,Nucleotide Transformer,0.479414067,Nucleotide Transformer,Teacher
+H3K4me1,Caduceus,0.4902,Caduceus,Teacher
+H3K4me1,Distilled Caduceus,0.48308,Caduceus,Student
+H3K4me2,BPNet,0.53658,BPNet,Baseline
+H3K4me2,Distilled Nucleotide Transformer,0.55007,Nucleotide Transformer,Student
+H3K4me2,DNABERT-2,0.56252,DNABERT-2,Teacher
+H3K4me2,Distilled DNABERT-2,0.52949,DNABERT-2,Student
+H3K4me2,Enformer,0.63124,Enformer,Teacher
+H3K4me2,Enformer Distilled,0.5431,Enformer,Student
+H3K4me2,Nucleotide Transformer,0.556654317,Nucleotide Transformer,Teacher
+H3K4me2,Caduceus,0.55484,Caduceus,Teacher
+H3K4me2,Distilled Caduceus,0.5432,Caduceus,Student
+H3K4me3,BPNet,0.62384,BPNet,Baseline
+H3K4me3,Distilled Nucleotide Transformer,0.63403,Nucleotide Transformer,Student
+H3K4me3,DNABERT-2,0.63931,DNABERT-2,Teacher
+H3K4me3,Distilled DNABERT-2,0.61184,DNABERT-2,Student
+H3K4me3,Enformer,0.64848,Enformer,Teacher
+H3K4me3,Enformer Distilled,0.6502,Enformer,Student
+H3K4me3,Nucleotide Transformer,0.632808114,Nucleotide Transformer,Teacher
+H3K4me3,Caduceus,0.63665,Caduceus,Teacher
+H3K4me3,Distilled Caduceus,0.63416,Caduceus,Student
+H2AFZ,BPNet,0.4568,BPNet,Baseline
+H2AFZ,Distilled Nucleotide Transformer,0.50614,Nucleotide Transformer,Student
+H2AFZ,DNABERT-2,0.48564,DNABERT-2,Teacher
+H2AFZ,Distilled DNABERT-2,0.49622,DNABERT-2,Student
+H2AFZ,Enformer,0.56217,Enformer,Teacher
+H2AFZ,Enformer Distilled,0.52,Enformer,Student
+H2AFZ,Nucleotide Transformer,0.510011906,Nucleotide Transformer,Teacher
+H2AFZ,Caduceus,0.50129,Caduceus,Teacher
+H2AFZ,Distilled Caduceus,0.51361,Caduceus,Student
+H3K27me3,BPNet,0.54969,BPNet,Baseline
+H3K27me3,Distilled Nucleotide Transformer,0.57441,Nucleotide Transformer,Student
+H3K27me3,DNABERT-2,0.60376,DNABERT-2,Teacher
+H3K27me3,Distilled DNABERT-2,0.55104,DNABERT-2,Student
+H3K27me3,Enformer,0.57781,Enformer,Teacher
+H3K27me3,Enformer Distilled,0.5801,Enformer,Student
+H3K27me3,Nucleotide Transformer,0.611405927,Nucleotide Transformer,Teacher
+H3K27me3,Caduceus,0.58968,Caduceus,Teacher
+H3K27me3,Distilled Caduceus,0.56887,Caduceus,Student
+H3K36me3,BPNet,0.55461,BPNet,Baseline
+H3K36me3,Distilled Nucleotide Transformer,0.57997,Nucleotide Transformer,Student
+H3K36me3,DNABERT-2,0.64535,DNABERT-2,Teacher
+H3K36me3,Distilled DNABERT-2,0.5562,DNABERT-2,Student
+H3K36me3,Enformer,0.58053,Enformer,Teacher
+H3K36me3,Enformer Distilled,0.5914,Enformer,Student
+H3K36me3,Nucleotide Transformer,0.653046675,Nucleotide Transformer,Teacher
+H3K36me3,Caduceus,0.60672,Caduceus,Teacher
+H3K36me3,Distilled Caduceus,0.55165,Caduceus,Student
+H3K9me3,BPNet,0.32946,BPNet,Baseline
+H3K9me3,Distilled Nucleotide Transformer,0.36004,Nucleotide Transformer,Student
+H3K9me3,DNABERT-2,0.50377,DNABERT-2,Teacher
+H3K9me3,Distilled DNABERT-2,0.4014,DNABERT-2,Student
+H3K9me3,Enformer,0.49418,Enformer,Teacher
+H3K9me3,Enformer Distilled,0.4112,Enformer,Student
+H3K9me3,Nucleotide Transformer,0.463561624,Nucleotide Transformer,Teacher
+H3K9me3,Caduceus,0.45532,Caduceus,Teacher
+H3K9me3,Distilled Caduceus,0.42366,Caduceus,Student
+H4K20me1,BPNet,0.60608,BPNet,Baseline
+H4K20me1,Distilled Nucleotide Transformer,0.6208,Nucleotide Transformer,Student
+H4K20me1,DNABERT-2,0.6424,DNABERT-2,Teacher
+H4K20me1,Distilled DNABERT-2,0.60893,DNABERT-2,Student
+H4K20me1,Enformer,0.63323,Enformer,Teacher
+H4K20me1,Enformer Distilled,0.6323,Enformer,Student
+H4K20me1,Nucleotide Transformer,0.655704093,Nucleotide Transformer,Teacher
+H4K20me1,Caduceus,0.6275,Caduceus,Teacher
+H4K20me1,Distilled Caduceus,0.60538,Caduceus,Student
+splice_sites_donors,BPNet,0.85273,BPNet,Baseline
+splice_sites_donors,Distilled Nucleotide Transformer,0.83918,Nucleotide Transformer,Student
+splice_sites_donors,DNABERT-2,0.84534,DNABERT-2,Teacher
+splice_sites_donors,Distilled DNABERT-2,0.91881,DNABERT-2,Student
+splice_sites_donors,Enformer,0.85665,Enformer,Teacher
+splice_sites_donors,Enformer Distilled,0.8432,Enformer,Student
+splice_sites_donors,Nucleotide Transformer,0.970110204,Nucleotide Transformer,Teacher
+splice_sites_donors,Caduceus,0.7307,Caduceus,Teacher
+splice_sites_donors,Distilled Caduceus,0.89398,Caduceus,Student
+splice_sites_all,BPNet,0.7571,BPNet,Baseline
+splice_sites_all,Distilled Nucleotide Transformer,0.82729,Nucleotide Transformer,Student
+splice_sites_all,DNABERT-2,0.86448,DNABERT-2,Teacher
+splice_sites_all,Distilled DNABERT-2,0.85301,DNABERT-2,Student
+splice_sites_all,Enformer,0.83829,Enformer,Teacher
+splice_sites_all,Enformer Distilled,0.8007,Enformer,Student
+splice_sites_all,Nucleotide Transformer,0.954118811,Nucleotide Transformer,Teacher
+splice_sites_all,Caduceus,0.72975,Caduceus,Teacher
+splice_sites_all,Distilled Caduceus,0.76002,Caduceus,Student
+splice_sites_acceptors,BPNet,0.82799,BPNet,Baseline
+splice_sites_acceptors,Distilled Nucleotide Transformer,0.87878,Nucleotide Transformer,Student
+splice_sites_acceptors,DNABERT-2,0.834,DNABERT-2,Teacher
+splice_sites_acceptors,Distilled DNABERT-2,0.84207,DNABERT-2,Student
+splice_sites_acceptors,Enformer,0.84664,Enformer,Teacher
+splice_sites_acceptors,Enformer Distilled,0.8199,Enformer,Student
+splice_sites_acceptors,Nucleotide Transformer,0.955175662,Nucleotide Transformer,Teacher
+splice_sites_acceptors,Caduceus,0.7256,Caduceus,Teacher
+splice_sites_acceptors,Distilled Caduceus,0.844,Caduceus,Student
