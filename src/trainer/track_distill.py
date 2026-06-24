@@ -176,7 +176,13 @@ def track_kd_loss(student: torch.Tensor, teacher: torch.Tensor, gt: torch.Tensor
         # path), so unequal student/teacher emb lengths never crash the MSE.
         if student_feat.shape[1] != teacher_feat.shape[1]:
             student_feat = _align_positions(student_feat, teacher_feat.shape[1])
-        L_feat = F.mse_loss(student_feat, teacher_feat.detach())
+        # L2-normalise each per-position feature vector before the MSE. NTv3 hidden states are large-
+        # magnitude (raw MSE ~O(100s)), which would swamp the O(1) Poisson track terms and make w_mse
+        # uninterpretable. Normalising transfers the teacher's representation DIRECTION (cosine-style,
+        # MSE in [0,4]) so w_mse trades off against the track losses on a comparable scale.
+        sf = F.normalize(student_feat, dim=-1)
+        tf = F.normalize(teacher_feat.detach(), dim=-1)
+        L_feat = F.mse_loss(sf, tf)
     else:
         L_feat = student.new_zeros(())
 

@@ -185,6 +185,14 @@ def test_feature_alignment_trainer_wiring():
     tot_f, comp_f = track_kd_loss(logits.detach(), teacher_logits, gt, cfg=cfg_f, student_layout="BLT",
                                   student_feat=sf_short, teacher_feat=tf_long)
     ok(float(comp_f["feat"]) > 0, "feature term self-aligns unequal emb lengths (no crash)")
+
+    # scale control: features are L2-normalised before MSE, so the term is bounded (~[0,4]) regardless
+    # of raw emb magnitude — it can't swamp the O(1) Poisson terms (the bug that motivated this).
+    big_sf = torch.randn(B, L, T_DIM, requires_grad=True) * 1000.0  # huge-magnitude emb
+    big_tf = torch.randn(B, L, T_DIM) * 1000.0
+    _, comp_big = track_kd_loss(logits.detach(), teacher_logits, gt, cfg=cfg_f, student_layout="BLT",
+                                student_feat=big_sf, teacher_feat=big_tf)
+    ok(0 < float(comp_big["feat"]) <= 4.0 + 1e-4, "feature MSE is scale-invariant + bounded (L2-normalised)")
     print("PASS feature_alignment_trainer_wiring")
 
 
