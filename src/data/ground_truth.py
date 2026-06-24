@@ -1,0 +1,101 @@
+"""Ground-truth ENCODE bigWig signal for the NTv3 tracks — to evaluate the teacher vs measured signal.
+
+ENCODE serves signed/expiring S3 URLs that pyBigWig cannot open remotely, so each track's bigWig is
+DOWNLOADED once to a local cache (SSD), then read locally. Resolves each track's experiment accession
+to a released GRCh38 bigWig (signal p-value for ChIP; DNase has no p-value track, so falls back to a
+read-depth-normalized track), and reads per-bp signal binned to the teacher's output length.
+
+Reuses the v1 track manifest (`config/distillation/ntv3_v1_tracks.json`) — no new metadata.
+"""
+
+import json
+import os
+import urllib.request
+from typing import List, Tuple
+
+import numpy as np
+
+_EXP = "https://www.encodeproject.org/experiments/{acc}/?format=json"
+# preferred bigWig output types, in order: ChIP has "signal p-value"; DNase does not.
+_PREF = ["signal p-value", "read-depth normalized signal", "fold change over control", "signal of unique reads"]
+
+
+def resolve_bigwig(acc: str, assembly: str = "GRCh38") -> Tuple[str, str]:
+    """Experiment accession -> (bigWig file accession, download URL) for a released ``assembly`` bigWig."""
+    req = urllib.request.Request(_EXP.format(acc=acc), headers={"Accept": "application/json"})
+    files = json.load(urllib.request.urlopen(req, timeout=30)).get("files", [])
+    # accept released OR archived (older DNase signal tracks are archived but still the measured signal)
+    bws = [f for f in files if f.get("file_format") == "bigWig" and f.get("status") in ("released", "archived")
+           and f.get("assembly") == assembly]
+    if not bws:
+        raise ValueError(f"no released {assembly} bigWig for {acc}")
+    for ot in _PREF:
+        m = [f for f in bws if f.get("output_type") == ot]
+        if m:
+            return m[0]["accession"], "https://www.encodeproject.org" + m[0]["href"]
+    return bws[0]["accession"], "https://www.encodeproject.org" + bws[0]["href"]
+
+
+def prepare_bigwigs(manifest: dict, cache_dir: str) -> List[str]:
+    """Download each track's bigWig to ``cache_dir`` (skip if already present). Returns local paths."""
+    os.makedirs(cache_dir, exist_ok=True)
+    paths, missing = [], []
+    for t in manifest["tracks"]:
+        try:
+            facc, url = resolve_bigwig(t["encode_acc"])
+        except Exception as e:  # one bad track shouldn't sink the others
+            print(f"  SKIP {t['label']} ({t['encode_acc']}): {e}", flush=True)
+            paths.append(None)
+            missing.append(t["label"])
+            continue
+        dst = os.path.join(cache_dir, f"{t['label']}__{facc}.bigWig")
+        # Atomic download: fetch to a .part temp then os.replace into place. A present `dst` is then
+        # guaranteed complete — so a concurrent reader (or a second downloader) can never open a
+        # half-written file (the race that crashed pyBigWig.open with a size>0-but-truncated bigWig).
+        if not (os.path.exists(dst) and os.path.getsize(dst) > 0):
+            print(f"  downloading {t['label']} ({facc}) ...", flush=True)
+            part = f"{dst}.part.{os.getpid()}"
+            urllib.request.urlretrieve(url, part)
+            os.replace(part, dst)
+        paths.append(dst)
+    if missing:
+        print(f"  WARNING: no bigWig for {missing} -> those tracks score NaN", flush=True)
+    return paths
+
+
+def ground_truth_targets(bigwig_paths: List[str], coords, nbins: int, workers: int = 8) -> np.ndarray:
+    """[N, nbins, T] binned-mean measured signal over the windows for each track's bigWig.
+
+    Reads are parallelized over tracks (one thread per bigWig, each with its own handle, writing a
+    disjoint output column -> no races). Combined with node-local staging this turns the prep from
+    hours (sshfs-latency-bound) into minutes. ``None`` paths -> zero column (missing track).
+    """
+    import pyBigWig  # lazy: module imports without pyBigWig installed
+    from concurrent.futures import ThreadPoolExecutor
+
+    out = np.zeros((len(coords), nbins, len(bigwig_paths)), dtype=np.float32)
+
+    def _read_track(j: int) -> None:
+        path = bigwig_paths[j]
+        if path is None:
+            return  # leave zeros
+        bw = pyBigWig.open(path)
+        try:
+            for i, (chrom, start, end) in enumerate(coords):
+                c = chrom if chrom in bw.chroms() else chrom.replace("chr", "")  # chr1 vs 1
+                # bw.values() -> raw per-bp array (one C call); np handles NaN + binning vectorized.
+                # This replaces stats(nBins)+Python list-comp (the ~95K x 6144 GIL-bound loop).
+                raw = np.nan_to_num(np.asarray(bw.values(c, start, end), dtype=np.float32))
+                if raw.shape[0] == nbins:  # base-resolution (our case): direct
+                    out[i, :, j] = raw
+                elif raw.shape[0] % nbins == 0:  # even downsample
+                    out[i, :, j] = raw.reshape(nbins, -1).mean(axis=1)
+                else:  # uneven bins (rare): mean over linspace edges
+                    e = np.linspace(0, raw.shape[0], nbins + 1).astype(int)
+                    out[i, :, j] = [raw[e[k]:e[k + 1]].mean() if e[k + 1] > e[k] else 0.0 for k in range(nbins)]
+        finally:
+            bw.close()
+
+    with ThreadPoolExecutor(max_workers=max(1, min(workers, len(bigwig_paths)))) as ex:
+        list(ex.map(_read_track, range(len(bigwig_paths))))
+    return out
