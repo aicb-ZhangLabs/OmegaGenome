@@ -49,11 +49,15 @@ def prepare_local_snapshot(path: str) -> str:
     patched = path.rstrip("/") + "_loadable"  # sibling dir, avoids self-recursion
     os.makedirs(patched, exist_ok=True)
     cfg_files = {"config.json", "tokenizer_config.json"}
-    # Symlink everything (weights etc.) — no copy — except the configs we rewrite.
+    # Symlink everything (weights etc.) — no copy — except the configs we rewrite. Idempotent +
+    # concurrency-safe: ignore FileExistsError (another process/job may create the same link).
     for fname in os.listdir(path):
         src, dst = os.path.join(path, fname), os.path.join(patched, fname)
         if os.path.isfile(src) and fname not in cfg_files and not os.path.exists(dst):
-            os.symlink(src, dst)
+            try:
+                os.symlink(src, dst)
+            except FileExistsError:
+                pass
     for cfg_name in cfg_files:
         orig = os.path.join(path, cfg_name)
         if not os.path.exists(orig):
@@ -62,8 +66,14 @@ def prepare_local_snapshot(path: str) -> str:
             d = json.load(f)
         if d.get("auto_map"):
             d["auto_map"] = {k: _strip_auto_map(v) for k, v in d["auto_map"].items()}
-        with open(os.path.join(patched, cfg_name), "w") as f:
+        # ATOMIC write (tmp + os.replace): concurrent jobs sharing this _loadable dir must never read
+        # a half-written config.json (the race that crashed a parallel KD job). os.replace is atomic
+        # on the same fs, so a reader sees either the old or the complete new file — never a partial.
+        final = os.path.join(patched, cfg_name)
+        tmp = f"{final}.tmp.{os.getpid()}"
+        with open(tmp, "w") as f:
             json.dump(d, f, indent=2)
+        os.replace(tmp, final)
     return patched
 
 
