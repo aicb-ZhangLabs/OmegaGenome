@@ -82,6 +82,18 @@ carbon_hyperparam_trainer_config = DistillTrainerConfig(
     teacher_batch_size=4,
 )
 carbon_debug_trainer_config = replace(carbon_trainer_config, epochs=2, eval_every_n_epochs=1)
+# Carbon-3B distillation into the `original` BPNet student (full receptive field; the SAME student the
+# NT/Enformer/Caduceus/DNABERT-2 distillations use). SEPARATE output leaf (`original`) so this re-search
+# CANNOT collide with the existing `deploy_120k` ckpts/grid — final_summary.json does not record
+# model_size, so a shared dir would corrupt resume/aggregation. Output dir is built from _CARBON_OUT
+# (node-aware, resolved at import) — never hardcode the SSD path (galaxy vs sshfs differ). cache_base_dir
+# is UNCHANGED so the expensive Carbon-3B teacher logit/feature cache is reused (teacher outputs are
+# student-independent).
+carbon_original_trainer_config = replace(
+    carbon_trainer_config,
+    output_dir=f"{_CARBON_OUT}/original",
+    wandb_project="OmegaGenome-Carbon-Distill-Original",
+)
 # Caduceus trainer configurations
 caduceus_trainer_config = DistillTrainerConfig(
     output_dir=f"{output_path}/caduceus_distillation/vanilla_original",

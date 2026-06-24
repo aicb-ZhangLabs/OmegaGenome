@@ -1,0 +1,22 @@
+[reconcile 2026-06-20_12:47:17] start; waiting for primary submitter PID=3034705 + queue drain
+[reconcile 2026-06-23_21:37:35] primary pass drained; entering self-heal loop
+/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/transformers/utils/hub.py:110: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+  warnings.warn(
+OUTPUT_PATH is not found in environment variables. NNTOOL_OUTPUT_PATH is set using path: /extra/zhanglab0/INDV/pengchx3/OmegaGenome_different_version/OmegaGenome_1-27-clean/OmegaGenome//output/06232026/213750
+grid: 4kl x 4mse x 5T x 18tasks = 1440 combos; 1440 already done; wrote 0 specs -> hp_specs_reconcile.txt
+[reconcile 2026-06-23_21:41:48] cycle 1/6: 0
+0 combos still missing
+slurm/reconcile_hp.sh: line 33: [: 0
+0: integer expression expected
+[specs 21:41:48] hp_specs_reconcile.txt: 0 jobs to submit
+[specs 21:41:48] all 0 submitted
+/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/transformers/utils/hub.py:110: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+  warnings.warn(
+OUTPUT_PATH is not found in environment variables. NNTOOL_OUTPUT_PATH is set using path: /extra/zhanglab0/INDV/pengchx3/OmegaGenome_different_version/OmegaGenome_1-27-clean/OmegaGenome//output/06232026/214203
+grid: 4kl x 4mse x 5T x 18tasks = 1440 combos; 1440 already done; wrote 0 specs -> hp_specs_reconcile.txt
+[reconcile 2026-06-23_21:46:52] cycle 2/6: 0
+0 combos still missing
+slurm/reconcile_hp.sh: line 33: [: 0
+0: integer expression expected
+[specs 21:46:52] hp_specs_reconcile.txt: 0 jobs to submit
+[specs 21:46:52] all 0 submitted

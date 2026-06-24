@@ -365,12 +365,55 @@ def test_grid_kl0_temp_skip():
     print("PASS test_grid_kl0_temp_skip")
 
 
+def test_carbon_original_student_wiring():
+    """Audit the Carbon-3B -> `original` BPNet re-search: same student as the other teachers, full
+    receptive field, MSE-projection support, and a SEPARATE output leaf so the re-search can NEVER
+    collide with the existing deploy_120k grid (final_summary.json records no model_size)."""
+    import os, sys, torch
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "slurm"))
+    from config.distillation.experiments.carbon import (
+        experiment_configs, carbon_raw_original_config as o, carbon_raw_config as legacy,
+    )
+    from config.distillation.bpnet import original_bpnet_classifier_config
+    from src.model.bpnet_classifier import BPNetClassifier, BPNetClassifierConfig
+
+    ok("carbon-raw-original" in experiment_configs, "carbon-raw-original registered for the CLI")
+    ok(o.student_config.model_size == "original", "Carbon re-search student is `original` (full RF)")
+    ok(o.student_config is original_bpnet_classifier_config,
+       "reuses the SAME original_bpnet_classifier_config the NT/Enformer/Caduceus distillations use")
+
+    # CONFLICT-AVOIDANCE: distinct output leaf, but shared teacher cache.
+    o_leaf = os.path.basename(o.trainer_config.output_dir)
+    legacy_leaf = os.path.basename(legacy.trainer_config.output_dir)
+    ok(o_leaf == "original", f"output leaf is `original` (got {o_leaf})")
+    ok(o_leaf != legacy_leaf, f"original leaf != deploy_120k leaf ({o_leaf} vs {legacy_leaf}) -> no ckpt collision")
+    ok(o.trainer_config.cache_base_dir == legacy.trainer_config.cache_base_dir,
+       "teacher logit/feature cache is SHARED (no expensive Carbon-3B recompute)")
+
+    # gen_hp_specs auto-derives the resume scope from the cfg's output leaf -> matches the leaf above.
+    from gen_hp_specs import done_combos  # importable; accepts a scope arg
+    derived = os.path.basename(experiment_configs["carbon-raw-original"][1].trainer_config.output_dir)
+    ok(derived == "original", "gen_hp_specs derives scope_leaf='original' from the cfg (resume scoped)")
+    ok(callable(done_combos), "done_combos exposed for scoped resume")
+
+    # `original` builds the MSE teacher-projection when teacher_hidden_size is set, AND keeps full RF.
+    m = BPNetClassifier(BPNetClassifierConfig(num_labels=3, model_size="original", teacher_hidden_size=2048))
+    ok(getattr(m, "teacher_proj", None) is not None, "original builds the teacher_proj for the MSE term")
+    maxd = max(mod.dilation[0] for mod in m.modules() if isinstance(mod, torch.nn.Conv1d))
+    ok(maxd == 512, f"original has uncapped dilation -> RF 512 (got {maxd}); fixes the splice_donor gap")
+    cap = BPNetClassifier(BPNetClassifierConfig(num_labels=3, model_size="deploy_120k", teacher_hidden_size=2048))
+    capd = max(mod.dilation[0] for mod in cap.modules() if isinstance(mod, torch.nn.Conv1d))
+    ok(capd == 64, f"deploy_120k stays dilation-capped at 64 (got {capd}) — documents the contrast")
+    print("PASS test_carbon_original_student_wiring")
+
+
 if __name__ == "__main__":
     tests = [test_logit_standard_parity, test_kl_variants_sane, test_mse_raw,
              test_mse_l2norm_scale_invariant, test_mse_skipped, test_teacher_discovery,
              test_deploy_120k_student, test_teacher_tokenization_isolation,
              test_get_best_checkpoint_dispatch, test_teacher_configs_formatting, test_end_to_end_loss,
-             test_early_stop_step, test_retry_io, test_final_summary_seed_wiring, test_grid_kl0_temp_skip]
+             test_early_stop_step, test_retry_io, test_final_summary_seed_wiring, test_grid_kl0_temp_skip,
+             test_carbon_original_student_wiring]
     failed = 0
     for fn in tests:
         try:

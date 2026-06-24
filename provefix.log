@@ -1,0 +1,3 @@
+PROOF: post-fix final_summary written -> /tmp/galaxy_srv_disk00/pengchx3/carbon_distillation/deploy_120k/H3K9ac/20260621_142548/d8712db7-fb85-41c0-bdb8-8cfd467c3798/distill_methodvanilla_dkd_alpha1.0_dkd_beta8.0_kl_methodkl_mse_normalizeFalse_temperature1.5_weight_ce0.5_weight_kl0.25_weight_mse5.0_zscoreFalse/final_summary.json
+task= H3K9ac | random_state= 42 | best_test_mcc= 0.4632 | early_stopped= True
+new FAILED since fix (14:21): 0

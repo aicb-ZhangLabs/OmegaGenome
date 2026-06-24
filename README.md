@@ -117,7 +117,7 @@ The best checkpoint per task (by validation MCC) is saved to `<output_dir>/<task
 (`output_dir = $OUTPUT_PATH/teacher_finetune/carbon_3b`). Those adapters are exactly what the
 distillation configs (`carbon-raw`, `carbon-base-raw`, …) load as the teacher in Stage 2 below.
 
-### Distiallation
+### Distillation
 
 See help message
 

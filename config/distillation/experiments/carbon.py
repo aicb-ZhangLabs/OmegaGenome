@@ -16,9 +16,14 @@ from ..config_schema import (
     DistillationHyperparamExperimentConfig,
 )
 from ..glm import carbon_3b_lora, nt_2b5
-from ..bpnet import deploy_120k_bpnet_config
+from ..bpnet import deploy_120k_bpnet_config, original_bpnet_classifier_config
 from .nt import NT_PARENT_PATH
-from ..trainer import carbon_trainer_config, carbon_hyperparam_trainer_config, carbon_debug_trainer_config
+from ..trainer import (
+    carbon_trainer_config,
+    carbon_hyperparam_trainer_config,
+    carbon_debug_trainer_config,
+    carbon_original_trainer_config,
+)
 from ..data import nucletide_transformer_revised_benchmark
 from ..distillation_model import carbon_vanilla_mse_raw, carbon_vanilla_mse_l2norm
 from ...slurm import basic_distillation_slurm, run_distillation_slurm
@@ -57,12 +62,35 @@ carbon_l2norm_config = DistillationExperimentConfig(
     dataset_config=nucletide_transformer_revised_benchmark,
     slurm_config=basic_distillation_slurm,
 )
+# Carbon-3B distillation into the `original` BPNet student — the SAME student the NT/Enformer/Caduceus/
+# DNABERT-2 distillations use (full receptive field, reproduces the published BPNet baseline). SEPARATE
+# output leaf (carbon_original_trainer_config -> .../original) so it cannot collide with the existing
+# deploy_120k grid/ckpts. Teacher cache is shared (same cache_base_dir).
+carbon_raw_original_config = DistillationExperimentConfig(
+    task_names=CARBON_TASKS,
+    teacher_config=carbon_3b_lora,
+    teacher_parent_dir=CARBON_PARENT_PATH,
+    model_type="glm",
+    student_config=original_bpnet_classifier_config,
+    distillation_config=carbon_vanilla_mse_raw,
+    trainer_config=carbon_original_trainer_config,
+    dataset_config=nucletide_transformer_revised_benchmark,
+    slurm_config=basic_distillation_slurm,
+)
 
 # --- `base` vanilla HP sweep (mse_normalize inherited from distillation_config) ---
+# gen_hp_specs.py reads this grid (kl x mse x T x tasks), collapsing kl=0 x T (T is a no-op at kl=0).
+# The carbon-raw-original re-search is STAGED BY mse to control queue load and let us review results
+# between stages (edit weight_mses + rerun gen_hp_specs --cfg carbon-raw-original; resume is scoped to
+# the `original` output leaf, so finished combos are skipped):
+#   stage 1: weight_mses=[0.0, 1]   (current)
+#   stage 2: weight_mses=[0.25]
+#   stage 3: weight_mses=[2, 5]
+# (The original deploy_120k grid used the full [0.0, 1, 2, 5] in one pass; it is complete and untouched.)
 _GRID = dict(
     weight_ces=[0.5],
     weight_kls=[0.0, 0.25, 0.5, 1.0],
-    weight_mses=[0.0, 1, 2, 5],
+    weight_mses=[0.0, 1],  # STAGE 1 of 3 (see runbook above)
     temperatures=[0.5, 1.0, 1.5, 2.0, 4.0],
     zscores=[False],
 )
@@ -165,6 +193,7 @@ experiment_configs = {
     "nt-iso-smoke": ("NT-2.5B isolation smoke: proves Carbon changes don't break NT", nt_iso_smoke_config),
     "carbon-raw": ("Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, raw MSE", carbon_raw_config),
     "carbon-l2norm": ("Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, L2-norm MSE", carbon_l2norm_config),
+    "carbon-raw-original": ("Carbon->ORIGINAL BPNet student (full RF, matches other teachers); SEPARATE output leaf", carbon_raw_original_config),
 }
 hyperparam_experiment_configs = {
     "carbon-base-raw": ("Carbon->deploy_120k base vanilla HP sweep (raw MSE)", carbon_base_hyperparam_raw_config),

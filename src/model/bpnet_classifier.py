@@ -23,8 +23,8 @@ class BPNetClassifierConfig:
         "ultra_tiny",
         "extra_tiny",
         "medium_small",
-        "deploy_120k",  # ~0.12M deploy params (65 ch) — dilation CAPPED at 64 (legacy student)
-        "deploy_120k_fulldil",  # ~0.12M, 65 ch, UNCAPPED dilation->512 (same params, full RF) — preferred
+        "deploy_120k",  # ~0.12M deploy params (65 ch) — NOTE: dilation CAPPED at 64 (small RF). For
+                        # Carbon-3B distillation use `original` instead (full-RF, matches other teachers).
         "pico",
         "medium_large",
         "extra_large",
@@ -246,31 +246,16 @@ class BPNetClassifier(nn.Module):
         elif model_size == "deploy_120k":
             # ~0.12M deployment-param BPNet (65 channels). NOTE: dilation is CAPPED at 2**min(i,6)=64,
             # NOT uncapped like the `original` backbone (which goes to 2**9=512). The cap shrinks the
-            # receptive field ~8x, which underperforms on long-range tasks — most acutely splice_donor
-            # (0.63 here vs 0.85 for `original`). Kept for backward-compat with prior checkpoints;
-            # prefer `deploy_120k_fulldil` (identical param count, full receptive field).
+            # receptive field ~8x and underperforms on long-range tasks — most acutely splice_donor
+            # (0.63 vs 0.85 for `original`). Kept for backward-compat with prior checkpoints; for
+            # Carbon-3B distillation use `original` (full RF, and matches the NT/Enformer/Caduceus/
+            # DNABERT-2 students). Dilation adds no params, so the cap was pure downside.
             layers = [nn.Conv1d(4, 65, 25, padding="same"), nn.ReLU()]
             for i in range(1, 10):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
                             nn.Conv1d(65, 65, 3, padding="same", dilation=2 ** min(i, 6)),
-                            nn.ReLU(),
-                        )
-                    )
-                )
-            return VariableBPNet(nn.Sequential(*layers), feature_dim=65)
-        elif model_size == "deploy_120k_fulldil":
-            # Same ~0.12M-param 65-channel deploy student as `deploy_120k` but with UNCAPPED dilation
-            # (2**i, i=1..9 -> receptive field to 512, matching the `original` backbone). Dilation
-            # adds ZERO parameters, so this recovers long-range capacity (splice_donor) at no deploy
-            # cost. This is the preferred distillation/deployment student.
-            layers = [nn.Conv1d(4, 65, 25, padding="same"), nn.ReLU()]
-            for i in range(1, 10):
-                layers.append(
-                    SimpleResidual(
-                        nn.Sequential(
-                            nn.Conv1d(65, 65, 3, padding="same", dilation=2 ** i),
                             nn.ReLU(),
                         )
                     )
