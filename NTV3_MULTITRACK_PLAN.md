@@ -390,19 +390,56 @@ head, `NTv3PreBigWigModel`) and **~1M DilatedTrackNet**. 34 benchmark tracks, pe
 question: does distilling the 650M lift the 8M (overall 0.475) toward the teacher (0.606) — most
 headroom on PRO-cap and ATAC. KD per-track columns will be appended to this table as runs complete.
 
-### KD runs — IN PROGRESS (2026-06-24) — clean 2×2 loss ablation, all 32 kb full recipe on voyager
+### KD runs — ✅ COMPLETE (2026-06-24) — clean 2×2 loss ablation, full 32 kb recipe on voyager
+
 All four on the **full dataset + 32 kb + 19932 steps** (identical recipe to the 650M reproduction), so
-the gt∈{poisson,mse} × distill∈{poisson,mse} comparison is apples-to-apples.
+the gt∈{poisson,mse} × distill∈{poisson,mse} comparison is apples-to-apples. Student = NTv3-**8M**
+(`NTv3PreBigWigModel`); teacher = the §5 paper-match **650M** (0.6064). All weights `w_ce/w_kl/w_mse =
+0.5/0.5/0.2`. Metric = per-track Pearson averaged over the **34** tracks.
 
-| run | gt_loss / distill_loss | status |
-|---|---|---|
-| `ntv3_8m_kd_pois` (241810) | poisson_mn / poisson_mn | running (faithful headline) |
-| `ntv3_8m_kd_allmse` (241807) | mse / mse | running |
-| `ntv3_8m_kd_gtmse` (241814) | mse / poisson_mn | running (32k, was 16k) |
-| `ntv3_8m_kd_distmse` (241815) | poisson_mn / mse | running (32k, was 16k) |
+| run | gt_loss / distill_loss | best-val | **TEST mean Pearson** | Δ vs 8M baseline (0.4748) |
+|---|---|:-:|:-:|:-:|
+| `ntv3_8m_kd_pois` (241810) | poisson_mn / poisson_mn | 0.5040 | **0.4759** | **+0.0011** ✅ (only one ≥ baseline) |
+| `ntv3_8m_kd_allmse` (241807) | mse / mse | 0.4946 | 0.4655 | −0.0093 |
+| `ntv3_8m_kd_distmse` (241815) | poisson_mn / mse | 0.4921 | 0.4620 | −0.0128 |
+| `ntv3_8m_kd_gtmse` (241875) | mse / poisson_mn | 0.4854 | 0.4572 | −0.0176 |
+| — 8M baseline (no KD, job 241800) | — | — | 0.4748 | (ref) |
+| — 650M teacher (§5) | — | — | 0.6064 | +0.1316 |
 
-(Early subset-val, ~10–25% in: poisson converges fastest — 0.418 at step 2000 vs all-MSE's step 4000.)
+**Honest headline:** on the 8M student, **KD essentially does not help** — the best variant
+(Poisson-multinomial on *both* terms) lands at **0.4759 ≈ the 0.4748 no-distill baseline (+0.001)**, and
+every MSE-using variant is *below* baseline. The 650M→8M capacity gap (0.606 vs 0.475, the §7 table) is
+too large for soft-target distillation to bridge at this size; **Poisson-multinomial clearly beats MSE**
+on both the gt and distill terms (consistent with the §6 student-architecture finding and the count-like
+nature of the data), so it is the right loss — but the lever for closing the gap is **student capacity**
+(next: the ~1M DilatedTrackNet student), not the loss form. Per-track CSVs via `per_track_csv.py`.
 
-Each KD result (mean + **per-track** via `per_track_csv.py`) to be appended here on completion, with
-the head-to-head vs the 0.475 baseline (does KD help?) and the Poisson-vs-MSE loss decision. Then add
-the ~1M DilatedTrackNet student.
+#### Method — loss formulas (all in `src/trainer/track_distill.py` / `track_losses.py`)
+
+Total per-bp track-KD objective (regression analog of the classification CE+KL+MSE), student/teacher/gt
+tensors `[B, L, T]` (batch × sequence × tracks):
+
+```
+L = w_ce · L_gt(student, real_bigWig)        # ground-truth supervision  (w_ce = 0.5)
+  + w_kl · L_distill(student, teacher_tracks)# distill from frozen 650M   (w_kl = 0.5)
+  + w_mse · L_feat(student_feat, teacher_feat)# intermediate feature match (w_mse = 0.2)
+```
+
+`L_gt` and `L_distill` each pick one of the per-term losses below (the 2×2 ablation varies them);
+`L_feat = MSE(student_feat, teacher_feat)` (Hinton-style hint/feature matching).
+
+- **Poisson-multinomial** (Borzoi/Enformer/Enigma; `shape_loss_coefficient λ = 5`):
+  `PM(pred, target) = L_shape + L_scale / λ`
+  - scale (total coverage): `L_scale = mean_{B,T} [ Poisson(Σ_L target, Σ_L pred) ] / L`, with
+    `Poisson(t, p) = p − t·log(p)` (Poisson NLL on the summed-over-position counts per track)
+  - shape (per-position profile): `L_shape = − Σ target · log(p_pred) / (B·L·T)`, where
+    `p_pred = pred / Σ_L pred` is the multinomial distribution over the sequence axis.
+  The multinomial **profile** term is the per-bp regression analog of Hinton soft-target KL.
+- **MSE:** `F.mse_loss(pred, target)`.
+- **Pearson:** `1 − mean_track corr(pred, target)` (penalises shape mismatch directly).
+- **Teacher-bounded** (Chen et al. 2017, for the distill term): squared student-vs-GT error counted
+  **only where the student is worse than the teacher** by > margin —
+  `Σ mask·(student−gt)² / Σ mask`, `mask = [(student−gt)² > (teacher−gt)² + margin]` — so the teacher
+  pulls the student only where it actually helps.
+
+Next: the ~1M **DilatedTrackNet** student (capacity is the lever per the result above).
