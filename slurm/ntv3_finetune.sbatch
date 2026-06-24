@@ -32,6 +32,10 @@ mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3
 DATA="$SSD/ntv3_benchmark_data"
 STAGE="${SLURM_TMPDIR:-/tmp/ntv3_stage_$USER}"
 
-"$PV" -u -m src.train.finetune_ntv3 --data_dir "$DATA" --model InstaDeepAI/NTv3_650M_post \
-      --out "$SSD/ntv3_targets/ntv3_finetune_faithful" --stage_dir "$STAGE" --wandb --compile "$@"
-echo "=== done: $SSD/ntv3_targets/ntv3_finetune_faithful/ntv3_finetune_result.json ==="
+# MODEL/RUNTAG env-overridable: default = 650M teacher reproduction; set MODEL=<8m_pre dir> +
+# RUNTAG=ntv3_8m_baseline for the 8M-from-pretrain baseline (same faithful recipe, smaller backbone).
+MODEL="${MODEL:-InstaDeepAI/NTv3_650M_post}"
+RUNTAG="${RUNTAG:-ntv3_finetune_faithful}"
+"$PV" -u -m src.train.finetune_ntv3 --data_dir "$DATA" --model "$MODEL" \
+      --out "$SSD/ntv3_targets/$RUNTAG" --stage_dir "$STAGE" --wandb --compile "$@"
+echo "=== done: $SSD/ntv3_targets/$RUNTAG/ntv3_finetune_result.json ==="
