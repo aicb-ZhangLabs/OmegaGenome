@@ -388,13 +388,18 @@ head, `NTv3PreBigWigModel`) and **~1M DilatedTrackNet**. 34 benchmark tracks, pe
 question: does distilling the 650M lift the 8M (overall 0.475) toward the teacher (0.606) — most
 headroom on PRO-cap and ATAC. KD per-track columns will be appended to this table as runs complete.
 
-### KD runs — IN PROGRESS (launched 2026-06-24, parallel voyager+laniakea)
-| run | node | seq | gt_loss / distill_loss | status |
-|---|---|---|---|---|
-| `ntv3_8m_kd_pois` (241806) | voyager | 32768 | poisson_mn / poisson_mn | running (headline) |
-| `ntv3_8m_kd_allmse` (241807) | voyager | 32768 | mse / mse | running (ablation) |
-| `ntv3_8m_kd_gtmse` (241808) | laniakea | 16384 | mse / poisson_mn | running (ablation) |
-| `ntv3_8m_kd_distmse` (241809) | laniakea | 16384 | poisson_mn / mse | queued (ablation) |
+### KD runs — IN PROGRESS (2026-06-24) — clean 2×2 loss ablation, all 32 kb full recipe on voyager
+All four on the **full dataset + 32 kb + 19932 steps** (identical recipe to the 650M reproduction), so
+the gt∈{poisson,mse} × distill∈{poisson,mse} comparison is apples-to-apples.
+
+| run | gt_loss / distill_loss | status |
+|---|---|---|
+| `ntv3_8m_kd_pois` (241810) | poisson_mn / poisson_mn | running (faithful headline) |
+| `ntv3_8m_kd_allmse` (241807) | mse / mse | running |
+| `ntv3_8m_kd_gtmse` (241814) | mse / poisson_mn | running (32k, was 16k) |
+| `ntv3_8m_kd_distmse` (241815) | poisson_mn / mse | running (32k, was 16k) |
+
+(Early subset-val, ~10–25% in: poisson converges fastest — 0.418 at step 2000 vs all-MSE's step 4000.)
 
 Each KD result (mean + **per-track** via `per_track_csv.py`) to be appended here on completion, with
 the head-to-head vs the 0.475 baseline (does KD help?) and the Poisson-vs-MSE loss decision. Then add
