@@ -161,7 +161,16 @@ def load_finetuned_bigwig_teacher(ckpt_path: str, base_model: str, num_tracks: i
     model = build_bigwig_model(base_model, num_tracks, **kwargs)
     sd = torch.load(ckpt_path, map_location="cpu")
     sd = sd["model"] if isinstance(sd, dict) and "model" in sd else sd
-    model.load_state_dict(sd, strict=True)
+    # ckpts saved from a torch.compile'd model carry a "_orig_mod." prefix; strip it.
+    sd = {k[len("_orig_mod."):] if k.startswith("_orig_mod.") else k: v for k, v in sd.items()}
+    # strict=False to tolerate derived rotary-cache buffers (registered on first forward, not saved);
+    # but guard that nothing REAL is missing/unexpected (mirrors the resume loader).
+    info = model.load_state_dict(sd, strict=False)
+    _rot = ("rotary", "cos_cached", "sin_cached")
+    real_missing = [k for k in info.missing_keys if not any(t in k for t in _rot)]
+    real_unexpected = [k for k in info.unexpected_keys if not any(t in k for t in _rot)]
+    if real_missing or real_unexpected:
+        raise RuntimeError(f"teacher load mismatch: missing={real_missing[:5]} unexpected={real_unexpected[:5]}")
     model = model.to(device).eval()
     for p in model.parameters():
         p.requires_grad_(False)
