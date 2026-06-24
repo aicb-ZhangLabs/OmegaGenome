@@ -170,9 +170,38 @@ splice (0.80–0.82 test), promoters (0.72–0.79); hardest: H3K9me3/H3K27ac/enh
 - `results/carbon_grid_results.csv` — full per-run table (one row per task×HP×seed → val/test MCC, etc.).
 - `best_hyperparams.json` — winners above; `best_3seed_specs.txt` — 54 seed specs.
 
-**3-seed-on-best LAUNCHED (in progress):** 18 tasks × seeds {0,1,2} = 54 jobs, on the right-sized
-sbatch (5 CPU / 24G / 3h, early-stop patience 100). Final per-task **mean ± std** test-MCC table to be
-appended here via `aggregate_3seed.py` once they complete.
+### 3-SEED-ON-BEST — ✅ DONE (2026-06-24, 18/18 tasks × seeds {0,1,2})
+
+Best-HP per task re-run at 3 seeds (random_state 0/1/2; excludes the seed-42 HP-search runs, so no
+selection-optimism). The significance-backed headline: **mean best-test MCC 0.594 ± (per-task std
+≤0.033) = 89.6% of the Carbon-3B teacher (0.663)** — confirms the 90% retention is real, not seed luck.
+
+| task | 3-seed mean ± std | teacher | % | best HP (ce/kl/mse/T) |
+|---|:-:|:-:|:-:|:-:|
+| splice_sites_acceptors | 0.7888 ± 0.0167 | 0.9727 | 81% | 0.5/0.5/0/1.5 |
+| splice_sites_all | 0.7843 ± 0.0207 | 0.9720 | 81% | 0.5/1.0/0/4 |
+| promoter_no_tata | 0.7361 ± 0.0074 | 0.7805 | 94% | 0.5/0.5/1/0.5 |
+| promoter_all | 0.7294 ± 0.0091 | 0.7709 | 95% | 0.5/1.0/1/2 |
+| promoter_tata | 0.8243 ± 0.0225 | 0.9717 | 85% | 0.5/0.0/2/1 |
+| splice_sites_donors | 0.6266 ± 0.0325 | 0.9773 | 64% | 0.5/0.5/0/0.5 |
+| H3K4me3 | 0.6172 ± 0.0118 | 0.6533 | 94% | 0.5/0.5/0/4 |
+| H4K20me1 | 0.6071 ± 0.0075 | 0.6699 | 91% | 0.5/1.0/1/4 |
+| H3K27me3 | 0.5739 ± 0.0049 | 0.6008 | 96% | 0.5/0.5/0.2/2 |
+| H3K36me3 | 0.5732 ± 0.0072 | 0.6075 | 94% | 0.5/0.5/2/1.5 |
+| H3K4me2 | 0.5272 ± 0.0163 | 0.5856 | 90% | 0.5/0.5/0/2 |
+| H3K9ac | 0.5066 ± 0.0180 | 0.5339 | 95% | 0.5/1.0/2/1.5 |
+| enhancers | 0.5055 ± 0.0007 | 0.5346 | 95% | 0.5/1.0/0/1 |
+| H2AFZ | 0.4934 ± 0.0098 | 0.5105 | 97% | 0.5/1.0/0/1 |
+| H3K4me1 | 0.4678 ± 0.0081 | 0.4791 | 98% | 0.5/1.0/0/4 |
+| H3K27ac | 0.4648 ± 0.0033 | 0.4065 | **114%** | 0.5/1.0/2/0.5 |
+| enhancers_types | 0.4579 ± 0.0125 | 0.5509 | 83% | 0.5/0.5/1/1.5 |
+| H3K9me3 | 0.4137 ± 0.0169 | 0.3591 | **115%** | 0.5/0.25/0/2 |
+| **mean (18)** | **0.5943** | **0.6632** | **89.6%** | — |
+
+- Student (0.12M BPNet) retains **89.6%** of Carbon-3B (~3B, ~25,000× smaller); **beats the teacher**
+  on the two noisiest tasks (H3K27ac 114%, H3K9me3 115%). Per-task std small (≤0.033; most ≤0.02).
+- Reproduce: `python slurm/aggregate_3seed.py --best best_hyperparams.json`. Per-run rows (all
+  seeds + the full grid) in `results/carbon_grid_results.csv`.
 
 **Infra notes this round (cluster contention 6/21–6/23):**
 - Fair-share bottomed out (RawUsage ~95M, factor ~1e-4) from the 1440-run campaign → long Priority-pending
