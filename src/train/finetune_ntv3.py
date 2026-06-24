@@ -158,6 +158,13 @@ def main():
         print(f"KD: teacher={args.teacher} | w_ce/kl/mse={kd_cfg.w_ce}/{kd_cfg.w_kl}/{kd_cfg.w_mse} "
               f"gt={kd_cfg.gt_loss} distill={kd_cfg.distill_loss}", flush=True)
 
+    # FitNets-style feature alignment for the w_mse term: a student->teacher linear projector built
+    # lazily on the first KD batch (once feature dims are known), with its OWN small AdamW (an auxiliary
+    # adapter at constant lr, decoupled from the main scheduler). Active only when KD is on AND w_mse>0.
+    # Training-only: NOT part of the student, so eval / best_model.pth are unaffected. Live extraction
+    # (teacher already runs each step) — no feature cache (65M windows make caching infeasible).
+    feat_proj, feat_opt = None, None
+
     optimizer, scheduler = build_optimizer_and_scheduler(
         model, args.initial_learning_rate, args.end_learning_rate, args.weight_decay,
         args.num_steps_warmup, args.num_steps_training)
@@ -190,18 +197,30 @@ def main():
             raise RuntimeError(f"resume: real missing keys (not rotary cache): {_real_missing[:8]}")
         optimizer.load_state_dict(ckpt["optimizer"])
         scheduler.load_state_dict(ckpt["scheduler"])
+        if "feat_proj" in ckpt:  # rebuild the FitNets projector from saved shape, then restore it
+            w = ckpt["feat_proj"]["weight"]  # [teacher_dim, student_dim]
+            feat_proj = torch.nn.Linear(w.shape[1], w.shape[0]).to(device)
+            feat_proj.load_state_dict(ckpt["feat_proj"])
+            feat_opt = torch.optim.AdamW(feat_proj.parameters(), lr=args.initial_learning_rate)
+            feat_opt.load_state_dict(ckpt["feat_opt"])
         start_step, best_val = ckpt["step"], ckpt["best_val"]
         print(f"RESUMED from {latest_path} at step {start_step} (best_val={best_val:.4f}); "
               f"load skipped {len(_info.unexpected_keys)} rotary-cache keys", flush=True)
 
     def _save_latest(step):
-        torch.save({"model": model.state_dict(), "optimizer": optimizer.state_dict(),
-                    "scheduler": scheduler.state_dict(), "step": step, "best_val": best_val}, latest_path)
+        state = {"model": model.state_dict(), "optimizer": optimizer.state_dict(),
+                 "scheduler": scheduler.state_dict(), "step": step, "best_val": best_val}
+        if feat_proj is not None:  # persist the FitNets projector + its optimizer for exact resume
+            state["feat_proj"] = feat_proj.state_dict()
+            state["feat_opt"] = feat_opt.state_dict()
+        torch.save(state, latest_path)
 
     train_iter = iter(train_loader)
     model.train()
     for step in range(start_step, args.num_steps_training):
         optimizer.zero_grad()
+        if feat_opt is not None:
+            feat_opt.zero_grad()
         for _ in range(args.num_accumulation_gradient):
             try:
                 batch = next(train_iter)
@@ -209,17 +228,32 @@ def main():
                 train_iter = iter(train_loader)
                 batch = next(train_iter)
             tokens = batch["tokens"].to(device)
-            logits = model(tokens)["bigwig_tracks_logits"]
             targets = batch["bigwig_targets"].to(device)
-            if teacher is not None:  # KD: 3-term loss (gt + frozen-teacher + feature); student is [B,L,T]
+            if teacher is not None:  # KD: gt + teacher-logit distill + (optional) FitNets feature align
+                s_out = model(tokens)
+                logits, s_feat = s_out["bigwig_tracks_logits"], s_out["features"]
                 with torch.no_grad():
-                    teacher_logits = teacher(tokens)["bigwig_tracks_logits"]
-                loss, _ = track_kd_loss(logits, teacher_logits, targets, cfg=kd_cfg, student_layout="BLT")
+                    t_out = teacher(tokens)
+                    teacher_logits, t_feat = t_out["bigwig_tracks_logits"], t_out["features"]
+                s_feat_proj = None
+                if kd_cfg.w_mse > 0:  # feature alignment: project student emb -> teacher emb, then MSE
+                    if feat_proj is None:  # lazy build once feature dims are known
+                        feat_proj = torch.nn.Linear(s_feat.shape[-1], t_feat.shape[-1]).to(device)
+                        feat_opt = torch.optim.AdamW(feat_proj.parameters(), lr=args.initial_learning_rate)
+                        print(f"KD feature alignment ON (FitNets): student {s_feat.shape[-1]} -> "
+                              f"teacher {t_feat.shape[-1]}", flush=True)
+                    s_feat_proj = feat_proj(s_feat)
+                loss, _ = track_kd_loss(
+                    logits, teacher_logits, targets, cfg=kd_cfg, student_layout="BLT",
+                    student_feat=s_feat_proj, teacher_feat=(t_feat if kd_cfg.w_mse > 0 else None))
             else:
+                logits = model(tokens)["bigwig_tracks_logits"]
                 loss = poisson_multinomial_loss(logits, targets)
             (loss / args.num_accumulation_gradient).backward()
             train_metrics.update(logits, targets, loss.item())
         optimizer.step()
+        if feat_opt is not None:
+            feat_opt.step()
         scheduler.step()
 
         if (step + 1) % args.log_every_n_steps == 0:

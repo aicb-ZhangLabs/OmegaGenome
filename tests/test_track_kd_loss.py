@@ -125,9 +125,73 @@ def test_pearson_zero_when_identical():
     print("PASS pearson_zero_when_identical")
 
 
+def test_feature_alignment_trainer_wiring():
+    """End-to-end audit of the NEW trainer feature-alignment block (src/train/finetune_ntv3.py): the
+    previous KD runs passed NO student_feat/teacher_feat, so the w_mse term was a silent no-op. This
+    replicates the loop's block — student & teacher emit `{"bigwig_tracks_logits","features"}`, a lazily
+    built student->teacher FitNets projector + its own optimizer — and verifies the alignment is real:
+    feature term active, gradients reach BOTH student and projector, and the projector actually learns."""
+    torch.manual_seed(0)
+    B, L, T, S_DIM, T_DIM = 2, 48, 5, 16, 40  # student emb 16 -> teacher emb 40 (mismatched, like 256->1536)
+
+    # mock student/teacher forwards matching the real wrappers' output contract (both return "features")
+    student_logits_w = torch.nn.Linear(S_DIM, T, bias=False)
+    def student_forward(x):
+        feat = x  # [B, L, S_DIM] per-bp embedding (the cropped hidden state)
+        return {"bigwig_tracks_logits": torch.relu(student_logits_w(feat)), "features": feat}
+    def teacher_forward(x):  # frozen
+        return {"bigwig_tracks_logits": torch.rand(B, L, T), "features": torch.rand(B, L, T_DIM)}
+
+    x = torch.rand(B, L, S_DIM, requires_grad=True)
+    gt = torch.rand(B, L, T)
+    cfg = TrackKDConfig(w_ce=0.5, w_kl=0.5, w_mse=0.2, gt_loss="mse", distill_loss="mse")
+
+    # --- replicate the trainer's per-step block ---
+    feat_proj, feat_opt = None, None              # lazily built, as in the loop
+    s_out = student_forward(x); t_out = teacher_forward(x)
+    logits, s_feat = s_out["bigwig_tracks_logits"], s_out["features"]
+    teacher_logits, t_feat = t_out["bigwig_tracks_logits"], t_out["features"]
+    ok("features" in s_out and "features" in t_out, "both forwards expose `features` (the wired contract)")
+
+    s_feat_proj = None
+    if cfg.w_mse > 0:
+        feat_proj = torch.nn.Linear(s_feat.shape[-1], t_feat.shape[-1])   # lazy build: 16 -> 40
+        feat_opt = torch.optim.AdamW(feat_proj.parameters(), lr=1e-2)
+        ok(feat_proj.in_features == S_DIM and feat_proj.out_features == T_DIM,
+           "projector maps student emb -> teacher emb (handles dim mismatch)")
+        s_feat_proj = feat_proj(s_feat)
+    total, comp = track_kd_loss(logits, teacher_logits, gt, cfg=cfg, student_layout="BLT",
+                                student_feat=s_feat_proj, teacher_feat=(t_feat if cfg.w_mse > 0 else None))
+    ok(float(comp["feat"]) > 0, "feature term is ACTIVE now (was a no-op before the wiring)")
+
+    w_before = feat_proj.weight.detach().clone()
+    feat_opt.zero_grad()
+    total.backward()
+    ok(x.grad is not None and float(x.grad.abs().sum()) > 0, "gradient flows back into the STUDENT")
+    ok(feat_proj.weight.grad is not None and float(feat_proj.weight.grad.abs().sum()) > 0,
+       "gradient flows into the FitNets projector")
+    feat_opt.step()
+    ok(float((feat_proj.weight - w_before).abs().sum()) > 0, "projector's own optimizer actually updates it")
+
+    # backward-compat: w_mse=0 -> no projector needed, feature term stays 0 (old behavior preserved)
+    cfg0 = TrackKDConfig(w_ce=0.5, w_kl=0.5, w_mse=0.0, gt_loss="mse", distill_loss="mse")
+    _, comp0 = track_kd_loss(logits.detach(), teacher_logits, gt, cfg=cfg0, student_layout="BLT")
+    ok(float(comp0["feat"]) == 0.0, "w_mse=0 -> feature term off (backward compatible)")
+
+    # robustness: unequal student/teacher emb SEQUENCE lengths must self-align (not crash)
+    sf_short = torch.rand(B, L // 2, T_DIM, requires_grad=True)  # student emb half the teacher length
+    tf_long = torch.rand(B, L, T_DIM)
+    cfg_f = TrackKDConfig(w_ce=0, w_kl=0, w_mse=1.0, gt_loss="mse", distill_loss="mse")
+    tot_f, comp_f = track_kd_loss(logits.detach(), teacher_logits, gt, cfg=cfg_f, student_layout="BLT",
+                                  student_feat=sf_short, teacher_feat=tf_long)
+    ok(float(comp_f["feat"]) > 0, "feature term self-aligns unequal emb lengths (no crash)")
+    print("PASS feature_alignment_trainer_wiring")
+
+
 if __name__ == "__main__":
     for fn in [test_weighted_sum_and_components, test_all_loss_types_run, test_teacher_and_gt_detached,
                test_student_layout_btl, test_position_alignment, test_feature_term, test_weight_zeroing,
-               test_teacher_bounded_semantics, test_pearson_zero_when_identical]:
+               test_teacher_bounded_semantics, test_pearson_zero_when_identical,
+               test_feature_alignment_trainer_wiring]:
         fn()
     print(f"\n{_n} assertions passed")

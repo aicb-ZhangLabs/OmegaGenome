@@ -88,7 +88,9 @@ class NTv3BigWigModel(nn.Module):
         emb = outputs["hidden_states"][-1]  # [B, seq_len, embed_dim] @ single-nt resolution
         if self.keep_target_center_fraction < 1.0:
             emb = crop_center(emb, self.keep_target_center_fraction)
-        return {"bigwig_tracks_logits": self.bigwig_head(emb)}  # [B, L_out, num_tracks]
+        # `features` = the per-bp hidden embedding feeding the head (cropped to L_out, so teacher and
+        # student features share positions) — used for FitNets-style KD feature alignment.
+        return {"bigwig_tracks_logits": self.bigwig_head(emb), "features": emb}  # [B, L_out, *]
 
 
 class NTv3PreBigWigModel(nn.Module):
@@ -121,7 +123,8 @@ class NTv3PreBigWigModel(nn.Module):
         emb = out.hidden_states[-1] if hasattr(out, "hidden_states") else out["hidden_states"][-1]
         if self.keep_target_center_fraction < 1.0:
             emb = crop_center(emb, self.keep_target_center_fraction)
-        return {"bigwig_tracks_logits": self.bigwig_head(emb)}  # [B, L_out, num_tracks]
+        # `features` = per-bp hidden embedding (cropped to L_out) for KD feature alignment; see sibling.
+        return {"bigwig_tracks_logits": self.bigwig_head(emb), "features": emb}  # [B, L_out, *]
 
 
 def _is_pretrained_ckpt(config) -> bool:

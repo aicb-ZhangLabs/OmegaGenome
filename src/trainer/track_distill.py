@@ -171,6 +171,11 @@ def track_kd_loss(student: torch.Tensor, teacher: torch.Tensor, gt: torch.Tensor
     else:
         L_distill = _regression_term(student, teacher, cfg.distill_loss, cfg.multinomial_weight)
     if cfg.w_mse > 0 and student_feat is not None and teacher_feat is not None:
+        # FitNets feature alignment. Channels must already match (caller projects student->teacher dim);
+        # adaptive-pool the student's SEQUENCE axis to the teacher's if they differ (mirrors the track
+        # path), so unequal student/teacher emb lengths never crash the MSE.
+        if student_feat.shape[1] != teacher_feat.shape[1]:
+            student_feat = _align_positions(student_feat, teacher_feat.shape[1])
         L_feat = F.mse_loss(student_feat, teacher_feat.detach())
     else:
         L_feat = student.new_zeros(())
