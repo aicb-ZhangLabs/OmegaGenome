@@ -89,3 +89,62 @@ class NTv3BigWigModel(nn.Module):
         if self.keep_target_center_fraction < 1.0:
             emb = crop_center(emb, self.keep_target_center_fraction)
         return {"bigwig_tracks_logits": self.bigwig_head(emb)}  # [B, L_out, num_tracks]
+
+
+class NTv3PreBigWigModel(nn.Module):
+    """PRETRAINED NTv3 backbone (e.g. 8M) + a fresh ``LinearHead`` — sibling of ``NTv3BigWigModel``.
+
+    PRE checkpoints (``NTv3PreTrained``) register as ``AutoModelForMaskedLM`` (NOT ``AutoModel``),
+    have no ``.core`` and no species conditioning — but their last hidden state is a per-nt embedding
+    ``[B, L, embed_dim]``, so we attach the *same* track head over the central crop. Used for the 8M
+    baseline fine-tune and as the KD student. Identical forward contract to ``NTv3BigWigModel``:
+    ``{"bigwig_tracks_logits": [B, L_out, num_tracks]}`` (non-negative, ``L_out = 0.375*L``).
+    """
+
+    def __init__(self, model_name: str, num_tracks: int,
+                 keep_target_center_fraction: float = NTV3_CROP_FRAC, use_lora: bool = False,
+                 lora_r: int = 16, lora_alpha: int = 32, local_files_only: bool = False, **_ignored):
+        super().__init__()
+        from transformers import AutoConfig, AutoModelForMaskedLM
+
+        self.config = AutoConfig.from_pretrained(model_name, trust_remote_code=True,
+                                                 local_files_only=local_files_only)
+        self.backbone = AutoModelForMaskedLM.from_pretrained(
+            model_name, trust_remote_code=True, config=self.config, local_files_only=local_files_only)
+        self.keep_target_center_fraction = keep_target_center_fraction
+        self.bigwig_head = LinearHead(self.config.embed_dim, num_tracks)
+        if use_lora:
+            self.backbone = apply_lora(self.backbone, r=lora_r, alpha=lora_alpha)
+
+    def forward(self, tokens: torch.Tensor) -> dict:
+        out = self.backbone(tokens, output_hidden_states=True)
+        emb = out.hidden_states[-1] if hasattr(out, "hidden_states") else out["hidden_states"][-1]
+        if self.keep_target_center_fraction < 1.0:
+            emb = crop_center(emb, self.keep_target_center_fraction)
+        return {"bigwig_tracks_logits": self.bigwig_head(emb)}  # [B, L_out, num_tracks]
+
+
+def _is_pretrained_ckpt(config) -> bool:
+    """PRE (masked-LM) vs POST: PRE checkpoints (NTv3-8M) have no native bigwig/species head and load
+    via AutoModelForMaskedLM; POST (100M/650M) carry ``bigwigs_per_species`` + a track ``core``."""
+    arch = (getattr(config, "architectures", None) or [""])[0]
+    return "Pre" in arch or not hasattr(config, "bigwigs_per_species")
+
+
+def build_bigwig_model(model_name: str, num_tracks: int, **kwargs):
+    """One factory for every NTv3 size: dispatches to NTv3PreBigWigModel (PRE, e.g. 8M) or
+    NTv3BigWigModel (POST, e.g. 100M/650M) by inspecting the config — so the same fine-tune / distill
+    entrypoint works for the 8M baseline, the teachers, and KD students with strictly-correct loading.
+    Local snapshot dirs are auto-prepared (gated auto_map stripped) before loading.
+    """
+    import os
+    from transformers import AutoConfig
+    from src.model.ntv3_teacher import prepare_local_snapshot
+
+    if os.path.isdir(model_name):
+        model_name = prepare_local_snapshot(model_name)
+        kwargs["local_files_only"] = True
+    cfg = AutoConfig.from_pretrained(model_name, trust_remote_code=True,
+                                     local_files_only=kwargs.get("local_files_only", False))
+    cls = NTv3PreBigWigModel if _is_pretrained_ckpt(cfg) else NTv3BigWigModel
+    return cls(model_name, num_tracks, **kwargs)

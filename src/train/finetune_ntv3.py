@@ -28,7 +28,7 @@ from torch.utils.data import DataLoader
 
 from src.data.ntv3_benchmark import stage_to_local
 from src.data.ntv3_ft_data import GenomeBigWigDataset, load_benchmark_frames, make_target_scaling_fn
-from src.model.ntv3_finetune import NTV3_CROP_FRAC, NTv3BigWigModel
+from src.model.ntv3_finetune import NTV3_CROP_FRAC, build_bigwig_model
 from src.trainer.ntv3_optim import build_optimizer_and_scheduler
 from src.trainer.track_losses import poisson_multinomial_loss
 from src.trainer.track_metrics import TracksMetrics
@@ -125,9 +125,9 @@ def main():
                                         args, tokenizer, transform_fn, 0.0, args.max_test_samples, False)
     print(f"windows: train {len(train_ds)} / val {len(val_ds)} / test {len(test_ds)}", flush=True)
 
-    model = NTv3BigWigModel(args.model, T, species_str=args.species,
-                            keep_target_center_fraction=args.keep_target_center_fraction,
-                            use_lora=args.use_lora).to(device)
+    model = build_bigwig_model(args.model, T, species_str=args.species,
+                               keep_target_center_fraction=args.keep_target_center_fraction,
+                               use_lora=args.use_lora).to(device)
     if args.compile:
         model = torch.compile(model)
     n_train = sum(p.numel() for p in model.parameters() if p.requires_grad)
