@@ -252,13 +252,23 @@ from the figure-pack repo `explcre/dna-llm-distillation-plot` and versioned here
   ~8× smaller receptive field. Splice **donor** needs long-range exon/intron context, so the cap craters
   it; **acceptor** is mildly hit (−0.039); **splice_all is fine** (+0.027). The `deploy_120k` docstring's
   "full dilation" claim was wrong.
-- **FIX (zero param cost): `deploy_120k_fulldil`** — identical 121,423 params, dilation uncapped to 512.
-  Dilation adds no parameters, so the cap was pure downside. Confirmation runs in flight:
-  - `original` from-scratch donor/acceptor (241915/241914) — expect ~0.85/0.83, reproducing the baseline.
-  - `deploy_120k_fulldil` donor/acceptor, from-scratch + distilled — expect donor to recover toward ~0.85.
-  - control: donor `original` ce=1.0 vs 0.5 (241916) — expect ≈ identical (AdamW is loss-scale-invariant).
-  If confirmed, switch the deployable student to `deploy_120k_fulldil` (same size, fixes the only task
-  where distillation was losing to baseline).
+- **FIX = use the `original` BPNet student** (full receptive field, dilation→512) — the SAME student the
+  NT/Enformer/Caduceus/DNABERT-2 distillations use (so Carbon is now consistent), 0.12M-deployable
+  (teacher-projection is training-only). New `carbon-raw-original` config → SEPARATE `.../original` output
+  leaf (cannot collide with the deploy_120k grid), shared teacher cache. (An earlier bespoke
+  `deploy_120k_fulldil` idea was dropped in favour of `original` for consistency.)
+- **✅ CONFIRMED (2026-06-24, jobs 241920/241921, from-scratch ce0.5/kl0/mse0, 200ep no early stop):**
+
+  | task | `original` (test) | your table baseline | deploy_120k (capped) |
+  |---|:-:|:-:|:-:|
+  | splice_sites_acceptors | **0.8907** (val 0.906) | 0.828 | 0.81 |
+  | splice_sites_donors | **0.9025** (val 0.934) | 0.853 | **0.63** |
+
+  Donor **0.63 → 0.90** purely from the receptive field — the dilation cap was the bug, decisively. The
+  `original` student reproduces *and exceeds* the published BPNet-from-scratch baseline. Baselines fetched
+  from `explcre/dna-llm-distillation-plot`, versioned at `results/baselines_nt_revised/`.
+- **Next (in flight):** vanilla 0.5/0.5/0.2 distillation on `carbon-raw-original` — acceptor+donor first
+  (241938/241939), then the other 16, then the staged HP grid (mse [0,1]→[0.25]→[2,5]).
 
 ### 2026-06-24 — splice from-scratch (within this repo, distill path) + "is distillation helping splice?" (200 epochs)
 
