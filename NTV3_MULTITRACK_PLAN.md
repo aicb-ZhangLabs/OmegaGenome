@@ -344,10 +344,49 @@ head, `NTv3PreBigWigModel`) and **~1M DilatedTrackNet**. 34 benchmark tracks, pe
 | PRO-cap | 10 | 0.347 | 0.514 | −0.167 |
 | **overall** | **34** | **0.475** | **0.606** | **−0.131** |
 
-Per-track detail (all 34): `results/ntv3_8m_baseline_per_track.csv` (track_id, assay, test_pearson).
-Notable per-track range: ATAC ENCSR325NFE 0.685 (best) … PRO-cap ENCSR114HGS 0.279 (worst); one
-histone track ENCSR962OTG hits 0.847. The KD question: does distilling the 650M lift this 0.475
-toward 0.606 — most headroom on PRO-cap (−0.167) and ATAC (−0.191).
+**Complete per-track table — all 34 tracks (650M teacher 3-seed mean · 8M baseline · paper assay):**
+(CSVs: `results/ntv3_650m_per_track_3seed.csv`, `results/ntv3_8m_baseline_per_track.csv`.)
+
+| # | track_id | assay | 650M (3-seed) | 8M baseline | paper (assay) |
+|--:|---|---|:-:|:-:|:-:|
+| 1 | ENCSR325NFE | ATAC-seq | 0.8325 | 0.6850 | 0.759 |
+| 2 | ENCSR814RGG | ATAC-seq | 0.7968 | 0.6591 | 0.759 |
+| 3 | ENCSR410DWV | ATAC-seq | 0.7957 | 0.5491 | 0.759 |
+| 4 | ENCSR487QSB | ATAC-seq | 0.7117 | 0.5161 | 0.759 |
+| 5 | ENCSR628PLS | ATAC-seq | 0.6498 | 0.4274 | 0.759 |
+| 6 | ENCSR962OTG | Histone ChIP-seq | 0.9143 | 0.8470 | 0.717 |
+| 7 | ENCSR863PSM | Histone ChIP-seq | 0.6899 | 0.5113 | 0.717 |
+| 8 | ENCSR682BFG | Histone ChIP-seq | 0.6840 | 0.5141 | 0.717 |
+| 9 | ENCSR754DRC | Histone ChIP-seq | 0.6030 | 0.4476 | 0.717 |
+| 10 | ENCSR799DGV_P | PRO-cap | 0.5832 | 0.3751 | 0.508 |
+| 11 | ENCSR935RNW_P | PRO-cap | 0.5801 | 0.3767 | 0.508 |
+| 12 | ENCSR100LIJ_P | PRO-cap | 0.5746 | 0.3701 | 0.508 |
+| 13 | ENCSR100LIJ_M | PRO-cap | 0.5741 | 0.3797 | 0.508 |
+| 14 | ENCSR935RNW_M | PRO-cap | 0.5731 | 0.3737 | 0.508 |
+| 15 | ENCSR799DGV_M | PRO-cap | 0.5697 | 0.3723 | 0.508 |
+| 16 | ENCSR046BCI_M | PRO-cap | 0.5317 | 0.3511 | 0.508 |
+| 17 | ENCSR046BCI_P | PRO-cap | 0.4970 | 0.3130 | 0.508 |
+| 18 | ENCSR114HGS_M | PRO-cap | 0.3426 | 0.2787 | 0.508 |
+| 19 | ENCSR114HGS_P | PRO-cap | 0.3420 | 0.2794 | 0.508 |
+| 20 | ENCSR321PWZ_P | eCLIP | 0.6886 | 0.5894 | 0.584 |
+| 21 | ENCSR321PWZ_M | eCLIP | 0.6797 | 0.5490 | 0.584 |
+| 22 | ENCSR249ROI_M | eCLIP | 0.6072 | 0.5444 | 0.584 |
+| 23 | ENCSR249ROI_P | eCLIP | 0.5727 | 0.5244 | 0.584 |
+| 24 | ENCSR862QCH_M | eCLIP | 0.5423 | 0.4487 | 0.584 |
+| 25 | ENCSR862QCH_P | eCLIP | 0.5380 | 0.4495 | 0.584 |
+| 26 | ENCSR154HRN_M | eCLIP | 0.5076 | 0.4562 | 0.584 |
+| 27 | ENCSR154HRN_P | eCLIP | 0.5069 | 0.4543 | 0.584 |
+| 28 | ENCSR484LTQ_M | eCLIP | 0.4792 | 0.3920 | 0.584 |
+| 29 | ENCSR484LTQ_P | eCLIP | 0.4732 | 0.4076 | 0.584 |
+| 30 | ENCSR527JGN_P | polyA plus RNA-seq | 0.7203 | 0.6053 | 0.695 |
+| 31 | ENCSR527JGN_M | polyA plus RNA-seq | 0.5025 | 0.3969 | 0.695 |
+| 32 | ENCSR619DQO_P | total RNA-seq | 0.6988 | 0.6240 | 0.695 |
+| 33 | ENCSR619DQO_M | total RNA-seq | 0.6953 | 0.5970 | 0.695 |
+| 34 | ENCSR701YIC | total RNA-seq | 0.5585 | 0.4771 | 0.695 |
+
+(paper publishes assay-level only → `paper (assay)` is the assay bar repeated per track.) The KD
+question: does distilling the 650M lift the 8M (overall 0.475) toward the teacher (0.606) — most
+headroom on PRO-cap and ATAC. KD per-track columns will be appended to this table as runs complete.
 
 ### KD runs — IN PROGRESS (launched 2026-06-24, parallel voyager+laniakea)
 | run | node | seq | gt_loss / distill_loss | status |
