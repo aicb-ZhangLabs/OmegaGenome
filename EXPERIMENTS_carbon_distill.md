@@ -247,11 +247,18 @@ from the figure-pack repo `explcre/dna-llm-distillation-plot` and versioned here
   exceeds the 0.12M baseline overall (0.5943 vs 0.5882)** while also being the deployable artifact.
 - **⚠ splice_donor is the one real failure: 0.627 distilled vs 0.853 baseline (−0.226).** Same size,
   same nt_revised data, and the Carbon-3B teacher scores **0.977** on donor → the task is fully
-  learnable; **our pipeline's donor training is underperforming its own from-scratch baseline**, so
-  distillation is *hurting* donor rather than helping. This is a **training-path gap vs the original
-  OmegaGenome repo**, not capacity — the lead suspect to fix (LR schedule / class handling / data
-  collation for the 3-class splice tasks differs between the two repos). acceptor is mildly affected
-  (−0.039); splice_all is actually fine (+0.027).
+  learnable. **ROOT CAUSE FOUND (code, not data/training):** the `deploy_120k` student caps dilation at
+  `2**min(i,6)=64`, while the canonical baseline's `original` backbone uses `2**i` → **512**. That's an
+  ~8× smaller receptive field. Splice **donor** needs long-range exon/intron context, so the cap craters
+  it; **acceptor** is mildly hit (−0.039); **splice_all is fine** (+0.027). The `deploy_120k` docstring's
+  "full dilation" claim was wrong.
+- **FIX (zero param cost): `deploy_120k_fulldil`** — identical 121,423 params, dilation uncapped to 512.
+  Dilation adds no parameters, so the cap was pure downside. Confirmation runs in flight:
+  - `original` from-scratch donor/acceptor (241915/241914) — expect ~0.85/0.83, reproducing the baseline.
+  - `deploy_120k_fulldil` donor/acceptor, from-scratch + distilled — expect donor to recover toward ~0.85.
+  - control: donor `original` ce=1.0 vs 0.5 (241916) — expect ≈ identical (AdamW is loss-scale-invariant).
+  If confirmed, switch the deployable student to `deploy_120k_fulldil` (same size, fixes the only task
+  where distillation was losing to baseline).
 
 ### 2026-06-24 — splice from-scratch (within this repo, distill path) + "is distillation helping splice?" (200 epochs)
 
