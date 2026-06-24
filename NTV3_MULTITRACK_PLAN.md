@@ -334,15 +334,17 @@ head, `NTv3PreBigWigModel`) and **~1M DilatedTrackNet**. 34 benchmark tracks, pe
 ### RESULT — 8M baseline (no distillation) ✅ DONE (job 241800, full-FT, seq 32768)
 **test mean Pearson 0.4748** (between BPNet-6M ~0.40 and the 650M teacher 0.606).
 
-| assay | #tracks | 8M baseline | 650M teacher | (Δ to teacher) |
+| assay | #tracks | 8M baseline¹ | 650M teacher (3-seed mean±std) | (Δ to teacher) |
 |---|:-:|:-:|:-:|:-:|
-| Histone ChIP-seq | 4 | 0.580 | 0.723 | −0.143 |
-| ATAC-seq | 5 | 0.567 | 0.758 | −0.191 |
-| total RNA-seq | 3 | 0.566 | 0.653 | −0.087 |
-| polyA plus RNA-seq | 2 | 0.501 | 0.613 | −0.112 |
-| eCLIP | 10 | 0.482 | 0.559 | −0.077 |
-| PRO-cap | 10 | 0.347 | 0.514 | −0.167 |
-| **overall** | **34** | **0.475** | **0.606** | **−0.131** |
+| Histone ChIP-seq | 4 | 0.580 | 0.7228 ± 0.0007 | −0.143 |
+| ATAC-seq | 5 | 0.567 | 0.7573 ± 0.0007 | −0.191 |
+| total RNA-seq | 3 | 0.566 | 0.6509 ± 0.0015 | −0.087 |
+| polyA plus RNA-seq | 2 | 0.501 | 0.6114 ± 0.0019 | −0.112 |
+| eCLIP | 10 | 0.482 | 0.5595 ± 0.0012 | −0.077 |
+| PRO-cap | 10 | 0.347 | 0.5168 ± 0.0030 | −0.167 |
+| **overall** | **34** | **0.475** | **0.6064 ± 0.0006** | **−0.131** |
+
+¹ 8M baseline is currently a **single** full-FT run (job 241800); its 3-seed mean±std is queued (see "3-seed" task below) and will replace these point values for an apples-to-apples ±std comparison. The 650M teacher column is the per-assay 3-seed mean±std (std across the 3 per-seed assay-means; same source as the §5 table, with RNA-seq here split into total/polyA).
 
 **Complete per-track table — all 34 tracks (650M teacher 3-seed mean · 8M baseline · paper assay):**
 (CSVs: `results/ntv3_650m_per_track_3seed.csv`, `results/ntv3_8m_baseline_per_track.csv`.)
