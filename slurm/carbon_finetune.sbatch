@@ -22,8 +22,9 @@ cd "$REPO"
 source slurm/env_setup.sh
 export OMEGA_FINETUNE_LOCAL=1  # run inline on this GPU instead of re-submitting per task
 
-# Everything after the config name is passed through as tyro overrides (the CLI uses
-# overridable_config_cli, so overrides are --config.<field>), e.g.:
-#   sbatch slurm/carbon_finetune.sbatch carbon_3b --config.task-names H3K27ac --config.epochs 40
+# Everything after the config name is passed through as tyro overrides. The CLI uses
+# overridable_config_cli, so the config's fields are TOP-LEVEL flags (NOT --config.<field>),
+# e.g. --task-names / --epochs / --lora-r:
+#   sbatch slurm/carbon_finetune.sbatch carbon_3b --task-names H3K27ac --epochs 40 --lora-r 32 --lora-alpha 64
 echo "Running teacher fine-tune: exp=$EXP  overrides=${*:2}"
 "$PY" -m src.train.finetune_teacher "$EXP" "${@:2}"

@@ -176,7 +176,7 @@ Best-HP per task re-run at 3 seeds (random_state 0/1/2; excludes the seed-42 HP-
 selection-optimism). The significance-backed headline: **mean best-test MCC 0.594 ± (per-task std
 ≤0.033) = 89.6% of the Carbon-3B teacher (0.663)** — confirms the 90% retention is real, not seed luck.
 
-| task | 3-seed mean ± std | teacher | % | best HP (ce/kl/mse/T) |
+| task | 3-seed mean ± std | teacher¹ | % | best HP (ce/kl/mse/T) |
 |---|:-:|:-:|:-:|:-:|
 | splice_sites_acceptors | 0.7888 ± 0.0167 | 0.9727 | 81% | 0.5/0.5/0/1.5 |
 | splice_sites_all | 0.7843 ± 0.0207 | 0.9720 | 81% | 0.5/1.0/0/4 |
@@ -200,8 +200,39 @@ selection-optimism). The significance-backed headline: **mean best-test MCC 0.59
 
 - Student (0.12M BPNet) retains **89.6%** of Carbon-3B (~3B, ~25,000× smaller); **beats the teacher**
   on the two noisiest tasks (H3K27ac 114%, H3K9me3 115%). Per-task std small (≤0.033; most ≤0.02).
+
+¹ **Teacher column is a single LoRA finetune per task** (deterministic, `seed=42`; LoRA r16→re-finetuned
+  variants noted separately), so it carries no ±std. A teacher mean±std would require 3-seeding all 18
+  teachers (54 Carbon-3B LoRA runs) — deferred: LoRA finetunes are low-variance and the **student**
+  3-seed already supplies the significance for the retention headline. Re-finetune of the underfit
+  H3K27ac teacher (40ep, r32/α64; job 241907) is in flight and will update that one teacher cell +
+  cascade a re-distill.
 - Reproduce: `python slurm/aggregate_3seed.py --best best_hyperparams.json`. Per-run rows (all
   seeds + the full grid) in `results/carbon_grid_results.csv`.
+
+### 2026-06-24 — splice from-scratch baseline + "is distillation helping splice?" (200 epochs)
+
+The two splice tasks were flagged as low (acceptor table 0.788, donor 0.627). Pulled the **from-scratch**
+(`ce0.5 / kl0 / mse0`, no teacher) runs already present in the 200-epoch grid (no rerun needed), and
+compared against the val-selected best **distill** config. All seed-42 (the HP-search seed):
+
+| task | from-scratch 0.5/0/0 (test · val) | best distill (config) test | does distill help? |
+|---|:-:|:-:|:-:|
+| splice_sites_acceptors | **0.8126** · 0.8349 | **0.8233** (0.5/0.5/0/1.5) | +0.011 (marginal) |
+| splice_sites_donors | **0.6313** · 0.6527 | **0.6906** (0.5/0.5/0/0.5) | +0.059 ✅ |
+
+- **Acceptor reproduces ~0.81–0.83** from scratch at 200 ep — the table's 0.788 was the conservative
+  **3-seed mean** (seeds 0/1/2), which sits *below* the seed-42 grid peak (0.8233): splice has **high
+  seed variance** for a 0.12M student. From-scratch 3-seed (0/1/2) launched (jobs 241908–241913) for a
+  matched mean±std; seed-42 already in grid.
+- **Donor caps at ~0.63 from scratch even at 200 ep** (val 0.6527, converged). A 0.12M BPNet **cannot
+  reach 0.85** on donors — that target is a larger-model/CNN number, not this student's ceiling.
+  Distillation *does* lift donor (+0.059 → 0.69), the largest distill gain among splice tasks.
+- **kl=0 × temperature is GPU-nondeterminism, not a T effect** — confirmed empirically here: the 5 T
+  values at kl=0 collapse into **2 bit-identical clusters** (acceptor: T∈{0.5,1.5}=0.8126 vs
+  T∈{1,2,4}=0.7960; same `best_epoch` within a cluster), exactly the cuDNN run-to-run pattern. A real
+  T effect would give 5 distinct monotonic values. This is why `gen_hp_specs.grid_combos` keeps only one
+  canonical T per kl=0 family (1440→1152 runs; `test_grid_kl0_temp_skip`).
 
 **Infra notes this round (cluster contention 6/21–6/23):**
 - Fair-share bottomed out (RawUsage ~95M, factor ~1e-4) from the 1440-run campaign → long Priority-pending
