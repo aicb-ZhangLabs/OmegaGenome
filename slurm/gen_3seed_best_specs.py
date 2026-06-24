@@ -24,7 +24,7 @@ def main():
                 f"{cfg} --task-names {task} "
                 f"--distillation-config.weight-ce {hp['weight_ce']} --distillation-config.weight-kl {hp['weight_kl']} "
                 f"--distillation-config.weight-mse {hp['weight_mse']} --distillation-config.temperature {hp['temperature']} "
-                f"--random-state {s} --slurm-config.mode run"
+                f"--trainer-config.early-stop-patience 100 --random-state {s} --slurm-config.mode run"
             )
     with open(args.out, "w") as f:
         f.write("\n".join(lines) + ("\n" if lines else ""))

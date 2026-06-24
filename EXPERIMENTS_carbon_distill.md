@@ -132,3 +132,50 @@ motivates the HP search.
 2. `python slurm/gen_3seed_best_specs.py --best best_hyperparams.json --seeds 0 1 2 --out best_3seed_specs.txt`
 3. `bash slurm/auto_submit_specs.sh best_3seed_specs.txt`  (18×3 = 54 jobs, seeds 0/1/2)
 4. `python slurm/aggregate_3seed.py --best best_hyperparams.json`  → per-task mean±std (the paper table)
+
+## 2026-06-23 — HP GRID SEARCH COMPLETE (1440/1440) + best-HP per task + 3-seed launched
+
+**Raw HP grid done: 1440/1440 combos, 0 failures** (after the 2026-06-21 regression fix held all the
+way). kl{0,.25,.5,1} × mse{0,1,2,5} × T{.5,1,1.5,2,4} × 18 tasks, fixed seed 42, best-on-VAL selection.
+
+**Best-on-val hyperparameters per task** (`best_hyperparams.json`; ~81–91 candidates/task = full grid):
+
+| task | val MCC | test MCC | best (ce/kl/mse/T) |
+|---|:-:|:-:|:-:|
+| splice_sites_acceptors | 0.849 | 0.823 | 0.5/0.5/0/1.5 |
+| splice_sites_all | 0.818 | 0.805 | 0.5/1.0/0/4 |
+| promoter_tata | 0.886 | 0.793 | 0.5/0.0/2/1 |
+| promoter_all | 0.749 | 0.727 | 0.5/1.0/1/2 |
+| promoter_no_tata | 0.754 | 0.718 | 0.5/0.5/1/0.5 |
+| splice_sites_donors | 0.732 | 0.691 | 0.5/0.5/0/0.5 |
+| H3K4me3 | 0.685 | 0.624 | 0.5/0.5/0/4 |
+| H4K20me1 | 0.631 | 0.603 | 0.5/1.0/1/4 |
+| H3K36me3 | 0.628 | 0.580 | 0.5/0.5/2/1.5 |
+| H3K27me3 | 0.594 | 0.570 | 0.5/0.5/0.2/2 |
+| H3K4me2 | 0.588 | 0.532 | 0.5/0.5/0/2 |
+| H3K9ac | 0.563 | 0.506 | 0.5/1.0/2/1.5 |
+| enhancers | 0.550 | 0.497 | 0.5/1.0/0/1 |
+| H2AFZ | 0.523 | 0.477 | 0.5/1.0/0/1 |
+| enhancers_types | 0.499 | 0.452 | 0.5/0.5/1/1.5 |
+| H3K4me1 | 0.504 | 0.482 | 0.5/1.0/0/4 |
+| H3K27ac | 0.487 | 0.465 | 0.5/1.0/2/0.5 |
+| H3K9me3 | 0.419 | 0.436 | 0.5/0.25/0/2 |
+
+**Findings:** (1) **`mse=0` (pure logit-KD) wins or ties on the majority of tasks** — feature-matching MSE
+rarely helps the 0.12M student; (2) `promoter_tata` best at **`kl=0`** (CE+MSE only); (3) optimal
+temperature spans 0.5→4 and KL weight 0→1 per task — task-specific tuning was worth it. Strong tasks:
+splice (0.80–0.82 test), promoters (0.72–0.79); hardest: H3K9me3/H3K27ac/enhancers (~0.44–0.50).
+
+**Artifacts:**
+- `results/carbon_grid_results.csv` — full per-run table (one row per task×HP×seed → val/test MCC, etc.).
+- `best_hyperparams.json` — winners above; `best_3seed_specs.txt` — 54 seed specs.
+
+**3-seed-on-best LAUNCHED (in progress):** 18 tasks × seeds {0,1,2} = 54 jobs, on the right-sized
+sbatch (5 CPU / 24G / 3h, early-stop patience 100). Final per-task **mean ± std** test-MCC table to be
+appended here via `aggregate_3seed.py` once they complete.
+
+**Infra notes this round (cluster contention 6/21–6/23):**
+- Fair-share bottomed out (RawUsage ~95M, factor ~1e-4) from the 1440-run campaign → long Priority-pending
+  stalls. Caps raised to LAN 8 / VOY 4 / GAL 5. Jobs right-sized 8→5 CPU, 96G→24G, 12h→3h so they
+  **backfill** into short gaps (the old 12h/96G footprint was locked out of every gap). Grid scans run on
+  galaxy-local disk (`slurm/grid_progress.py`) to avoid sshfs-walk timeouts.
