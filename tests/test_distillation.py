@@ -325,12 +325,52 @@ def test_final_summary_seed_wiring():
        "DistillTrainerConfig has no random_state -> reading config.random_state inside the trainer crashes")
 
 
+def test_grid_kl0_temp_skip():
+    """Audit gen_hp_specs: temperature is irrelevant when kl=0 (kl_term returns 0 BEFORE any softmax/T),
+    so the grid must collapse kl=0 to ONE canonical temperature (not run N_T identical copies) while
+    keeping every loss-distinct (kl,mse) config family. Verifies the dedup is correct AND lossless."""
+    import os, sys, collections
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "slurm"))
+    from gen_hp_specs import _temps_for_kl, grid_combos
+    from config.distillation.experiments.carbon import carbon_base_hyperparam_raw_config as C
+    Ts = list(C.temperatures)
+
+    ok(_temps_for_kl(0.0, Ts) == [Ts[0]], "kl=0.0 -> single canonical temperature")
+    ok(_temps_for_kl(0, Ts) == [Ts[0]], "kl=0 (int) -> single temperature")
+    ok(_temps_for_kl(0.5, Ts) == Ts, "kl>0 -> all temperatures")
+
+    combos = list(grid_combos(C))
+    bad = [c for c in combos if float(c[2]) == 0.0 and float(c[4]) != float(Ts[0])]
+    ok(not bad, f"no kl=0 combo at a non-canonical T; got {bad[:3]}")
+
+    kl0 = [c for c in combos if float(c[2]) == 0.0]
+    ok(len(kl0) == len(C.task_names) * len(C.weight_ces) * len(C.weight_mses),
+       "kl=0 combos = tasks*ce*mse (exactly one T each)")
+
+    by = collections.defaultdict(set)
+    for t, ce, kl, mse, tp in combos:
+        if float(kl) > 0:
+            by[(t, ce, kl, mse)].add(tp)
+    ok(all(len(v) == len(Ts) for v in by.values()), "kl>0 families keep ALL temperatures")
+
+    n_kl0 = sum(1 for kl in C.weight_kls if float(kl) == 0.0)
+    expect = len(C.task_names) * len(C.weight_ces) * len(C.weight_mses) * (n_kl0 + (len(C.weight_kls) - n_kl0) * len(Ts))
+    naive = len(C.task_names) * len(C.weight_ces) * len(C.weight_kls) * len(C.weight_mses) * len(Ts)
+    ok(len(combos) == expect, f"canonical count {len(combos)} == {expect}")
+    ok(len(combos) < naive, f"dedup saves {naive - len(combos)} redundant runs ({naive} -> {len(combos)})")
+    # LOSSLESS: every (task,ce,kl,mse) family still present — no loss-distinct config dropped
+    fams = {(t, ce, kl, mse) for t, ce, kl, mse, _ in combos}
+    ok(len(fams) == len(C.task_names) * len(C.weight_ces) * len(C.weight_kls) * len(C.weight_mses),
+       "every (kl,mse) config family retained (lossless)")
+    print("PASS test_grid_kl0_temp_skip")
+
+
 if __name__ == "__main__":
     tests = [test_logit_standard_parity, test_kl_variants_sane, test_mse_raw,
              test_mse_l2norm_scale_invariant, test_mse_skipped, test_teacher_discovery,
              test_deploy_120k_student, test_teacher_tokenization_isolation,
              test_get_best_checkpoint_dispatch, test_teacher_configs_formatting, test_end_to_end_loss,
-             test_early_stop_step, test_retry_io, test_final_summary_seed_wiring]
+             test_early_stop_step, test_retry_io, test_final_summary_seed_wiring, test_grid_kl0_temp_skip]
     failed = 0
     for fn in tests:
         try:

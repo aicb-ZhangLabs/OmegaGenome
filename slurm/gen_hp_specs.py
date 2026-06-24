@@ -29,12 +29,28 @@ def done_combos():
     return done
 
 
+def _temps_for_kl(kl, temperatures):
+    """Temperatures to sweep for a given kl weight. Temperature ONLY enters the loss via the KL term,
+    and ``kl_term`` returns 0 *before* any softmax/T when ``weight_kl <= 0`` (src/model/distillation.py).
+    So for kl==0 every temperature gives the identical loss — collapse to a single canonical T (the
+    first) to avoid running ~N_T redundant copies. For kl>0, sweep all temperatures."""
+    return [temperatures[0]] if float(kl) == 0.0 else list(temperatures)
+
+
+def grid_combos(C):
+    """Canonical HP-grid combos (task, ce, kl, mse, temp), with the kl=0 × T redundancy removed."""
+    for task, ce, kl, mse in product(C.task_names, C.weight_ces, C.weight_kls, C.weight_mses):
+        for temp in _temps_for_kl(kl, C.temperatures):
+            yield (task, ce, kl, mse, temp)
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--out", default="hp_specs.txt")
     args = ap.parse_args()
     done = done_combos()
-    lines, skipped = [], 0
-    for task, ce, kl, mse, temp in product(C.task_names, C.weight_ces, C.weight_kls, C.weight_mses, C.temperatures):
+    lines, skipped, total = [], 0, 0
+    for task, ce, kl, mse, temp in grid_combos(C):
+        total += 1
         if (task, float(ce), float(kl), float(mse), float(temp)) in done:
             skipped += 1
             continue
@@ -47,9 +63,10 @@ def main():
         )
     with open(args.out, "w") as f:
         f.write("\n".join(lines) + ("\n" if lines else ""))
-    total = len(C.task_names) * len(C.weight_ces) * len(C.weight_kls) * len(C.weight_mses) * len(C.temperatures)
+    full = len(C.task_names) * len(C.weight_ces) * len(C.weight_kls) * len(C.weight_mses) * len(C.temperatures)
     print(f"grid: {len(C.weight_kls)}kl x {len(C.weight_mses)}mse x {len(C.temperatures)}T x "
-          f"{len(C.task_names)}tasks = {total} combos; {skipped} already done; wrote {len(lines)} specs -> {args.out}")
+          f"{len(C.task_names)}tasks = {full} naive; {total} canonical (kl=0 collapses T, saves {full-total}); "
+          f"{skipped} already done; wrote {len(lines)} specs -> {args.out}")
 
 
 if __name__ == "__main__":
