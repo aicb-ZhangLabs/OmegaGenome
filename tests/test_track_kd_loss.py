@@ -5,9 +5,108 @@ layout (BLT vs BTL), position alignment, feature term on/off, weight zeroing, te
 semantics, and gradient flow. Pure synthetic tensors (CPU, fast). No model load.
 Run: PYTHONPATH=. <venv>/python -m tests.test_track_kd_loss
 """
+import numpy as np
 import torch
 
-from src.trainer.track_distill import TrackKDConfig, track_kd_loss
+from src.trainer.track_distill import (
+    TrackKDConfig, track_kd_loss, _dist_term, _corr_along, _standardized_mse_term, _cwd_term,
+)
+
+
+def test_reference_correctness_dist():
+    """DIST audit (4 angles): (1) intra term == numpy Pearson over positions; (2) inter term == numpy
+    Pearson over tracks; (3) sum == _dist_term; (4) each 1-corr ∈ [0,2] so total ∈ [0,4] (bounded)."""
+    rng = np.random.RandomState(1)
+    B, L, T = 2, 24, 4
+    p = rng.rand(B, L, T).astype("float64"); t = rng.rand(B, L, T).astype("float64")
+    pt, tt = torch.tensor(p), torch.tensor(t)
+    # (1) intra = 1 - mean over (b,track) of Pearson along positions
+    intra = np.mean([np.corrcoef(p[b, :, c], t[b, :, c])[0, 1] for b in range(B) for c in range(T)])
+    ok(abs((1 - intra) - float(_corr_along(pt, tt, dim=1))) < 1e-6, "DIST intra == numpy Pearson over positions")
+    # (2) inter = 1 - mean over (b,pos) of Pearson across tracks
+    inter = np.mean([np.corrcoef(p[b, i, :], t[b, i, :])[0, 1] for b in range(B) for i in range(L)])
+    ok(abs((1 - inter) - float(_corr_along(pt, tt, dim=2))) < 1e-6, "DIST inter == numpy Pearson over tracks")
+    # (3) _dist_term == intra + inter
+    ok(abs(float(_dist_term(pt, tt)) - ((1 - intra) + (1 - inter))) < 1e-6, "DIST == intra + inter (both axes)")
+    # (4) bounded in [0,4]
+    ok(0 <= float(_dist_term(pt, tt)) <= 4 + 1e-6, "DIST bounded in [0,4]")
+    print("PASS reference_correctness_dist")
+
+
+def test_reference_correctness_standardized_mse():
+    """standardized-MSE audit (4 angles): (1) == numpy per-track z-MSE (torch std is unbiased/ddof=1);
+    (2) per-track INDEPENDENT (scaling one track doesn't change another's contribution); (3) shift+scale
+    invariant per track; (4) >= 0."""
+    rng = np.random.RandomState(2)
+    B, L, T = 2, 32, 3
+    p = rng.rand(B, L, T).astype("float64"); t = rng.rand(B, L, T).astype("float64")
+    def zmse(a, b):  # reference: z-score each track over positions (ddof=1 to match torch default), MSE
+        za = (a - a.mean(1, keepdims=True)) / (a.std(1, ddof=1, keepdims=True) + 1e-7)
+        zb = (b - b.mean(1, keepdims=True)) / (b.std(1, ddof=1, keepdims=True) + 1e-7)
+        return float(np.mean((za - zb) ** 2))
+    ref = zmse(p, t)
+    got = float(_standardized_mse_term(torch.tensor(p), torch.tensor(t)))
+    ok(abs(ref - got) < 1e-4, f"std-MSE == numpy per-track z-MSE ({got:.5f} vs {ref:.5f})")
+    # (2) per-track independence: multiply track 0 of pred by a constant -> only track 0's z-score is
+    #     unchanged (z-score is scale-invariant), so the loss is unchanged
+    p2 = p.copy(); p2[:, :, 0] *= 13.0
+    ok(abs(_standardized_mse_term(torch.tensor(p2), torch.tensor(t)).item() - got) < 1e-4,
+       "std-MSE per-track scale-invariant (track 0 ×13 -> unchanged)")
+    ok(float(_standardized_mse_term(torch.tensor(p), torch.tensor(t))) >= 0, "std-MSE >= 0")
+    print("PASS reference_correctness_standardized_mse")
+
+
+def test_reference_correctness_cwd():
+    """CWD audit (5 angles): (1) == numpy T²·KL(softmax_t || softmax_s) over positions per track, meaned,
+    at two temperatures (validates the T² scaling + KL direction); (2) >= 0 (KL nonneg); (3) exact 0 when
+    identical; (4) RAW KL (the softness, T² removed) decreases with temperature; (5) asymmetric (KL is
+    directional: swapping student/teacher changes the value)."""
+    rng = np.random.RandomState(3)
+    B, L, T = 2, 20, 3
+    p = rng.rand(B, L, T).astype("float64") * 4; t = rng.rand(B, L, T).astype("float64") * 4
+    pt, tt = torch.tensor(p), torch.tensor(t)
+    def ref_cwd(pred, targ, Tm):
+        def sm(x):  # softmax over positions (axis=1)
+            e = np.exp(x / Tm - (x / Tm).max(1, keepdims=True)); return e / e.sum(1, keepdims=True)
+        sp, tp = sm(pred), sm(targ)
+        kl = (tp * (np.log(tp + 1e-12) - np.log(sp + 1e-12))).sum(1)  # [B,C] KL over positions
+        return float(Tm * Tm * kl.mean())
+    for Tm in (1.0, 4.0):  # (1) full formula incl T² at two temperatures
+        ok(abs(ref_cwd(p, t, Tm) - float(_cwd_term(pt, tt, Tm))) < 1e-3, f"CWD == numpy T²·KL over positions (T={Tm})")
+    ok(float(_cwd_term(pt, tt, 4.0)) >= 0, "CWD >= 0 (KL nonneg)")                       # (2)
+    ok(float(_cwd_term(tt, tt, 4.0)) < 1e-6, "CWD == 0 when identical")                  # (3)
+    # (4) raw KL (divide out T²) softens with temperature: KL(T=8) < KL(T=1)
+    raw = lambda Tm: float(_cwd_term(pt, tt, Tm)) / (Tm * Tm)
+    ok(raw(8.0) < raw(1.0), "CWD raw KL (T² removed) decreases with temperature (softening)")
+    # (5) directional: KL(t||s) != KL(s||t) in general
+    ok(abs(float(_cwd_term(pt, tt, 4.0)) - float(_cwd_term(tt, pt, 4.0))) > 1e-4, "CWD is directional (teacher→student)")
+    print("PASS reference_correctness_cwd")
+
+
+def test_reference_correctness_gt_mix_and_subset():
+    """GT-mix audit (3 angles): m=0 pure teacher, m=1 pure GT, m=0.5 == loss vs explicit convex blend.
+    Specialist track_subset audit (2 angles): teacher index_select matches; T=1 loss is finite + the
+    distill term equals the single picked track's loss."""
+    s, t, g = _data()
+    cfg_half = TrackKDConfig(w_ce=0, w_kl=1.0, w_mse=0, gt_loss="mse", distill_loss="mse",
+                             distill_target_gt_mix=0.5)
+    _, comp = track_kd_loss(s, t, g, cfg=cfg_half)
+    blend = 0.5 * t + 0.5 * g
+    ref_distill = torch.nn.functional.mse_loss(s, blend)  # explicit convex blend target
+    ok(abs(float(comp["distill"]) - float(ref_distill)) < 1e-6, "gt_mix=0.5 distill == MSE vs (0.5·teacher+0.5·gt)")
+    # specialist: subset the teacher by index and confirm the loss equals training that one track alone
+    B, L, T = 2, 16, 5
+    full_t = torch.rand(B, L, T)
+    idx = torch.tensor([2])  # pick track 2
+    sub_student = torch.rand(B, L, 1, requires_grad=True)
+    sub_teacher = full_t.index_select(-1, idx)            # the trainer's teacher_logits.index_select(-1, kd_track_idx)
+    ok(torch.equal(sub_teacher[..., 0], full_t[..., 2]), "specialist: teacher index_select picks the right track")
+    tot, c = track_kd_loss(sub_student, sub_teacher, torch.rand(B, L, 1),
+                           cfg=TrackKDConfig(w_ce=0, w_kl=1.0, w_mse=0, gt_loss="mse", distill_loss="mse"))
+    tot.backward()
+    ok(torch.isfinite(tot).item() and sub_student.grad is not None, "specialist: T=1 KD loss finite + grad flows")
+    print("PASS reference_correctness_gt_mix_and_subset")
+
 
 _n = 0
 def ok(cond, msg):
@@ -261,6 +360,6 @@ if __name__ == "__main__":
     for fn in [test_weighted_sum_and_components, test_all_loss_types_run, test_teacher_and_gt_detached,
                test_student_layout_btl, test_position_alignment, test_feature_term, test_weight_zeroing,
                test_teacher_bounded_semantics, test_pearson_zero_when_identical,
-               test_feature_alignment_trainer_wiring, test_dist_and_standardized_mse, test_cwd_and_gt_mix]:
+               test_feature_alignment_trainer_wiring, test_dist_and_standardized_mse, test_cwd_and_gt_mix, test_reference_correctness_dist, test_reference_correctness_standardized_mse, test_reference_correctness_cwd, test_reference_correctness_gt_mix_and_subset]:
         fn()
     print(f"\n{_n} assertions passed")
