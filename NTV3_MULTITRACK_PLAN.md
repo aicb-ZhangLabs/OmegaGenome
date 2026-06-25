@@ -489,3 +489,8 @@ gt_mix}; **100M baseline vs KD** (the decisive *capacity* test — no 50M varian
   **100M joint student** (running; the single-model answer) or **grouped/per-assay specialists** — NOT a
   cleverer per-track loss. (Specialists = 34× params, so the sweep is the ceiling diagnostic, not the
   deployable model.) Pending: the 100M baseline-vs-KD verdict + the new 8M per-track methods (dist/cwd/…).
+- **🔑 100M student (no KD) = TEST 0.5178** — **+0.043 over the 8M baseline (0.4748)**, 85% of the 650M
+  teacher (0.6064), in ONE deployable model. Confirms capacity is the lever (12× the 8M → +0.04 with zero
+  distillation). The decisive Goal-1 test — **does KD *add* on top of this?** — is the 100M-KD run (just
+  started, ~12h). If 100M-KD > 0.5178, distillation helps a student *with headroom* (the clean win); if
+  ≈ 0.5178, then for multitrack the lever is purely capacity and KD's role is marginal at any size.
