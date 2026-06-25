@@ -76,9 +76,10 @@ def _parse_args():
     ap.add_argument("--kd_w_kl", type=float, default=0.5, help="KD distill (teacher) term weight")
     ap.add_argument("--kd_w_mse", type=float, default=0.2, help="KD feature term weight (0 = off here)")
     ap.add_argument("--kd_gt_loss", default="poisson_multinomial",
-                    choices=["poisson_multinomial", "mse", "pearson"])
+                    choices=["poisson_multinomial", "mse", "pearson", "dist", "standardized_mse"])
     ap.add_argument("--kd_distill_loss", default="poisson_multinomial",
-                    choices=["poisson_multinomial", "mse", "pearson", "teacher_bounded"])
+                    choices=["poisson_multinomial", "mse", "pearson", "teacher_bounded",
+                             "dist", "standardized_mse"])
     ap.add_argument("--kd_multinomial_weight", type=float, default=5.0)
     return ap.parse_args()
 
