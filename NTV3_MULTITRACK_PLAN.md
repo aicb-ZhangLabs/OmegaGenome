@@ -494,3 +494,16 @@ gt_mix}; **100M baseline vs KD** (the decisive *capacity* test — no 50M varian
   distillation). The decisive Goal-1 test — **does KD *add* on top of this?** — is the 100M-KD run (just
   started, ~12h). If 100M-KD > 0.5178, distillation helps a student *with headroom* (the clean win); if
   ≈ 0.5178, then for multitrack the lever is purely capacity and KD's role is marginal at any size.
+- **🔑🔑 THE TEACHER IS CAPACITY-LIMITED PER-TRACK TOO — the root cause of the KD failure.** On the hard
+  PRO-cap track (ENCSR114HGS_P): joint 8M **0.2794** · **650M teacher 0.3420** · **from-scratch 8M
+  specialist 0.6103**. The 8M specialist *beats the 650M teacher by +0.27 on that track*. Even at 650M,
+  sharing capacity across 34 tracks, the teacher only reaches 0.342 — so **KD can't lift this track: you
+  can't distill knowledge the teacher doesn't have.** This is the mechanism behind every flat KD result:
+  the 650M teacher's high MEAN (0.606) is carried by EASY tracks (Histone 0.91, ATAC 0.83); on the HARD
+  tracks it is itself weak, so the soft targets there are *worse* than what a dedicated student learns
+  from the data alone. Nuance: on the *easier* PRO-cap tracks (idx 9–14) the teacher (~0.58) does beat
+  the joint 8M (~0.37), so KD *should* help those — but the joint 8M can't absorb it (its own capacity).
+  **Conclusion: multitrack KD is doubly capacity-bound** — (i) the student can't allocate capacity per
+  track, and (ii) the teacher couldn't either, so it's a weak guide exactly where the student is weakest.
+  The real levers: per-track/grouped **capacity** (specialists, or a bigger joint model), and a teacher
+  that is itself per-track-strong (specialist teachers) — not a cleverer distillation loss.
