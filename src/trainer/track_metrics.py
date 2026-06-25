@@ -69,7 +69,9 @@ class TracksMetrics:
 
     def compute(self):
         """Return {track/pearson, mean/pearson, loss}."""
-        corr = self.pearson.compute().cpu().numpy()
+        # atleast_1d: torchmetrics PearsonCorrCoef(num_outputs=1) returns a 0-d scalar, which would crash
+        # the per-track indexing below for a single-track (specialist) student. No-op for T>1.
+        corr = np.atleast_1d(self.pearson.compute().cpu().numpy())
         out = {f"{n}/pearson": float(corr[i]) for i, n in enumerate(self.track_names)}
         out["mean/pearson"] = float(corr.mean())
         out["loss"] = float(np.mean(self.losses)) if self.losses else float("nan")
