@@ -133,7 +133,8 @@ def main():
         load_benchmark_frames(data_dir, args.species)
     # Optional SPECIALIST mode: train on a subset of tracks (e.g. one). Subset everything track-indexed
     # (head size T, bigWig paths/targets, scaling means, metric ids) consistently; keep the ORIGINAL
-    # indices to index-select the teacher's 34-track output to match in the KD loop.
+    # indices to index-select the teacher's full-track output to match in the KD loop.
+    teacher_num_tracks = len(bw_ids)  # the teacher ckpt's NATIVE track count (e.g. 34) — never subset
     kd_track_idx = None
     if args.track_subset:
         idx = [int(x) for x in args.track_subset.split(",")]
@@ -171,7 +172,7 @@ def main():
     # KD mode: load the frozen finetuned teacher (e.g. reproduced 650M) + build the 3-term loss config.
     teacher, kd_cfg = None, None
     if args.teacher:
-        teacher = load_finetuned_bigwig_teacher(args.teacher, args.teacher_base, T, device=device)
+        teacher = load_finetuned_bigwig_teacher(args.teacher, args.teacher_base, teacher_num_tracks, device=device)
         kd_cfg = TrackKDConfig(w_ce=args.kd_w_ce, w_kl=args.kd_w_kl, w_mse=args.kd_w_mse,
                                gt_loss=args.kd_gt_loss, distill_loss=args.kd_distill_loss,
                                multinomial_weight=args.kd_multinomial_weight,
