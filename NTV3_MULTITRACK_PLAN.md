@@ -443,3 +443,36 @@ L = w_ce · L_gt(student, real_bigWig)        # ground-truth supervision  (w_ce 
   pulls the student only where it actually helps.
 
 Next: the ~1M **DilatedTrackNet** student (capacity is the lever per the result above).
+
+### 2026-06-25 — breaking the 8M plateau: SOTA-grounded methods + a capacity study
+
+The 2×2 Poisson/MSE ablation + **feature alignment** (FitNets; the `w_mse` term was a silent no-op before
+— now wired: student emb → teacher emb projection, L2-normalised) all land at **test ≈ 0.476 = the no-KD
+baseline (0.4748) / no-op poisson (0.4759)**. The 8M val **plateaus** (peaks 0.5036 @ step ~16500, flat
+after — so *not* epoch-limited). A literature survey (NeurIPS/ICLR/ICML/CVPR + genomics) drove a set of
+new methods, all added to `track_distill.py` (reuse the existing `_regression_term` dispatch + config;
+**94 assertions, numpy-reference-verified**):
+
+| `distill_loss` / option | paper | formula (student/teacher `[B,L,T]`) | why it might beat exact-value matching |
+|---|---|---|---|
+| **`dist`** | DIST, Tang et al. **NeurIPS'22** | `(1−corr_pos) + (1−corr_track)` — match the teacher's **Pearson structure** (intra-track over positions = *the eval metric* + inter-track) | scale/shift-invariant → robust to the teacher↔student **capacity gap** |
+| **`standardized_mse`** | logit-standardization, Sun et al. **CVPR'24** | z-score **each track** over positions, then MSE | scale-invariant → stops high-count tracks (ATAC/RNA) dominating low-count high-headroom ones (PRO-cap/eCLIP) |
+| **`cwd`** | Channel-Wise Distillation, Shu et al. **ICCV'21** | `(T²/C)·Σ_c KL(softmax_pos(t^c/T) ‖ softmax_pos(s^c/T))` — softmax each track's profile over positions, KL teacher→student | matches positional **shape** (what Pearson rewards), not absolute counts |
+| **`distill_target_gt_mix`** = m | Enigma (bioRxiv'25) | distill target = `(1−m)·teacher + m·ground-truth` (m≈0.1) | anchors the distill term to truth where the teacher errs |
+| **feature alignment** (`w_mse`) | FitNets | `MSE(L2norm(proj(student_emb)), L2norm(teacher_emb))` | representation transfer (verdict: no lift — capacity wall) |
+| **`--track_subset`** (specialist) | — | train a student on **one track** (teacher index-selected to match) | *diagnostic*: if a 1-track 8M ≫ the joint 8M on that track, **capacity-sharing across 34 tracks is the wall** |
+
+**Survey verdicts:** (a) **on-policy / reverse-KL distillation does NOT apply** — it is defined by an
+autoregressive student *sampling* its output; our discriminative fixed-window regressor has no output
+policy, and for unimodal track likelihoods reverse-KL collapses to moment-matching (= MSE). (b) Plain
+**augmentation** (RC/shift) is low-value here: the student is capacity-saturated (not data-starved), and
+RC is non-trivial for **stranded** tracks (RNA/PRO-cap need +/− strand swapping). (c) The cheapest untried
+lever is a **weaker/mid-size teacher** — *Distillation Scaling Laws* (Apple'25) show a too-strong teacher
+hurts a small student; so the **100M student** doubles as a mid-teacher for TAKD on the 8M. **Reserve
+(if all above plateau):** DiffKD (denoise student features toward the teacher manifold, NeurIPS'23), MGD
+(masked generative distillation, ECCV'22), per-track headroom weighting.
+
+**Experiment matrix (running, voyager + laniakea):** 8M × {dist, standardized_mse, dist+lean, cwd,
+gt_mix}; **100M baseline vs KD** (the decisive *capacity* test — no 50M variant exists, 100M = 12× the
+8M); **single-track specialist** baseline+KD on PRO-cap track 18 (joint 8M = 0.2787). Results pending;
+this table's right-most column is the hypothesis under test — outcomes will be recorded here.
