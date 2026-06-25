@@ -39,11 +39,40 @@ def test_weighted_sum_and_components():
 
 def test_all_loss_types_run():
     s, t, g = _data()
-    for gl in ("poisson_multinomial", "mse", "pearson", "dist", "standardized_mse"):
-        for dl in ("poisson_multinomial", "mse", "pearson", "teacher_bounded", "dist", "standardized_mse"):
+    for gl in ("poisson_multinomial", "mse", "pearson", "dist", "standardized_mse", "cwd"):
+        for dl in ("poisson_multinomial", "mse", "pearson", "teacher_bounded", "dist", "standardized_mse", "cwd"):
             total, comp = track_kd_loss(s, t, g, cfg=TrackKDConfig(gt_loss=gl, distill_loss=dl))
             ok(torch.isfinite(total).item(), f"finite total for gt={gl} distill={dl}")
     print("PASS all_loss_types_run")
+
+
+def test_cwd_and_gt_mix():
+    """Audit Channel-Wise Distillation (ICCV'21, per-track softmax-KL over positions) + Enigma-style
+    GT-target mixing — the research-recommended #1 untried method + the cheap target-blend."""
+    from src.trainer.track_distill import _cwd_term
+    torch.manual_seed(0)
+    B, L, T = 3, 64, 5
+    t = torch.rand(B, L, T)
+    # CWD = 0 when student matches teacher; positive when the positional profile differs
+    ok(float(_cwd_term(t.clone(), t, 4.0)) < 1e-5, "CWD = 0 when student profile matches teacher")
+    ok(float(_cwd_term(torch.rand(B, L, T), t, 4.0)) > 0, "CWD > 0 when profiles differ")
+    # CWD softmax over positions is SHIFT-invariant (a per-track additive baseline doesn't change it);
+    # it matches the positional profile SHAPE. (It is NOT scale-invariant — a multiplicative scale
+    # sharpens the softmax — which is fine: the eval cares about shape, set via the temperature.)
+    ok(float(_cwd_term(t + 5.0, t, 4.0)) < 1e-4, "CWD is shift-invariant per track (matches profile shape)")
+    # gradient flows through CWD as a distill term
+    s = torch.rand(B, L, T, requires_grad=True)
+    tot, _ = track_kd_loss(s, t, torch.rand(B, L, T),
+                           cfg=TrackKDConfig(w_ce=0, w_kl=1.0, w_mse=0, distill_loss="cwd"))
+    s.grad = None; tot.backward()
+    ok(s.grad is not None and float(s.grad.abs().sum()) > 0, "gradient flows for distill_loss=cwd")
+    # GT-target mix: m=0 -> pure teacher target; m=1 -> distill target == gt (so distill term == gt term)
+    s2, t2, g2 = _data()
+    _, c0 = track_kd_loss(s2, t2, g2, cfg=TrackKDConfig(gt_loss="mse", distill_loss="mse", distill_target_gt_mix=0.0))
+    _, c1 = track_kd_loss(s2, t2, g2, cfg=TrackKDConfig(gt_loss="mse", distill_loss="mse", distill_target_gt_mix=1.0))
+    ok(abs(float(c1["distill"]) - float(c1["gt"])) < 1e-6, "gt_mix=1 -> distill target is the ground truth")
+    ok(float(c0["distill"]) != float(c1["distill"]), "gt_mix changes the distill target")
+    print("PASS cwd_and_gt_mix")
 
 
 def test_dist_and_standardized_mse():
@@ -232,6 +261,6 @@ if __name__ == "__main__":
     for fn in [test_weighted_sum_and_components, test_all_loss_types_run, test_teacher_and_gt_detached,
                test_student_layout_btl, test_position_alignment, test_feature_term, test_weight_zeroing,
                test_teacher_bounded_semantics, test_pearson_zero_when_identical,
-               test_feature_alignment_trainer_wiring, test_dist_and_standardized_mse]:
+               test_feature_alignment_trainer_wiring, test_dist_and_standardized_mse, test_cwd_and_gt_mix]:
         fn()
     print(f"\n{_n} assertions passed")

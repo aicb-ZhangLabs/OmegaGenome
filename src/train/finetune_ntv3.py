@@ -79,8 +79,10 @@ def _parse_args():
                     choices=["poisson_multinomial", "mse", "pearson", "dist", "standardized_mse"])
     ap.add_argument("--kd_distill_loss", default="poisson_multinomial",
                     choices=["poisson_multinomial", "mse", "pearson", "teacher_bounded",
-                             "dist", "standardized_mse"])
+                             "dist", "standardized_mse", "cwd"])
     ap.add_argument("--kd_multinomial_weight", type=float, default=5.0)
+    ap.add_argument("--kd_cwd_temperature", type=float, default=4.0)
+    ap.add_argument("--kd_distill_target_gt_mix", type=float, default=0.0)
     return ap.parse_args()
 
 
@@ -155,7 +157,9 @@ def main():
         teacher = load_finetuned_bigwig_teacher(args.teacher, args.teacher_base, T, device=device)
         kd_cfg = TrackKDConfig(w_ce=args.kd_w_ce, w_kl=args.kd_w_kl, w_mse=args.kd_w_mse,
                                gt_loss=args.kd_gt_loss, distill_loss=args.kd_distill_loss,
-                               multinomial_weight=args.kd_multinomial_weight)
+                               multinomial_weight=args.kd_multinomial_weight,
+                               cwd_temperature=args.kd_cwd_temperature,
+                               distill_target_gt_mix=args.kd_distill_target_gt_mix)
         print(f"KD: teacher={args.teacher} | w_ce/kl/mse={kd_cfg.w_ce}/{kd_cfg.w_kl}/{kd_cfg.w_mse} "
               f"gt={kd_cfg.gt_loss} distill={kd_cfg.distill_loss}", flush=True)
 
