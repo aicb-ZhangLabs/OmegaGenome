@@ -36,7 +36,10 @@ from typing import List, Tuple, Dict, Literal, Optional
 # ============================================================================
 # GLOBAL DEBUG SETTINGS
 # ============================================================================
-DEBUG = True
+import os as _os
+DEBUG = _os.environ.get("DISTILL_DEBUG", "0") == "1"  # default OFF (was hardcoded True -> ~3k log
+# lines/job of "[DEBUG batch=..] Teacher logits=None"; 574 grid jobs => GBs of /home log spam).
+# Set DISTILL_DEBUG=1 to restore the per-batch debug logging. Logging-only; no effect on results.
 DEBUG_LOG_EVERY = 50  # Log every N batches
 DEBUG_BATCH = 0
 DEBUG_LOG_FIRST_N = 5  # Always log first N batches
