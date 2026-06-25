@@ -474,5 +474,18 @@ hurts a small student; so the **100M student** doubles as a mid-teacher for TAKD
 
 **Experiment matrix (running, voyager + laniakea):** 8M × {dist, standardized_mse, dist+lean, cwd,
 gt_mix}; **100M baseline vs KD** (the decisive *capacity* test — no 50M variant exists, 100M = 12× the
-8M); **single-track specialist** baseline+KD on PRO-cap track 18 (joint 8M = 0.2787). Results pending;
-this table's right-most column is the hypothesis under test — outcomes will be recorded here.
+8M); **single-track specialist** baseline+KD on PRO-cap track 18 (joint 8M = 0.2787).
+
+#### RESULT — feature alignment + the SPECIALIST capacity finding (2026-06-25)
+- **Feature alignment gives NO lift:** featalign **0.4762** / featstrong **0.4755** / featlean (lean-teacher)
+  **0.4765** — all ≈ the no-op baseline 0.4759. Representation matching doesn't break the 8M plateau.
+- **🔑 SINGLE-TRACK SPECIALIST = the headline.** An 8M trained on **only PRO-cap track 18** scores **TEST
+  0.6103** — vs the joint 8M's **0.2787** on that track (and above the teacher's ~0.51 PRO-cap). A
+  **+0.33 (2.2×)** jump from dedicating the 8M's capacity to one track. **Capacity-sharing across 34 tracks
+  is the dominant bottleneck, not the distillation signal** — every output-space and feature-space KD
+  method plateaus at ~0.476 because the joint 8M cannot allocate enough capacity per track. Launched the
+  **full 34-track baseline-specialist sweep** (throttled) to measure the per-track-capacity *ceiling*
+  (ensemble mean). **Implication for the paper:** the deployable fix is **more per-track capacity** — the
+  **100M joint student** (running; the single-model answer) or **grouped/per-assay specialists** — NOT a
+  cleverer per-track loss. (Specialists = 34× params, so the sweep is the ceiling diagnostic, not the
+  deployable model.) Pending: the 100M baseline-vs-KD verdict + the new 8M per-track methods (dist/cwd/…).
