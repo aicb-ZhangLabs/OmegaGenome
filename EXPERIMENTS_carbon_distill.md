@@ -270,6 +270,29 @@ from the figure-pack repo `explcre/dna-llm-distillation-plot` and versioned here
 - **Next (in flight):** vanilla 0.5/0.5/0.2 distillation on `carbon-raw-original` — acceptor+donor first
   (241938/241939), then the other 16, then the staged HP grid (mse [0,1]→[0.25]→[2,5]).
 
+### 2026-06-24 — vanilla 0.5/0.5/0.2 distillation, all 18 tasks, `original` student ✅ DONE
+
+Single fixed config (ce0.5 / kl0.5 / mse0.2 / T2.0, 200ep no early stop) on the **`original`** student
+— a sanity pass before the per-task HP grid. **mean test MCC = 0.6195 = 93.4% of the Carbon-3B teacher
+(0.6632)**, already **above the old deploy_120k best-HP 3-seed (0.5943)** — switching the student
+(capped→full receptive field) lifts the mean ~0.59→0.62 *before any per-task tuning*.
+
+| task | vanilla test | val | | task | vanilla test | val |
+|---|:-:|:-:|---|---|:-:|:-:|
+| splice_sites_donors | 0.8921 | 0.930 | | H3K4me2 | 0.5473 | 0.586 |
+| splice_sites_all | 0.8779 | 0.885 | | H3K9ac | 0.5122 | 0.550 |
+| splice_sites_acceptors | 0.8601 | 0.886 | | enhancers | 0.4975 | 0.515 |
+| promoter_tata | 0.8308 | 0.854 | | H2AFZ | 0.4919 | 0.523 |
+| promoter_no_tata | 0.7305 | 0.749 | | H3K4me1 | 0.4713 | 0.490 |
+| promoter_all | 0.7286 | 0.743 | | enhancers_types | 0.4688 | 0.483 |
+| H4K20me1 | 0.6224 | 0.616 | | H3K27ac | 0.4622 | 0.488 |
+| H3K4me3 | 0.6143 | 0.676 | | H3K9me3 | 0.3939 | 0.402 |
+| H3K36me3 | 0.5757 | 0.614 | | **mean (18)** | **0.6195** | — |
+| H3K27me3 | 0.5736 | 0.587 | | | | |
+
+The **3-stage HP grid** (`carbon-raw-original`, mse [0,1]→[0.25]→[2,5]) is now running to optimize each
+task; stage-1 best-per-task will be appended here. Vanilla is a floor — the grid only goes up.
+
 ### 2026-06-24 — splice from-scratch (within this repo, distill path) + "is distillation helping splice?" (200 epochs)
 
 The two splice tasks were flagged as low (acceptor table 0.788, donor 0.627). Pulled the **from-scratch**
