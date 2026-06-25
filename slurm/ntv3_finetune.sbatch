@@ -11,7 +11,7 @@
 #SBATCH --partition=zhanglab.p
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=160G
+#SBATCH --mem=48G
 #SBATCH --nice=0
 #SBATCH --requeue
 #SBATCH --time=30-00:00:00
