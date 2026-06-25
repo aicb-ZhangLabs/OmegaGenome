@@ -62,6 +62,8 @@ def main():
     # config's weight_mses and rerunning (the 3 stages: [0,1] -> [0.25] -> [2,5]).
     ap.add_argument("--cfg", default="carbon-raw",
                     help="Experiment config name emitted per line (carbon-raw | carbon-raw-original).")
+    ap.add_argument("--patience", type=int, default=100,
+                    help="early-stop patience for the search (lower = faster, best-val ckpt still reported).")
     args = ap.parse_args()
     from config.distillation.experiments.carbon import experiment_configs
     scope_leaf = os.path.basename(experiment_configs[args.cfg][1].trainer_config.output_dir)
@@ -76,7 +78,7 @@ def main():
             f"{args.cfg} --task-names {task} "
             f"--distillation-config.weight-ce {ce} --distillation-config.weight-kl {kl} "
             f"--distillation-config.weight-mse {mse} --distillation-config.temperature {temp} "
-            f"--trainer-config.early-stop-patience 100 "  # search: best-val ckpt -> same MCC, ~2x faster
+            f"--trainer-config.early-stop-patience {args.patience} "  # search: best-val ckpt reported
             f"--slurm-config.mode run"
         )
     with open(args.out, "w") as f:
