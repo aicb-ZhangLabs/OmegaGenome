@@ -99,19 +99,50 @@ class TrackKDConfig:
     w_ce: float = 0.5          # ground-truth term weight (student vs real bigWig)
     w_kl: float = 0.5          # distill term weight (student vs frozen 650M teacher tracks)
     w_mse: float = 0.2         # feature-matching term weight (0 disables; needs *_feat args)
-    gt_loss: str = "poisson_multinomial"       # {"poisson_multinomial", "mse", "pearson"}
-    distill_loss: str = "poisson_multinomial"  # {"poisson_multinomial", "mse", "pearson", "teacher_bounded"}
+    gt_loss: str = "poisson_multinomial"       # {"poisson_multinomial", "mse", "pearson", "dist", "standardized_mse"}
+    # distill term vs the frozen teacher's tracks. SOTA-grounded options:
+    #   poisson_multinomial (Borzoi/Enigma) · mse · pearson (1−corr over positions = the eval metric) ·
+    #   teacher_bounded (Chen 2017) · dist (NeurIPS'22 correlation-matching, robust to capacity gap) ·
+    #   standardized_mse (CVPR'24 logit-standardization, per-track z-score → scale-invariant).
+    distill_loss: str = "poisson_multinomial"
     multinomial_weight: float = 5.0            # Poisson-multinomial shape/scale coefficient (Borzoi=5)
     teacher_bound_margin: float = 0.0          # margin for the teacher_bounded distill loss
 
 
-def _pearson_term(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-    """1 - mean per-(window,track) Pearson along the POSITION axis. pred/target: [B, L, T]."""
-    s = pred - pred.mean(dim=1, keepdim=True)
-    t = target - target.mean(dim=1, keepdim=True)
-    num = (s * t).sum(dim=1)
-    den = s.norm(dim=1) * t.norm(dim=1) + 1e-8
+def _corr_along(pred: torch.Tensor, target: torch.Tensor, dim: int) -> torch.Tensor:
+    """1 - mean Pearson correlation between pred and target along ``dim`` (both [B, L, T])."""
+    s = pred - pred.mean(dim=dim, keepdim=True)
+    t = target - target.mean(dim=dim, keepdim=True)
+    num = (s * t).sum(dim=dim)
+    den = s.norm(dim=dim) * t.norm(dim=dim) + 1e-8
     return 1.0 - (num / den).mean()
+
+
+def _pearson_term(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """1 - mean per-(window,track) Pearson along the POSITION axis. pred/target: [B, L, T]. This is
+    exactly the eval metric (per-track Pearson over positions), but computed vs the teacher's tracks."""
+    return _corr_along(pred, target, dim=1)
+
+
+def _dist_term(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """DIST distillation (Tang et al., "Knowledge Distillation from A Stronger Teacher", NeurIPS 2022;
+    github.com/hunto/DIST_KD) adapted to multitrack regression. Matches the teacher's CORRELATION
+    STRUCTURE rather than exact values, so it is robust to the teacher↔student magnitude/capacity gap
+    (the regime where exact MSE/Poisson matching fails). Two terms, both 1−Pearson:
+      • intra: per-track correlation along POSITIONS — i.e. distil directly to the eval metric;
+      • inter: per-position correlation across the 34 TRACKS — preserves cross-track relationships.
+    pred/target: [B, L, T]."""
+    return _corr_along(pred, target, dim=1) + _corr_along(pred, target, dim=2)
+
+
+def _standardized_mse_term(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """Per-track standardized MSE (logit-standardization, Sun et al., CVPR 2024, adapted for regression):
+    z-score each track over POSITIONS before the MSE so the loss is scale-invariant and not dominated by
+    the high-count tracks (ATAC/RNA) at the expense of the low-count high-headroom ones (PRO-cap/eCLIP).
+    pred/target: [B, L, T]."""
+    ps = (pred - pred.mean(dim=1, keepdim=True)) / (pred.std(dim=1, keepdim=True) + 1e-7)
+    ts = (target - target.mean(dim=1, keepdim=True)) / (target.std(dim=1, keepdim=True) + 1e-7)
+    return F.mse_loss(ps, ts)
 
 
 def _teacher_bounded_term(student: torch.Tensor, teacher: torch.Tensor, gt: torch.Tensor,
@@ -132,6 +163,10 @@ def _regression_term(pred: torch.Tensor, target: torch.Tensor, kind: str, mw: fl
         return poisson_multinomial_loss(pred, target, shape_loss_coefficient=mw)
     if kind == "pearson":
         return _pearson_term(pred, target)
+    if kind == "dist":
+        return _dist_term(pred, target)
+    if kind == "standardized_mse":
+        return _standardized_mse_term(pred, target)
     raise ValueError(f"unknown regression loss kind: {kind!r}")
 
 

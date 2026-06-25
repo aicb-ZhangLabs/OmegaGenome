@@ -39,11 +39,43 @@ def test_weighted_sum_and_components():
 
 def test_all_loss_types_run():
     s, t, g = _data()
-    for gl in ("poisson_multinomial", "mse", "pearson"):
-        for dl in ("poisson_multinomial", "mse", "pearson", "teacher_bounded"):
+    for gl in ("poisson_multinomial", "mse", "pearson", "dist", "standardized_mse"):
+        for dl in ("poisson_multinomial", "mse", "pearson", "teacher_bounded", "dist", "standardized_mse"):
             total, comp = track_kd_loss(s, t, g, cfg=TrackKDConfig(gt_loss=gl, distill_loss=dl))
             ok(torch.isfinite(total).item(), f"finite total for gt={gl} distill={dl}")
     print("PASS all_loss_types_run")
+
+
+def test_dist_and_standardized_mse():
+    """Audit the new SOTA-grounded distill terms (DIST correlation-matching NeurIPS'22; per-track
+    standardized MSE / logit-standardization CVPR'24), adapted to multitrack regression."""
+    from src.trainer.track_distill import _dist_term, _standardized_mse_term
+    torch.manual_seed(0)
+    B, L, T = 3, 64, 5
+    t = torch.rand(B, L, T)
+
+    # identical student==teacher -> both terms ~0 (perfect correlation / zero standardized error)
+    ok(float(_dist_term(t.clone(), t)) < 1e-4, "DIST = 0 when student matches teacher")
+    ok(float(_standardized_mse_term(t.clone(), t)) < 1e-4, "standardized_mse = 0 when student matches teacher")
+    # uncorrelated student -> DIST positive
+    ok(float(_dist_term(torch.rand(B, L, T), t)) > 0, "DIST > 0 when student uncorrelated with teacher")
+
+    # DIST is SCALE/SHIFT-invariant (matches structure, not magnitude): an affine map of the teacher
+    # along positions has ~perfect correlation -> ~0 loss (the capacity-gap robustness property).
+    aff = 7.0 * t + 3.0
+    ok(float(_dist_term(aff, t)) < 1e-3, "DIST is scale+shift invariant (correlation-based)")
+    # standardized MSE is also scale-invariant per track -> huge-magnitude student still bounded
+    big = (t * 1000.0)
+    ok(0 <= float(_standardized_mse_term(big, t)) < 1e-3, "standardized_mse is per-track scale-invariant")
+
+    # gradient flows through both as a distill term, and DIST matches the eval (Pearson) direction
+    s = torch.rand(B, L, T, requires_grad=True)
+    for dl in ("dist", "standardized_mse"):
+        tot, comp = track_kd_loss(s, t, torch.rand(B, L, T),
+                                  cfg=TrackKDConfig(w_ce=0, w_kl=1.0, w_mse=0, distill_loss=dl))
+        s.grad = None; tot.backward()
+        ok(s.grad is not None and float(s.grad.abs().sum()) > 0, f"gradient flows for distill_loss={dl}")
+    print("PASS dist_and_standardized_mse")
 
 
 def test_teacher_and_gt_detached():
@@ -200,6 +232,6 @@ if __name__ == "__main__":
     for fn in [test_weighted_sum_and_components, test_all_loss_types_run, test_teacher_and_gt_detached,
                test_student_layout_btl, test_position_alignment, test_feature_term, test_weight_zeroing,
                test_teacher_bounded_semantics, test_pearson_zero_when_identical,
-               test_feature_alignment_trainer_wiring]:
+               test_feature_alignment_trainer_wiring, test_dist_and_standardized_mse]:
         fn()
     print(f"\n{_n} assertions passed")
