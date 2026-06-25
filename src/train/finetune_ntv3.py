@@ -83,6 +83,10 @@ def _parse_args():
     ap.add_argument("--kd_multinomial_weight", type=float, default=5.0)
     ap.add_argument("--kd_cwd_temperature", type=float, default=4.0)
     ap.add_argument("--kd_distill_target_gt_mix", type=float, default=0.0)
+    ap.add_argument("--track_subset", default=None,
+                    help="Comma-separated track indices to train a SPECIALIST student on a subset (e.g. a "
+                         "single track) instead of all 34 — diagnostic for whether capacity-sharing across "
+                         "tracks is the bottleneck. The teacher's output is index-selected to match.")
     return ap.parse_args()
 
 
@@ -127,6 +131,19 @@ def main():
 
     fasta, bw_paths, bw_ids, regions_by_split, track_means, track_assays = \
         load_benchmark_frames(data_dir, args.species)
+    # Optional SPECIALIST mode: train on a subset of tracks (e.g. one). Subset everything track-indexed
+    # (head size T, bigWig paths/targets, scaling means, metric ids) consistently; keep the ORIGINAL
+    # indices to index-select the teacher's 34-track output to match in the KD loop.
+    kd_track_idx = None
+    if args.track_subset:
+        idx = [int(x) for x in args.track_subset.split(",")]
+        bw_ids = [bw_ids[i] for i in idx]
+        bw_paths = [bw_paths[i] for i in idx]
+        track_means = (track_means[idx] if hasattr(track_means, "__getitem__")
+                       and not isinstance(track_means, list) else [track_means[i] for i in idx])
+        track_assays = [track_assays[i] for i in idx]
+        kd_track_idx = torch.tensor(idx, device=device)
+        print(f"TRACK SUBSET (specialist): {idx} -> {bw_ids}", flush=True)
     T = len(bw_ids)
     print(f"tracks={T} seq_len={args.sequence_length} center={args.keep_target_center_fraction} "
           f"device={device} mode={'LoRA' if args.use_lora else 'full-FT'}", flush=True)
@@ -240,6 +257,8 @@ def main():
                 with torch.no_grad():
                     t_out = teacher(tokens)
                     teacher_logits, t_feat = t_out["bigwig_tracks_logits"], t_out["features"]
+                    if kd_track_idx is not None:  # specialist: match the teacher to the student's subset
+                        teacher_logits = teacher_logits.index_select(-1, kd_track_idx)
                 s_feat_proj = None
                 if kd_cfg.w_mse > 0:  # feature alignment: project student emb -> teacher emb, then MSE
                     if feat_proj is None:  # lazy build once feature dims are known
