@@ -31,3 +31,4 @@ slurm-*.out
 /data/cache/carbon_3b_lora
 /data/finetuned_models/carbon_3b_lora
 /data/carbon_distillation_outputs
+REMOTE_H100_VAST.md

@@ -322,3 +322,19 @@ compared against the val-selected best **distill** config. All seed-42 (the HP-s
   stalls. Caps raised to LAN 8 / VOY 4 / GAL 5. Jobs right-sized 8→5 CPU, 96G→24G, 12h→3h so they
   **backfill** into short gaps (the old 12h/96G footprint was locked out of every gap). Grid scans run on
   galaxy-local disk (`slurm/grid_progress.py`) to avoid sshfs-walk timeouts.
+
+## GOAL-B status (2026-06-26): ORIGINAL-model 3-stage HP search — STAGE 1 only, in progress
+**Critical correction (user-flagged):** the prior `carbon_grid_results.csv` (1546 rows) is the **deploy_120k**
+(dilation-CAPPED) student, NOT the original model. Rebuilt for the **original** model →
+`results/carbon_grid_results_original.csv` (324 runs) via `collate_runs.py --base .../original`.
+**Original model coverage = STAGE 1 ONLY** (weight_mse ∈ {0,1}; 11 of 18 tasks, some partial); **stages 2
+(0.2) and 3 (2,5) NOT yet run** on original. The complete 3-stage search exists only for deploy_120k (wrong model).
+**Generated CSVs (new filenames, model-tagged):**
+- `results/carbon_hp_stage1_3_original.csv` (+ `_best.csv`) — base config (mse 0,1,2,5); currently == stage-1
+  only since stages 2/3 absent for original.
+- `results/carbon_hp_stage1_2_3_original.csv` (+ `_best.csv`) — full (adds 0.2); IDENTICAL to above until
+  stage 2 runs. Generator: `slurm/gen_stage_csvs.py --grid <csv> --tag original`.
+**To FINISH GOAL-B (remaining work):** (1) complete original stage 1 (auto-submitter running `hp_original_stage1.txt`,
+574 jobs); (2) submit original **stage 2** (weight_mse 0.2) + **stage 3** (weight_mse 2,5); (3) regenerate the two
+CSVs; (4) 3-seed the best base-config params/task + any stage-2-improved params. deploy_120k CSVs kept for
+reference but are the capped model.
