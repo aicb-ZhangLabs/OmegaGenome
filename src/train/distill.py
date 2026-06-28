@@ -109,6 +109,14 @@ class TaskContext:
     y_val: Any
     X_test: List[Any]
     y_test: Any
+    # SHARED-MEMORY (fork) fast path ONLY: teacher logits/features pre-loaded ONCE into CPU arrays
+    # by the fork-parallel parent so forked children read them via Linux COW (shared, not re-loaded
+    # per child). Default None on EVERY other path (serial/SLURM/spawn) -> train_student forwards
+    # None and train_distill_task reads the on-disk cache exactly as before (byte-identical). These
+    # are NOT serialized into the spawn ctx cache (spawn workers each read the disk cache); they
+    # exist purely to back the fork COW sharing.
+    teacher_logits: Any = None
+    teacher_features: Any = None
 
 
 def _resolve_needed_teacher_outputs(
@@ -563,6 +571,10 @@ def train_student(
         input_prefix=getattr(config.teacher_config, "input_prefix", ""),
         add_special_tokens=getattr(config.teacher_config, "add_special_tokens", True),
         random_state=config.random_state,
+        # Fork-shared teacher arrays (None on every non-fork path -> precompute reads the disk cache
+        # exactly as before). getattr keeps this safe for any TaskContext built without the fields.
+        preloaded_teacher_logits=getattr(task_ctx, "teacher_logits", None),
+        preloaded_teacher_features=getattr(task_ctx, "teacher_features", None),
     )
 
     wandb.finish()
@@ -595,6 +607,7 @@ def distill_task_batch(
     task_name: str,
     config_overrides_list: List[dict],
     parallel: int = 1,
+    parallel_mode: str = "fork",
 ):
     """Load a task's teacher ONCE and train every HP config against it.
 
@@ -620,14 +633,40 @@ def distill_task_batch(
             ``train_student`` on a teacher-free ``TaskContext`` (the tiny 317K
             BPNet students share the otherwise-idle GPU). Each config's result is
             identical to the serial run; only the concurrency differs.
+        parallel_mode: how the ``parallel`` workers are fanned out (ignored when
+            ``parallel <= 1``):
+
+              ``"fork"`` (default) -- prepare_task loads the data + teacher
+                logits/features ONCE on CPU (the skip-load fast path keeps the 3B
+                teacher OFF the GPU so NO CUDA context exists), then forks workers
+                with the ``fork`` start method. Linux copy-on-write means the big
+                read-only CPU arrays are SHARED, not copied, so memory stays ~1×
+                (data + features) per task regardless of ``parallel``. Each child
+                inits CUDA fresh post-fork (safe) and trains its config. Falls back
+                to ``"spawn"`` automatically (logged) if CUDA is already initialized
+                in the parent (e.g. the teacher could NOT be cache-skipped), since
+                forking a CUDA-initialized process is unsafe.
+
+              ``"spawn"`` -- the original config-parallel path: warm the on-disk
+                teacher cache, free the teacher, serialize a teacher-free ctx, and
+                spawn fresh Python workers that EACH re-read the data + teacher
+                cache from disk (memory ~N×). Use when fork is unavailable.
 
     Per-config exceptions are caught + logged so one bad config does not abort
     the rest of the task.
     """
     if parallel is None or parallel <= 1:
         return _distill_task_batch_serial(base_config, task_name, config_overrides_list)
-    return _distill_task_batch_parallel(
-        base_config, task_name, config_overrides_list, parallel
+    if parallel_mode == "fork":
+        return _distill_task_batch_fork(
+            base_config, task_name, config_overrides_list, parallel
+        )
+    if parallel_mode == "spawn":
+        return _distill_task_batch_parallel(
+            base_config, task_name, config_overrides_list, parallel
+        )
+    raise ValueError(
+        f"Unknown parallel_mode {parallel_mode!r}; expected 'fork' or 'spawn'."
     )
 
 
@@ -1007,6 +1046,7 @@ def _distill_task_batch_parallel(
     task_name: str,
     config_overrides_list: List[dict],
     parallel: int,
+    prebuilt_ctx: Optional["TaskContext"] = None,
 ):
     """Config-parallel batch path (parallel > 1).
 
@@ -1019,6 +1059,10 @@ def _distill_task_batch_parallel(
     same seeds, same cached teacher values, same data -- and crucially EVERY config
     (including config-0) gets its FULL training in the pool, not a serial warm-up run.
     Only concurrency differs.
+
+    ``prebuilt_ctx`` lets the fork path hand over the ctx it ALREADY built (when it fell back to
+    spawn because the teacher could not be cache-skipped), so we don't redo prepare_task / reload
+    the 3B teacher. None -> build it here as before (the normal spawn invocation is unchanged).
     """
     print(f"\n{'#' * 80}")
     print(
@@ -1027,9 +1071,12 @@ def _distill_task_batch_parallel(
     )
     print(f"{'#' * 80}")
 
-    prep_config = _seed_prep_config(base_config, config_overrides_list)
-    # Exact skip-the-load gate (union across the sweep), same as the serial path.
-    ctx = _call_prepare_task(prep_config, task_name, config_overrides_list)
+    if prebuilt_ctx is not None:
+        ctx = prebuilt_ctx
+    else:
+        prep_config = _seed_prep_config(base_config, config_overrides_list)
+        # Exact skip-the-load gate (union across the sweep), same as the serial path.
+        ctx = _call_prepare_task(prep_config, task_name, config_overrides_list)
     if ctx is None:
         print(f"[!] prepare_task returned None for {task_name}; nothing to run.")
         return
@@ -1098,6 +1145,248 @@ def _distill_task_batch_parallel(
     print(f"{'#' * 80}")
 
 
+# ---------------------------------------------------------------------------
+# FORK-based config-parallel path (parallel > 1, parallel_mode="fork"). Shares the
+# CPU data + teacher logits/features across all of a task's configs via Linux
+# copy-on-write so memory stays ~1× per task. Additive; never touched when
+# parallel == 1 or parallel_mode == "spawn".
+# ---------------------------------------------------------------------------
+
+
+def _cuda_is_initialized() -> bool:
+    """True iff a CUDA context exists in THIS process (import torch lazily, never init CUDA).
+
+    Used as the fork-safety guard: forking a process that has already created a CUDA context
+    leaves the child with a corrupt context (the NVIDIA driver forbids it). The skip-load fast
+    path guarantees the 3B teacher was NEVER put on the GPU, so this is False and fork is safe;
+    if anything DID touch CUDA we must NOT fork. ``torch.cuda.is_initialized()`` only reports an
+    EXISTING context and never creates one, so calling it here is itself fork-safe. Returns False
+    if torch/CUDA is unavailable (nothing could have initialized a context).
+    """
+    try:
+        import torch
+    except Exception:
+        return False
+    try:
+        return bool(torch.cuda.is_initialized())
+    except Exception:
+        return False
+
+
+def _assert_no_cuda_before_fork():
+    """Raise a clear error if a CUDA context exists right before we fork workers.
+
+    A hard guard backing the fork-safety argument: the fork dispatcher only proceeds after the
+    skip-load fast path (teacher cache valid -> 3B teacher never loaded -> no CUDA init). If that
+    invariant is violated we must fail loudly here rather than fork a CUDA-poisoned process and
+    corrupt every child silently. The dispatcher checks ``_cuda_is_initialized`` first and falls
+    back to spawn; this assert is the defense-in-depth that turns any remaining violation into an
+    immediate, named error instead of undefined CUDA behavior.
+    """
+    if _cuda_is_initialized():
+        raise RuntimeError(
+            "Refusing to fork: a CUDA context is already initialized in the parent. "
+            "Fork-parallel requires the teacher to have been cache-skipped (no 3B load, no CUDA "
+            "init) so children can initialize CUDA fresh post-fork. Use parallel_mode='spawn' "
+            "instead, or warm the teacher caches so prepare_task can skip the load."
+        )
+
+
+def _preload_teacher_arrays_for_fork(
+    base_config: DistillationExperimentConfig,
+    task_name: str,
+    ctx: "TaskContext",
+    config_overrides_list: List[dict],
+) -> None:
+    """Load the teacher logits/features cache ONCE into ``ctx`` (CPU) for fork COW sharing.
+
+    The fork children share these read-only arrays via copy-on-write instead of each re-reading
+    the on-disk cache (which would copy the whole feature tensor per child -> N× memory). We load
+    EXACTLY what the sweep needs (the union of logits/features across all configs, same gate the
+    serial path uses) and ONLY when the cache is already valid on disk (it must be: fork is only
+    chosen after the skip-load fast path, which itself validated these caches). On any miss we
+    leave the fields None and the children fall back to the normal per-child cache read (correct,
+    just not shared) -- never silently wrong. Stores numpy arrays (what ``SeqDataset`` accepts and
+    copies into fresh tensors), so children never mutate the shared parent arrays.
+
+    No CUDA is touched here (pure disk read of cached numpy) -> the no-CUDA-before-fork invariant
+    is preserved.
+    """
+    import numpy as np  # noqa: F401  (kept for clarity; np.load below uses it)
+    from src.trainer.utils import _get_cache_dir, _load_cache, _validate_cache
+    from config.env import project_path
+
+    resolved = [_apply_override(base_config, ov) for ov in config_overrides_list]
+    needs_logits = any(cfg.distillation_config.weight_kl > 0 for cfg in resolved)
+    needs_features = any(cfg.distillation_config.weight_mse > 0 for cfg in resolved)
+    if not (needs_logits or needs_features):
+        return  # pure-CE sweep: no teacher arrays needed at all.
+
+    tcfg = base_config.trainer_config
+    cache_base = getattr(tcfg, "cache_base_dir", None) or project_path
+    cache_dir = _get_cache_dir(cache_base, base_config.teacher_parent_dir, task_name)
+    logits, features, metadata = _load_cache(cache_dir, needs_features)
+    if metadata is None or not _validate_cache(
+        metadata, ctx.X_train, ctx.teacher_ckpt, tcfg.max_len
+    ):
+        # Cache not present/valid -> let each child precompute/read normally (fall through).
+        print(
+            "[fork] teacher cache not preloadable (missing/stale); children will read it per-config."
+        )
+        return
+    ctx.teacher_logits = logits if needs_logits else None
+    ctx.teacher_features = features if needs_features else None
+    _log = []
+    if ctx.teacher_logits is not None:
+        _log.append(f"logits{list(ctx.teacher_logits.shape)}")
+    if ctx.teacher_features is not None:
+        _log.append(f"features{list(ctx.teacher_features.shape)}")
+    print(f"[fork] preloaded teacher arrays for COW sharing: {', '.join(_log) or 'none'}")
+
+
+def _run_one_config_fork_worker(args):
+    """Fork-worker entry: train ONE config against the SHARED (COW) ctx, isolated.
+
+    Unlike the spawn worker, this receives the LIVE in-memory ``ctx`` (inherited via fork COW), so
+    it does NOT re-read the data/teacher cache from disk -- the big arrays are shared with the
+    parent. To guarantee a child never corrupts the shared parent state, it trains on a SHALLOW
+    COPY of the ctx (``dataclasses.replace`` with no changes): the big tensors/lists are shared by
+    reference (read-only -- SeqDataset copies them into fresh tensors), while the only field
+    ``train_student`` would ever rebind (none today; it ``replace``s the CONFIG, not the ctx) is
+    insulated. Seeds via the SAME per-config path as serial (``set_seed`` inside ``train_student``).
+    Returns ``(index, ok, error_repr)`` so the parent records successes/failures without one bad
+    config aborting siblings.
+    """
+    import dataclasses
+
+    index, base_config, task_name, override, ctx = args
+    try:
+        import torch
+    except Exception:
+        torch = None
+    try:
+        # Shallow per-child copy: shares the big read-only arrays, isolates any field rebinding.
+        child_ctx = dataclasses.replace(ctx)
+        cfg = _apply_override(base_config, override)
+        train_student(cfg, task_name, child_ctx)
+        return (index, True, None)
+    except Exception:
+        import traceback
+
+        return (index, False, traceback.format_exc())
+    finally:
+        try:
+            if wandb.run is not None:
+                wandb.finish(exit_code=0)
+        except Exception:
+            pass
+        import gc
+
+        gc.collect()
+        if torch is not None and torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+
+def _fork_pool(parallel: int):
+    """Return a ``multiprocessing`` Pool over the FORK context.
+
+    Fork (not spawn) is the whole point: the workers INHERIT the parent's already-loaded CPU data
+    + teacher arrays via copy-on-write (shared, not re-loaded). This is ONLY safe because the
+    caller guarantees NO CUDA context exists in the parent before the pool is built (see
+    ``_assert_no_cuda_before_fork``). Isolated so tests can monkeypatch it with a synchronous
+    executor (and so the fork context is created in exactly one place).
+    """
+    import multiprocessing as mp
+
+    fork_ctx = mp.get_context("fork")
+    return fork_ctx.Pool(processes=parallel)
+
+
+def _distill_task_batch_fork(
+    base_config: DistillationExperimentConfig,
+    task_name: str,
+    config_overrides_list: List[dict],
+    parallel: int,
+):
+    """FORK config-parallel batch path (parallel > 1, parallel_mode='fork'): shared-memory.
+
+    Steps: (1) prepare_task ONCE; (2) REQUIRE the teacher to have been cache-skipped (no 3B load
+    -> no CUDA context) -- if not, fall back to the spawn path automatically (logged), since fork
+    after CUDA init is unsafe; (3) preload the teacher logits/features cache ONCE into the ctx as
+    shared CPU arrays; (4) assert no CUDA context exists, then fork ``parallel`` workers over ALL
+    configs (0..n-1). Because the fork happens BEFORE any CUDA init and the big CPU arrays are only
+    READ by children, Linux copy-on-write shares them -> memory ~1× (data + features) per task
+    regardless of ``parallel``. Each child inits CUDA fresh post-fork and runs the SAME
+    ``train_student`` on a shallow ctx copy, reading the shared arrays. Per-config errors are
+    isolated. Faithful to serial: same prepare, same per-config seeds, same teacher values (same
+    cache), same data, same batch order -- only concurrency differs.
+    """
+    print(f"\n{'#' * 80}")
+    print(
+        f"### FORK PARALLEL BATCH for task={task_name}: "
+        f"{len(config_overrides_list)} configs, parallel={parallel} ###"
+    )
+    print(f"{'#' * 80}")
+
+    prep_config = _seed_prep_config(base_config, config_overrides_list)
+    # Exact skip-the-load gate (union across the sweep), same as serial/spawn.
+    ctx = _call_prepare_task(prep_config, task_name, config_overrides_list)
+    if ctx is None:
+        print(f"[!] prepare_task returned None for {task_name}; nothing to run.")
+        return
+
+    # --- (2) Fork is ONLY safe when the teacher was cache-skipped (no 3B load -> no CUDA context).
+    # If the 3B teacher WAS loaded (caches missing/stale), CUDA is now initialized and forking would
+    # corrupt every child. Fall back to the audited spawn path automatically (which warms the cache,
+    # frees the teacher, and uses fresh-Python spawn workers). Decision is logged.
+    teacher_load_skipped = isinstance(ctx.teacher_model, _NoOpTeacher)
+    if not teacher_load_skipped or _cuda_is_initialized():
+        print(
+            "[fork] WARNING: teacher was NOT cache-skipped (CUDA may be initialized in the parent); "
+            "fork is unsafe -> falling back to parallel_mode='spawn'."
+        )
+        # The freshly-loaded teacher in ctx is reused by the spawn path's warm step.
+        return _distill_task_batch_parallel(
+            base_config, task_name, config_overrides_list, parallel, prebuilt_ctx=ctx
+        )
+
+    # --- (3) Preload the teacher logits/features cache ONCE into the ctx for COW sharing.
+    _preload_teacher_arrays_for_fork(base_config, task_name, ctx, config_overrides_list)
+
+    # --- (4) Hard guard: no CUDA context may exist before we fork (defense-in-depth).
+    _assert_no_cuda_before_fork()
+
+    n = len(config_overrides_list)
+    results = {}  # index -> (ok, error_repr)
+    # Workers inherit `ctx` via fork COW; we hand it directly (no disk serialization needed).
+    work = [
+        (i, base_config, task_name, config_overrides_list[i], ctx) for i in range(n)
+    ]
+    if work:
+        pool = _fork_pool(parallel)
+        try:
+            for index, ok_flag, err in pool.imap_unordered(
+                _run_one_config_fork_worker, work
+            ):
+                results[index] = (ok_flag, err)
+                if ok_flag:
+                    print(f"[fork] config {index + 1}/{n} OK")
+                else:
+                    print(f"[fork] config {index + 1}/{n} FAILED:\n{err}")
+        finally:
+            pool.close()
+            pool.join()
+
+    n_ok = sum(1 for ok_flag, _ in results.values() if ok_flag)
+    n_fail = sum(1 for ok_flag, _ in results.values() if not ok_flag)
+    print(f"\n{'#' * 80}")
+    print(
+        f"### FORK PARALLEL BATCH done for task={task_name}: "
+        f"{n_ok} ok, {n_fail} failed (parallel={parallel}) ###"
+    )
+    print(f"{'#' * 80}")
+
+
 def _apply_override(
     base_config: DistillationExperimentConfig,
     override: dict,
@@ -1141,6 +1430,7 @@ def run_distillation(
     task_name: Optional[str] = None,
     config_overrides_list: Optional[List[dict]] = None,
     parallel: int = 1,
+    parallel_mode: str = "fork",
 ):
     """Single documented selector that routes a ``mode`` to the matching DISPATCH path.
 
@@ -1174,7 +1464,11 @@ def run_distillation(
                 "mode='batch' requires `base_config`, `task_name`, and `config_overrides_list`."
             )
         return distill_task_batch(
-            base_config, task_name, config_overrides_list, parallel=parallel
+            base_config,
+            task_name,
+            config_overrides_list,
+            parallel=parallel,
+            parallel_mode=parallel_mode,
         )
     raise ValueError(f"Unknown mode {mode!r}; expected one of {MODES}.")
 

@@ -66,7 +66,7 @@ def test_run_distillation_routes_each_mode():
     orig = (d.main, d.distill_task_batch)
     try:
         d.main = lambda config: captured["main"].append(config)
-        d.distill_task_batch = lambda base_config, task_name, overrides, parallel=1: captured[
+        d.distill_task_batch = lambda base_config, task_name, overrides, parallel=1, parallel_mode="fork": captured[
             "batch"
         ].append((task_name, len(overrides), parallel))
 
@@ -210,7 +210,7 @@ def test_legacy_distill_task_cli_unchanged():
     try:
         dt.experiment_configs = {"carbon-raw-original": (None, _FakeExperimentCfg())}
         dt.load_config_list = lambda path, task: [{"distillation_config": {"temperature": 1.0}}]
-        dt.distill_task_batch = lambda base_config, task, overrides, parallel=1: captured.update(
+        dt.distill_task_batch = lambda base_config, task, overrides, parallel=1, parallel_mode="fork": captured.update(
             parallel=parallel, task=task
         )
 

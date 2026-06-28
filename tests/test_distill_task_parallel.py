@@ -268,7 +268,7 @@ def test_parallel_shards_collects_isolates_and_frees():
             {"distillation_config": {"temperature": 0.0}},  # this worker RAISES
             {"distillation_config": {"temperature": 4.0}},
         ]
-        d.distill_task_batch(base, "H3K4me1", overrides, parallel=3)
+        d.distill_task_batch(base, "H3K4me1", overrides, parallel=3, parallel_mode="spawn")
 
         ok(events["freed"] is True, "(5) live teacher was freed in the parallel path")
         ok(events["empty_cache"] >= 1, "(5) cuda.empty_cache invoked when freeing teacher")
@@ -344,8 +344,9 @@ def test_cli_parallel_flag():
         dt.experiment_configs = {"carbon-raw-original": (None, _FakeExperimentCfg())}
         dt.load_config_list = lambda path, task: [{"distillation_config": {"temperature": 1.0}}]
 
-        def fake_batch(base_config, task, overrides, parallel=1):
+        def fake_batch(base_config, task, overrides, parallel=1, parallel_mode="fork"):
             captured["parallel"] = parallel
+            captured["parallel_mode"] = parallel_mode
 
         dt.distill_task_batch = fake_batch
 
@@ -468,7 +469,7 @@ def test_warm_once_and_pool_covers_all_configs():
             {"distillation_config": {"weight_kl": 0.5, "temperature": 2.0}},  # idx 1
             {"distillation_config": {"weight_kl": 0.5, "temperature": 3.0}},  # idx 2
         ]
-        d.distill_task_batch(base, "H3K4me1", overrides, parallel=2)
+        d.distill_task_batch(base, "H3K4me1", overrides, parallel=2, parallel_mode="spawn")
 
         ok(state["warm_calls"] == 1, f"(ii) minimal warm invoked exactly ONCE (got {state['warm_calls']})")
         ok(state["warm_before_free"] is True, "(ii) warm ran with the LIVE teacher (before free)")
@@ -513,7 +514,7 @@ def test_pure_ce_skips_warm_but_frees_and_runs_all():
             {"distillation_config": {"temperature": 1.0}},
             {"distillation_config": {"temperature": 2.0}},
         ]
-        d.distill_task_batch(base, "H3K4me1", overrides, parallel=2)
+        d.distill_task_batch(base, "H3K4me1", overrides, parallel=2, parallel_mode="spawn")
 
         ok(state["warm_calls"] == 0, "(iii) pure-CE batch SKIPS the teacher warm")
         ok(state["freed"] is True, "(iii) teacher still FREED even when warm is skipped")
@@ -561,7 +562,7 @@ def test_error_isolation_with_all_configs_including_index0():
             {"distillation_config": {"weight_kl": 0.5, "temperature": 2.0}},
             {"distillation_config": {"weight_kl": 0.5, "temperature": 3.0}},
         ]
-        d.distill_task_batch(base, "H3K4me1", overrides, parallel=2)
+        d.distill_task_batch(base, "H3K4me1", overrides, parallel=2, parallel_mode="spawn")
 
         ok(state["pool_indices"] == [0, 1, 2], "(iv) pool was handed all configs incl the raising idx 0")
         ok(sorted(trained_idx) == [2.0, 3.0], f"(iv) siblings ran despite idx-0 failure (got {sorted(trained_idx)})")

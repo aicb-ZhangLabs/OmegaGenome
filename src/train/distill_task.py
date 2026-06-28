@@ -141,8 +141,19 @@ def main():
         default=1,
         help=(
             "Number of HP configs to train CONCURRENTLY per task (default 1 = the "
-            "original serial path, unchanged). With >1, the teacher is freed after "
-            "warming its output cache and N spawn-based workers share the idle GPU."
+            "original serial path, unchanged). With >1, N workers share the idle GPU."
+        ),
+    )
+    parser.add_argument(
+        "--parallel-mode",
+        default="fork",
+        choices=("fork", "spawn"),
+        help=(
+            "How >1 parallel workers are fanned out. 'fork' (default): data + teacher "
+            "logits/features loaded ONCE on CPU and SHARED across configs via Linux "
+            "copy-on-write (memory ~1x/task; auto-falls back to spawn if the teacher "
+            "could not be cache-skipped). 'spawn': fresh-Python workers each re-read the "
+            "data + teacher cache from disk (memory ~Nx)."
         ),
     )
     args = parser.parse_args()
@@ -167,7 +178,13 @@ def main():
         )
     print(f"[distill_task] task={args.task}: {len(overrides)} configs from {args.config_list}")
 
-    distill_task_batch(base_config, args.task, overrides, parallel=args.parallel)
+    distill_task_batch(
+        base_config,
+        args.task,
+        overrides,
+        parallel=args.parallel,
+        parallel_mode=args.parallel_mode,
+    )
 
 
 if __name__ == "__main__":

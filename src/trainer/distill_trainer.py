@@ -230,6 +230,17 @@ def train_distill_task(
     input_prefix: str = "",  # teacher input formatting (Carbon "<dna>"); no-op default for others
     add_special_tokens: bool = True,
     random_state: int = 42,  # training seed (top-level config.random_state); recorded in final_summary
+    # SHARED-MEMORY (fork) fast path: when the fork-parallel parent has already loaded the teacher
+    # logits/features ONCE into shared CPU arrays (Linux COW after fork), it passes them here so
+    # this child reuses the SHARED arrays INSTEAD of re-reading the on-disk cache (which would copy
+    # the whole feature tensor per child -> N× memory). Defaults None = the original behavior:
+    # precompute_teacher_logits runs and reads the cache exactly as before (serial/SLURM are byte-
+    # identical). When provided, these MUST equal what the cache would return (the fork parent loads
+    # them via the SAME teacher_cache_is_valid-gated path), so results are unchanged. The arrays are
+    # treated read-only here (SeqDataset COPIES them into fresh tensors), so a child never mutates
+    # the shared parent arrays.
+    preloaded_teacher_logits=None,
+    preloaded_teacher_features=None,
 ):
     # move models to device
     model.to(config.device)
@@ -243,8 +254,25 @@ def train_distill_task(
     train_tlogits = None
     train_tfeatures = None
 
+    # SHARED-MEMORY fast path: reuse the parent-preloaded teacher arrays (fork COW) when present and
+    # needed, skipping the per-child disk read entirely. We only take a preloaded array for an output
+    # this config actually needs (matches the precompute gate below); a needed-but-missing preload
+    # falls through to the normal precompute (self-correcting, never silently wrong).
+    use_preloaded = (
+        (preloaded_teacher_logits is not None or preloaded_teacher_features is not None)
+        and (
+            (preloaded_teacher_logits is not None or not needs_logits)
+            and (preloaded_teacher_features is not None or not needs_features)
+        )
+    )
+    if (needs_logits or needs_features) and use_preloaded:
+        train_tlogits = preloaded_teacher_logits if needs_logits else None
+        train_tfeatures = preloaded_teacher_features if needs_features else None
+        print(
+            "Using parent-preloaded teacher outputs (shared fork memory; no per-child cache read)."
+        )
     # Only precompute if we need logits or features
-    if needs_logits or needs_features:
+    elif needs_logits or needs_features:
         if needs_logits and needs_features:
             print("Precomputing teacher logits and features...")
         elif needs_features:

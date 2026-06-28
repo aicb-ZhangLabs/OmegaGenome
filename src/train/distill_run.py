@@ -90,6 +90,7 @@ def _run_batch(args):
         task_name=args.task,
         config_overrides_list=overrides,
         parallel=args.parallel,
+        parallel_mode=args.parallel_mode,
     )
 
 
@@ -125,8 +126,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=1,
         help=(
             "[batch] Number of HP configs to train CONCURRENTLY per task (default 1 = "
-            "serial loop, unchanged). >1 = config-parallel (teacher freed after warming "
-            "its cache; N spawn-workers share the idle GPU)."
+            "serial loop, unchanged). >1 = config-parallel; N workers share the idle GPU."
+        ),
+    )
+    parser.add_argument(
+        "--parallel-mode",
+        default="fork",
+        choices=("fork", "spawn"),
+        help=(
+            "[batch] How >1 parallel workers are fanned out. 'fork' (default): data + "
+            "teacher logits/features loaded ONCE on CPU and SHARED across configs via "
+            "copy-on-write (memory ~1x/task; auto-falls back to spawn if the teacher was "
+            "not cache-skipped). 'spawn': workers each re-read the cache (memory ~Nx)."
         ),
     )
     return parser
