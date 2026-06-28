@@ -29,6 +29,14 @@ process so slurm mode is irrelevant). This keeps the existing ``hp_original_stag
 spec files usable verbatim.
 """
 
+import os
+
+# FORK-SAFETY: set BEFORE any import that may import torch + call torch.cuda.is_available(), so the
+# probe uses NVML (no cuInit) and never poisons a later fork. This is a process entry point for the
+# batch/fork path, so setting it first here guarantees the var is in place regardless of internal
+# import order. See src/train/distill.py for the full rationale.
+os.environ.setdefault("PYTORCH_NVML_BASED_CUDA_CHECK", "1")
+
 import argparse
 import shlex
 from dataclasses import replace

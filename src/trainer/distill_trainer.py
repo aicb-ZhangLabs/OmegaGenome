@@ -1,4 +1,12 @@
 import os
+
+# FORK-SAFETY: route `torch.cuda.is_available()` through the NVML probe (no `cuInit`) so the
+# `DistillTrainerConfig.device` field default below — evaluated at IMPORT time — does NOT
+# initialize the CUDA driver context and poison a later `fork`. Must precede `import torch`.
+# (Mirrors the same setdefault in src/train/distill.py; harmless if already set.) See that file
+# for the full rationale.
+os.environ.setdefault("PYTORCH_NVML_BASED_CUDA_CHECK", "1")
+
 import csv
 import time
 import json

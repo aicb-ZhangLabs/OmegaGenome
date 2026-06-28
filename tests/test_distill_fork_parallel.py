@@ -403,6 +403,167 @@ def test_assert_no_cuda_guard():
 
 
 # ---------------------------------------------------------------------------
+# (g) REGRESSION for the real-box failure: a parent that initialized the CUDA DRIVER
+#     context (via cudaGetDeviceCount/cuInit, e.g. an import-time torch.cuda.is_available())
+#     is invisible to torch.cuda.is_initialized() but MUST still be caught by the guard.
+#     We simulate the exact gap: is_initialized()==False but _cuda_hasPrimaryContext==True.
+# ---------------------------------------------------------------------------
+def test_guard_catches_primary_context_missed_by_is_initialized():
+    import types
+    import src.train.distill as d
+
+    # Build a fake torch whose is_initialized() LIES (returns False, like the real box) while a
+    # driver primary context DOES exist (_cuda_hasPrimaryContext True) -- the precise real failure.
+    fake_C = types.SimpleNamespace(_cuda_hasPrimaryContext=lambda dev: True)
+    fake_cuda = types.SimpleNamespace(
+        is_initialized=lambda: False,           # the misleading signal (matches the box)
+        _is_in_bad_fork=lambda: False,
+        device_count=lambda: 1,                 # NVML-based, fork-safe
+    )
+    fake_torch = types.ModuleType("torch")
+    fake_torch.cuda = fake_cuda
+    fake_torch._C = fake_C
+
+    import builtins
+    real_import = builtins.__import__
+
+    def fake_import(name, *a, **k):
+        if name == "torch":
+            return fake_torch
+        return real_import(name, *a, **k)
+
+    builtins.__import__ = fake_import
+    try:
+        ok(d._cuda_context_exists() is True,
+           "(g) hardened detector catches a primary context that is_initialized() misses (real-box gap)")
+    finally:
+        builtins.__import__ = real_import
+
+
+def test_detector_confirms_clean_when_no_primary_context():
+    import types
+    import src.train.distill as d
+
+    fake_C = types.SimpleNamespace(_cuda_hasPrimaryContext=lambda dev: False)
+    fake_cuda = types.SimpleNamespace(
+        is_initialized=lambda: False, _is_in_bad_fork=lambda: False, device_count=lambda: 2
+    )
+    fake_torch = types.ModuleType("torch")
+    fake_torch.cuda = fake_cuda
+    fake_torch._C = fake_C
+
+    import builtins
+    real_import = builtins.__import__
+
+    def fake_import(name, *a, **k):
+        if name == "torch":
+            return fake_torch
+        return real_import(name, *a, **k)
+
+    builtins.__import__ = fake_import
+    try:
+        ok(d._cuda_context_exists() is False,
+           "(g) detector POSITIVELY confirms clean (no primary context on any device) -> fork allowed")
+    finally:
+        builtins.__import__ = real_import
+
+
+def test_detector_conservative_when_probe_raises():
+    """Any uncertainty while probing -> treat as initialized (fall back to spawn), never a bad fork."""
+    import types
+    import src.train.distill as d
+
+    def boom_probe(dev):
+        raise RuntimeError("driver probe failed")
+
+    fake_C = types.SimpleNamespace(_cuda_hasPrimaryContext=boom_probe)
+    fake_cuda = types.SimpleNamespace(
+        is_initialized=lambda: False, _is_in_bad_fork=lambda: False, device_count=lambda: 1
+    )
+    fake_torch = types.ModuleType("torch")
+    fake_torch.cuda = fake_cuda
+    fake_torch._C = fake_C
+
+    import builtins
+    real_import = builtins.__import__
+
+    def fake_import(name, *a, **k):
+        if name == "torch":
+            return fake_torch
+        return real_import(name, *a, **k)
+
+    builtins.__import__ = fake_import
+    try:
+        ok(d._cuda_context_exists() is True,
+           "(g) probe failure -> conservative True (spawn fallback), never an unsafe fork")
+    finally:
+        builtins.__import__ = real_import
+
+
+def test_import_time_env_var_is_fork_safe():
+    """The NVML-based-cuda-check env var is set at import so is_available() never cuInit-poisons fork.
+
+    This is the root-cause fix: DistillTrainerConfig.device's import-time torch.cuda.is_available()
+    used the CUDA Runtime API (cudaGetDeviceCount -> cuInit), creating a driver context that poisoned
+    fork while staying invisible to is_initialized(). Setting PYTORCH_NVML_BASED_CUDA_CHECK=1 BEFORE
+    torch's first is_available() routes it through NVML (no cuInit).
+    """
+    import os
+    # Importing the distill module (done above transitively) must have set it.
+    import src.train.distill  # noqa: F401
+    ok(os.environ.get("PYTORCH_NVML_BASED_CUDA_CHECK") == "1",
+       "(g) PYTORCH_NVML_BASED_CUDA_CHECK=1 set at import (root-cause fix: no cuInit pre-fork)")
+    import src.trainer.distill_trainer  # noqa: F401
+    ok(os.environ.get("PYTORCH_NVML_BASED_CUDA_CHECK") == "1",
+       "(g) trainer module also sets the fork-safe cuda-check env var before importing torch")
+
+
+def test_fork_end_to_end_falls_back_when_real_detector_sees_context():
+    """End-to-end: when the (real, hardened) detector reports a context, fork must NOT run.
+
+    Unlike test_fork_falls_back_to_spawn_when_cuda_initialized (which forces the SKIP-load flag),
+    here the teacher IS cache-skipped (stub) -- so the ONLY thing that can stop the fork is the
+    CUDA-context detector. We make the real detector return True (simulating the poisoned parent)
+    and assert the fork pool is never built and we fall back to spawn.
+    """
+    import src.train.distill as d
+
+    orig = (
+        d.prepare_task, d._cuda_context_exists, d._cuda_is_initialized, d._fork_pool,
+        d._distill_task_batch_parallel, d._preload_teacher_arrays_for_fork,
+    )
+    try:
+        stub_ctx = _make_ctx(d)  # teacher_model is _NoOpTeacher -> cache-skipped (fork-eligible)
+        d.prepare_task = lambda c, t: stub_ctx
+        # Real detector says a context EXISTS (the poisoned-parent case). Patch BOTH the impl name
+        # and the alias the dispatcher resolves.
+        d._cuda_context_exists = lambda: True
+        d._cuda_is_initialized = lambda: True
+        d._preload_teacher_arrays_for_fork = lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("must not preload when falling back due to detected context")
+        )
+        d._fork_pool = lambda p: (_ for _ in ()).throw(
+            AssertionError("must NOT fork when a CUDA context is detected in the parent")
+        )
+        captured = {}
+
+        def fake_spawn(base_config, task_name, overrides, parallel, prebuilt_ctx=None):
+            captured["parallel"] = parallel
+
+        d._distill_task_batch_parallel = fake_spawn
+        base = _FakeExperimentCfg(trainer_config=_FakeTrainerCfg(output_dir=tempfile.mkdtemp()))
+        overrides = [{"distillation_config": {"weight_kl": 0.5, "temperature": 1.0}}]
+        d.distill_task_batch(base, "T", overrides, parallel=8, parallel_mode="fork")
+        ok(captured.get("parallel") == 8,
+           "(g) detected parent CUDA context -> fork skipped, fell back to spawn (no broken children)")
+    finally:
+        (
+            d.prepare_task, d._cuda_context_exists, d._cuda_is_initialized, d._fork_pool,
+            d._distill_task_batch_parallel, d._preload_teacher_arrays_for_fork,
+        ) = orig
+
+
+# ---------------------------------------------------------------------------
 # (a') preload reads the on-disk cache ONCE into the ctx (union of needs across the
 #      sweep); pure-CE sweep preloads nothing; stale/missing cache -> leaves None.
 # ---------------------------------------------------------------------------
@@ -529,6 +690,11 @@ def main():
         ("test_fork_worker_entry_isolation_and_sharing", test_fork_worker_entry_isolation_and_sharing),
         ("test_fork_falls_back_to_spawn_when_cuda_initialized", test_fork_falls_back_to_spawn_when_cuda_initialized),
         ("test_assert_no_cuda_guard", test_assert_no_cuda_guard),
+        ("test_guard_catches_primary_context_missed_by_is_initialized", test_guard_catches_primary_context_missed_by_is_initialized),
+        ("test_detector_confirms_clean_when_no_primary_context", test_detector_confirms_clean_when_no_primary_context),
+        ("test_detector_conservative_when_probe_raises", test_detector_conservative_when_probe_raises),
+        ("test_import_time_env_var_is_fork_safe", test_import_time_env_var_is_fork_safe),
+        ("test_fork_end_to_end_falls_back_when_real_detector_sees_context", test_fork_end_to_end_falls_back_when_real_detector_sees_context),
         ("test_preload_teacher_arrays", test_preload_teacher_arrays),
         ("test_trainer_uses_preloaded_arrays_only_when_present_and_needed", test_trainer_uses_preloaded_arrays_only_when_present_and_needed),
         ("test_real_fork_cow_shares_parent_array", test_real_fork_cow_shares_parent_array),

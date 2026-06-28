@@ -49,6 +49,17 @@ import os
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+# FORK-SAFETY (must be set BEFORE torch's first `cuda.is_available()` call): make
+# `torch.cuda.is_available()` use the NVML-based probe instead of the CUDA Runtime API
+# (`cudaGetDeviceCount` -> `cuInit`). The default Runtime-API probe INITIALIZES the CUDA driver
+# context as a side effect, which POISONS any later `fork` (children then die with "Cannot
+# re-initialize CUDA in forked subprocess") AND is invisible to `torch.cuda.is_initialized()`
+# (which only tracks PyTorch's Python-level lazy init, not the driver `cuInit`). The NVML path
+# does NOT call `cuInit`, so the import-time `DistillTrainerConfig.device` default and every other
+# pre-fork `is_available()` stay fork-safe. Set unconditionally here (idempotent; honors an
+# existing user value if already set to something truthy). See `_distill_task_batch_fork`.
+os.environ.setdefault("PYTORCH_NVML_BASED_CUDA_CHECK", "1")
+
 import tyro
 import wandb
 
@@ -1153,24 +1164,78 @@ def _distill_task_batch_parallel(
 # ---------------------------------------------------------------------------
 
 
-def _cuda_is_initialized() -> bool:
-    """True iff a CUDA context exists in THIS process (import torch lazily, never init CUDA).
+def _cuda_context_exists() -> bool:
+    """True iff a CUDA DRIVER context exists on any device in THIS process (never creates one).
 
-    Used as the fork-safety guard: forking a process that has already created a CUDA context
-    leaves the child with a corrupt context (the NVIDIA driver forbids it). The skip-load fast
-    path guarantees the 3B teacher was NEVER put on the GPU, so this is False and fork is safe;
-    if anything DID touch CUDA we must NOT fork. ``torch.cuda.is_initialized()`` only reports an
-    EXISTING context and never creates one, so calling it here is itself fork-safe. Returns False
-    if torch/CUDA is unavailable (nothing could have initialized a context).
+    This is the reliable fork-poison detector. The trap we hit on the box: an import-time
+    ``torch.cuda.is_available()`` (the ``DistillTrainerConfig.device`` field default) runs the CUDA
+    Runtime API ``cudaGetDeviceCount`` -> ``cuInit``, which CREATES a primary driver context and
+    poisons any later ``fork`` -- yet ``torch.cuda.is_initialized()`` STILL returns False, because
+    that flag only tracks PyTorch's *Python-level* lazy init (``_lazy_init``), NOT the driver
+    ``cuInit``. So a guard built on ``is_initialized()`` alone misses exactly this case (it did).
+
+    ``torch._C._cuda_hasPrimaryContext(dev)`` queries the driver for an EXISTING primary context
+    WITHOUT creating one -> it catches the ``cuInit`` poisoning that ``is_initialized()`` cannot.
+    We enumerate devices via NVML (``device_count`` under ``PYTORCH_NVML_BASED_CUDA_CHECK=1``, set
+    fork-safely at import) so the enumeration itself never calls ``cuInit``. Defense in depth:
+    ``is_initialized()`` OR ``_is_in_bad_fork()`` OR any primary context => treat as initialized.
+
+    Conservative by construction: ANY uncertainty (an exception while probing) returns True so the
+    caller falls back to the always-safe spawn path rather than risk a poisoned fork. Returns False
+    only when we can POSITIVELY confirm no context exists. Returns False if torch is unavailable.
     """
     try:
         import torch
     except Exception:
-        return False
+        return False  # no torch -> nothing could have created a CUDA context.
     try:
-        return bool(torch.cuda.is_initialized())
+        if torch.cuda.is_initialized():
+            return True  # PyTorch's own lazy init already ran.
     except Exception:
-        return False
+        return True  # cannot tell -> assume poisoned (fall back to spawn).
+    try:
+        if torch.cuda._is_in_bad_fork():
+            return True
+    except Exception:
+        pass
+    # Probe the driver for an existing PRIMARY context on each device WITHOUT creating one. We
+    # need a device count that does NOT call cuInit; device_count() uses NVML when
+    # PYTORCH_NVML_BASED_CUDA_CHECK=1 (set at import) and is fork-safe.
+    has_primary = getattr(torch._C, "_cuda_hasPrimaryContext", None)
+    if has_primary is None:
+        # Old torch without the probe: we cannot positively confirm cleanliness -> be conservative.
+        return False if not _nvml_cuda_present() else True
+    try:
+        n = torch.cuda.device_count()  # NVML-based (no cuInit) under the env var set at import.
+    except Exception:
+        return True  # cannot enumerate safely -> assume poisoned.
+    for dev in range(n):
+        try:
+            if has_primary(dev):
+                return True
+        except Exception:
+            return True  # probe failed -> assume poisoned.
+    return False  # positively confirmed: no primary context on any device.
+
+
+def _nvml_cuda_present() -> bool:
+    """True iff NVML reports >=1 CUDA device, WITHOUT calling ``cuInit`` (fork-safe).
+
+    Used only on torch builds lacking ``_cuda_hasPrimaryContext`` to decide the conservative
+    default: if a GPU is present we cannot prove the context is clean, so we treat it as poisoned.
+    """
+    try:
+        import torch
+
+        os.environ.setdefault("PYTORCH_NVML_BASED_CUDA_CHECK", "1")
+        return torch.cuda.device_count() > 0
+    except Exception:
+        return True  # uncertain -> conservative.
+
+
+# Back-compat alias: the guard used to be named ``_cuda_is_initialized``. Kept so existing call
+# sites / tests referencing the old name still resolve to the hardened detector.
+_cuda_is_initialized = _cuda_context_exists
 
 
 def _assert_no_cuda_before_fork():

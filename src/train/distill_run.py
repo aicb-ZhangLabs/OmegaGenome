@@ -27,6 +27,13 @@ Modes
                        [--base-experiment carbon-raw-original]
 """
 
+import os
+
+# FORK-SAFETY: set BEFORE any import that may import torch + call torch.cuda.is_available(), so the
+# probe uses NVML (no cuInit) and never poisons a later fork. This is a process entry point for the
+# batch/fork path. See src/train/distill.py for the full rationale.
+os.environ.setdefault("PYTORCH_NVML_BASED_CUDA_CHECK", "1")
+
 import argparse
 import sys
 
