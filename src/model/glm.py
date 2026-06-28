@@ -320,6 +320,45 @@ def find_teacher_checkpoint(config, task_name):
             return teacher_ckpt, -1.0
 
 
+def _teacher_eval_cache_path(config, teacher_ckpt) -> str:
+    """Resolve the teacher_evaluation.json path EXACTLY as evaluate_and_log_teacher does.
+
+    Single source of truth for the per-checkpoint teacher-eval cache location so the
+    skip-the-load check (``teacher_eval_cache_is_valid``) and the writer
+    (``evaluate_and_log_teacher``) never drift: Enformer ckpts are .pt files (cache in
+    the parent dir); every other teacher uses the checkpoint directory itself.
+    """
+    model_type = getattr(config, "model_type", "glm")
+    if model_type == "enformer":
+        cache_dir = os.path.dirname(teacher_ckpt)
+    else:
+        cache_dir = teacher_ckpt
+    if os.path.isfile(cache_dir):
+        cache_dir = os.path.dirname(cache_dir)
+    return os.path.join(cache_dir, "teacher_evaluation.json")
+
+
+def teacher_eval_cache_is_valid(config, teacher_ckpt) -> bool:
+    """True iff a cached teacher_evaluation.json would be a HIT in evaluate_and_log_teacher.
+
+    Mirrors the cache-read guard inside ``evaluate_and_log_teacher`` byte-for-byte: the
+    file must exist, parse, carry ``teacher_test_mcc``, and record the SAME
+    ``teacher_checkpoint`` as ``teacher_ckpt``. A True result guarantees
+    ``evaluate_and_log_teacher`` returns the cached MCC WITHOUT a teacher forward, so
+    ``prepare_task`` can safely skip the 3B load when this (plus the logits/features
+    cache) holds. Any read/parse/mismatch returns False (forces a real eval+load).
+    """
+    teacher_eval_file = _teacher_eval_cache_path(config, teacher_ckpt)
+    if not os.path.exists(teacher_eval_file):
+        return False
+    try:
+        with open(teacher_eval_file, "r") as f:
+            data = json.load(f)
+    except Exception:
+        return False
+    return data.get("teacher_checkpoint") == teacher_ckpt and "teacher_test_mcc" in data
+
+
 def evaluate_and_log_teacher(
     teacher_model,
     teacher_tokenizer,
@@ -341,21 +380,10 @@ def evaluate_and_log_teacher(
     print(f"{'=' * 60}")
     # --- START: CACHE CHECK ---
     # --- START: DETERMINE CACHE DIRECTORY BASED ON MODEL TYPE ---
-    model_type = getattr(config, "model_type", "glm")
-
-    if model_type == "enformer":
-        # For Enformer: checkpoint is a .pt file, save cache in parent directory
-        cache_dir = os.path.dirname(teacher_ckpt)
-        print(f"Enformer detected: Using parent directory for cache: {cache_dir}")
-    else:
-        # For other models (NT, Caduceus, DNABERT2): checkpoint is a directory
-        cache_dir = teacher_ckpt
-        print(f"Non-Enformer model: Using checkpoint directory for cache: {cache_dir}")
-
-    if os.path.isfile(cache_dir):
-        cache_dir = os.path.dirname(cache_dir)
-
-    teacher_eval_file = os.path.join(cache_dir, "teacher_evaluation.json")
+    # Resolve via the shared helper so the skip-the-3B-load check
+    # (teacher_eval_cache_is_valid) and this reader/writer use the SAME path.
+    teacher_eval_file = _teacher_eval_cache_path(config, teacher_ckpt)
+    cache_dir = os.path.dirname(teacher_eval_file)
     # teacher_eval_file = os.path.join(teacher_ckpt, "teacher_evaluation.json")
 
     if os.path.exists(teacher_eval_file):

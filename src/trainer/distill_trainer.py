@@ -191,7 +191,9 @@ class DistillTrainerConfig:
     max_len: int = 1024
     log_batch_every: int = 50
     eval_every_n_epochs: int = 5
-    num_workers: int = 4
+    # SeqDataset is in-memory → DataLoader workers add only fork/IPC overhead. Default 0 (main-process
+    # indexing) is fastest and bit-identical; raise only if a dataset ever becomes IO-bound.
+    num_workers: int = 0
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     # Base dir for the precompute logits/features cache. None -> project_path (legacy /extra). Set to
     # a fast local disk (SSD) to keep the cache off the degraded /extra NFS.
@@ -280,10 +282,23 @@ def train_distill_task(
     val_ds = SeqDataset(X_val, y_val, config.max_len)
     test_ds = SeqDataset(X_test, y_test, config.max_len)
 
-    # Create data loaders
-    train_loader = DataLoader(train_ds, batch_size=config.batch_size, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_ds, batch_size=config.batch_size, shuffle=False, num_workers=4)
-    test_loader = DataLoader(test_ds, batch_size=config.batch_size, shuffle=False, num_workers=4)
+    # Create data loaders.
+    # SeqDataset is FULLY in-memory: __init__ pre-encodes every sequence/label/teacher tensor, so
+    # __getitem__ is a trivial index with no IO or compute. DataLoader worker processes therefore add
+    # only fork + per-batch IPC overhead (re-spawned every epoch when persistent_workers is off), which
+    # for ~30k examples at batch_size 8 = ~3.75k tiny batches/epoch dominates the wall time — especially
+    # with many configs training concurrently. num_workers=0 (main-process indexing) is strictly faster
+    # here and bit-identical (workers never change batch content or order). We respect config.num_workers
+    # (previously hard-coded to 4, ignoring the field) and only enable persistent_workers when >0.
+    _dl_kwargs = dict(
+        num_workers=config.num_workers,
+        pin_memory=str(config.device).startswith("cuda"),
+    )
+    if config.num_workers > 0:
+        _dl_kwargs["persistent_workers"] = True
+    train_loader = DataLoader(train_ds, batch_size=config.batch_size, shuffle=True, **_dl_kwargs)
+    val_loader = DataLoader(val_ds, batch_size=config.batch_size, shuffle=False, **_dl_kwargs)
+    test_loader = DataLoader(test_ds, batch_size=config.batch_size, shuffle=False, **_dl_kwargs)
 
     best_val_mcc = -1.0
     best_epoch = 0

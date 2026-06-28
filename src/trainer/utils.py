@@ -242,6 +242,57 @@ def _validate_cache(
     return True
 
 
+def teacher_cache_is_valid(
+    sequences: list,
+    teacher_ckpt: str,
+    max_length: int,
+    *,
+    needs_logits: bool,
+    needs_features: bool,
+    project_path: str,
+    teacher_parent_dir: str,
+    task_name: str,
+) -> bool:
+    """True iff the on-disk teacher logits/features cache satisfies THIS request.
+
+    Pure read-only check that reuses EXACTLY the same path + key + validation logic
+    ``precompute_teacher_logits`` uses to decide a cache hit (``_get_cache_dir`` +
+    ``_load_cache`` + ``_validate_cache``), so a "valid" result here guarantees a
+    cache HIT (no teacher forward) inside ``precompute_teacher_logits`` for the same
+    arguments. Extracted as the single source of truth so callers that want to AVOID
+    loading the 3B teacher (``prepare_task``) and ``precompute_teacher_logits`` itself
+    never drift on the key/path.
+
+    Returns False (forcing a real load + recompute) when:
+      - caching is not fully addressable (any of project_path/teacher_parent_dir/
+        task_name/teacher_ckpt missing), or
+      - the required ``.npy`` file(s) are absent (logits always; features only when
+        ``needs_features``), or
+      - the metadata key does not validate against ``(sequences, teacher_ckpt,
+        max_length)`` (stale/mismatched cache).
+
+    NOTE: when ``needs_logits`` is False but ``needs_features`` is True, the features
+    cache is only ever written ALONGSIDE the logits cache (``precompute_teacher_logits``
+    always writes ``train_logits.npy``), so a valid features cache implies the logits
+    file exists; we still require the metadata to validate. This never reports valid
+    for an output a subsequent ``precompute_teacher_logits`` would have to recompute.
+    """
+    if not all([project_path, teacher_parent_dir, task_name, teacher_ckpt]):
+        return False
+    cache_dir = _get_cache_dir(project_path, teacher_parent_dir, task_name)
+    logits, features, metadata = _load_cache(cache_dir, needs_features)
+    if metadata is None:
+        return False
+    # _load_cache returns (None, None, None) when a required file is missing (logits
+    # always; features when needs_features). A non-None metadata thus already proves
+    # the required arrays are on disk; we only still need the key to validate.
+    if logits is None:
+        return False
+    if needs_features and features is None:
+        return False
+    return _validate_cache(metadata, sequences, teacher_ckpt, max_length)
+
+
 @torch.no_grad()
 def precompute_teacher_logits(
     tokenizer,
