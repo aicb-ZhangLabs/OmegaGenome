@@ -278,30 +278,12 @@ class DistillationModel(nn.Module):
         s_logits, s_feats = self.get_student_knowledge(inputs)
         tlog, tfeats = self.get_teacher_knowledge(inputs)
 
-        log(f"\n{'='*60}")
-        log(f"METHOD: {self.config.distill_method}")
-        log(per_sample(s_logits, "Student logits"))
-        log(per_sample(tlog, "Teacher logits"))
-
-        # CHECK: Are teacher logits actually different from student?
-        if tlog is not None and s_logits.shape == tlog.shape:
-            diff = (s_logits - tlog).abs().mean()
-            log(f"Student-Teacher logit diff: {diff.item():.6f}")
-            if diff < 0.01:
-                log(
-                    "!!! WARNING: Student and teacher logits are nearly identical !!!",
-                    force=True,
-                )
-
-        # Label info
+        # --- loss computation (unconditional; identical math + order to before) ---
         labels = inputs["labs"]
-        unique, counts = torch.unique(labels, return_counts=True)
-        log(f"Labels: unique={unique.tolist()}, counts={counts.tolist()}")
 
         # CE Loss
         ce = F.cross_entropy(s_logits, labels)
         loss = self.config.weight_ce * ce
-        log(f"CE: raw={ce.item():.6f}, weighted={loss.item():.6f}")
 
         # KL Loss
         kl = self.kl_term(s_logits, tlog, labels)
@@ -311,8 +293,36 @@ class DistillationModel(nn.Module):
         mse = self.mse_term(s_feats, tfeats)
         loss += mse
 
-        log(f"TOTAL: {loss.item():.6f}")
-        log(f"{'='*60}\n")
+        # --- per-step debug logging (gated on DISTILL_DEBUG, default OFF) ---
+        # Python evaluates these f-string args EAGERLY before log() decides whether to
+        # print, so the .item()/.tolist() (GPU->CPU syncs) and the extra reductions
+        # (per_sample x2, abs().mean(), torch.unique) ran every single step even with
+        # logging disabled -- stalling the GPU pipeline (solo util ~31%). Guarding the
+        # whole block makes the disabled path sync-free. DEBUG=1 prints the same values
+        # (only the KL line, emitted inside kl_term, now precedes this block).
+        if DEBUG:
+            log(f"\n{'='*60}")
+            log(f"METHOD: {self.config.distill_method}")
+            log(per_sample(s_logits, "Student logits"))
+            log(per_sample(tlog, "Teacher logits"))
+
+            # CHECK: Are teacher logits actually different from student?
+            if tlog is not None and s_logits.shape == tlog.shape:
+                diff = (s_logits - tlog).abs().mean()
+                log(f"Student-Teacher logit diff: {diff.item():.6f}")
+                if diff < 0.01:
+                    log(
+                        "!!! WARNING: Student and teacher logits are nearly identical !!!",
+                        force=True,
+                    )
+
+            # Label info
+            unique, counts = torch.unique(labels, return_counts=True)
+            log(f"Labels: unique={unique.tolist()}, counts={counts.tolist()}")
+
+            log(f"CE: raw={ce.item():.6f}, weighted={(self.config.weight_ce * ce).item():.6f}")
+            log(f"TOTAL: {loss.item():.6f}")
+            log(f"{'='*60}\n")
 
         return loss, {
             "loss": loss.item(),
@@ -343,7 +353,8 @@ class DistillationModel(nn.Module):
             kl = self._vanilla_kl(s_logits, tlog)
 
         weighted = self.config.weight_kl * kl
-        log(f"KL: raw={kl.item():.6f}, weighted={weighted.item():.6f}")
+        if DEBUG:  # avoid 2 per-step GPU->CPU syncs (.item()) when logging is disabled
+            log(f"KL: raw={kl.item():.6f}, weighted={weighted.item():.6f}")
         return weighted
 
     def _vanilla_kl(self, s_logits, tlog):
