@@ -444,6 +444,45 @@ def prepare_task(
     )
 
 
+def _config_already_done(config, task_name) -> bool:
+    """Resume-safety: True iff a ``final_summary.json`` for this EXACT config already exists
+    under the config's own ``output_dir``.
+
+    Keyed on the full config identity — ``(task, weight_ce, weight_kl, weight_mse, temperature,
+    random_state)`` — so it skips a re-run of an already-completed grid config but NEVER skips an
+    intentional different-seed re-run (3-seed uses distinct ``random_state``). Scoped to
+    ``config.trainer_config.output_dir`` so the raw/l2norm/deploy searches stay separate, and
+    ``mse_normalizeTrue`` (l2norm) runs are excluded — matching ``gen_hp_specs.done_combos``.
+    Run output dirs are randomized (timestamp+uuid), so we glob the task subtree rather than stat a
+    fixed path. Defensive: any unreadable/partial summary is ignored (treated as not-a-match).
+    """
+    import glob, json
+
+    dc = config.distillation_config
+    target = (
+        task_name,
+        float(dc.weight_ce), float(dc.weight_kl), float(dc.weight_mse), float(dc.temperature),
+        int(config.random_state),
+    )
+    pattern = os.path.join(config.trainer_config.output_dir, task_name, "**", "final_summary.json")
+    for f in glob.iglob(pattern, recursive=True):
+        if "mse_normalizeTrue" in f:  # l2norm variant has its own search; never count it here
+            continue
+        try:
+            with open(f) as fh:
+                s = json.load(fh)
+            hp = s["hyperparameters"]
+            if (
+                s.get("task"),
+                float(hp["weight_ce"]), float(hp["weight_kl"]), float(hp["weight_mse"]),
+                float(hp["temperature"]), int(s.get("random_state", 42)),
+            ) == target:
+                return True
+        except Exception:
+            continue
+    return False
+
+
 def train_student(
     config: DistillationExperimentConfig,
     task_name: str,
@@ -461,6 +500,18 @@ def train_student(
     task, so every config gets its own deterministic seeding exactly as the
     original per-config ``distill`` did.
     """
+    # Resume-safety (OPT-IN, default off): skip a config whose exact result already exists, so a
+    # stale specs file (or a re-submitted grid) cannot waste compute re-running done work. Enabled
+    # only by the grid-search launchers via CARBON_SKIP_IF_DONE=1; never set for 3-seed/intentional
+    # re-runs (and even if it were, the seed-aware key would not skip a new-seed run).
+    if os.environ.get("CARBON_SKIP_IF_DONE") == "1" and _config_already_done(config, task_name):
+        dc = config.distillation_config
+        print(
+            f"[skip-if-done] {task_name} CE{dc.weight_ce}/KL{dc.weight_kl}/MSE{dc.weight_mse}/"
+            f"T{dc.temperature}/seed{config.random_state} already has a result — skipping (resume-safe)."
+        )
+        return
+
     import json
 
     # Per-config deterministic seeding (matches original distill: set per config,
