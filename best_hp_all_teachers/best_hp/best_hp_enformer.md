@@ -1,0 +1,20 @@
+| task | weight_ce | weight_kl | weight_mse | temperature | distill_method | kl_method | dkd_alpha | dkd_beta | lr | batch_size | epochs | seed | model_size | hidden_dim | best_val_mcc | best_test_mcc | best_epoch | n_candidates |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| H2AFZ | 0.5 | 0.5 | 0 | 1.5 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.5317 | 0.4972 | 200 | 128 |
+| H3K27ac | 0.5 | 0.25 | 5 | 4 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.4994 | 0.483 | 200 | 128 |
+| H3K27me3 | 0.5 | 1 | 2 | 4 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.619 | 0.5903 | 200 | 129 |
+| H3K36me3 | 0.5 | 1 | 0 | 4 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.6339 | 0.591 | 200 | 128 |
+| H3K4me1 | 0.5 | 1 | 1 | 1 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.5035 | 0.4827 | 200 | 128 |
+| H3K4me2 | 0.5 | 0.5 | 5 | 1 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.6215 | 0.5391 | 200 | 128 |
+| H3K4me3 | 0.5 | 1 | 2 | 4 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.6872 | 0.6258 | 200 | 128 |
+| H3K9ac | 0.5 | 1 | 5 | 4 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.5654 | 0.5143 | 200 | 128 |
+| H3K9me3 | 0.5 | 1 | 1 | 2 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.4544 | 0.4524 | 200 | 128 |
+| H4K20me1 | 0.5 | 1 | 2 | 4 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.6448 | 0.6262 | 200 | 128 |
+| enhancers | 0.5 | 0.5 | 1 | 1.5 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.5314 | 0.5089 | 200 | 128 |
+| enhancers_types | 0.5 | 1 | 5 | 4 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.4897 | 0.4628 | 200 | 128 |
+| promoter_all | 0.5 | 0.5 | 1 | 0.5 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.7446 | 0.7196 | 200 | 128 |
+| promoter_no_tata | 0.5 | 1 | 0 | 1 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.7714 | 0.7056 | 200 | 128 |
+| promoter_tata | 0.5 | 1 | 5 | 0.5 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.8777 | 0.796 | 200 | 128 |
+| splice_sites_acceptors | 0.5 | 1 | 0 | 1 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.9007 | 0.8775 | 200 | 128 |
+| splice_sites_all | 0.5 | 1 | 0 | 4 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.8717 | 0.84 | 200 | 128 |
+| splice_sites_donors | 0.5 | 0.5 | 0 | 1 | vanilla | kl | 1 | 8 | 0.0001 | 16 | 200 | 42 | original |  | 0.936 | 0.9007 | 200 | 127 |

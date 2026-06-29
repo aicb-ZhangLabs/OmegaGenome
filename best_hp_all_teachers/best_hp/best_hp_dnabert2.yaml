@@ -1,0 +1,395 @@
+H2AFZ:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.5
+    weight_mse: 1
+    temperature: 1.5
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.5215
+  best_test_mcc: 0.4729
+  best_epoch: 100
+  n_candidates: 64
+
+H3K27ac:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.5
+    weight_mse: 1
+    temperature: 1
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.4885
+  best_test_mcc: 0.453
+  best_epoch: 100
+  n_candidates: 91
+
+H3K27me3:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 1
+    weight_mse: 0
+    temperature: 0.5
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.5832
+  best_test_mcc: 0.5429
+  best_epoch: 100
+  n_candidates: 92
+
+H3K36me3:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.5
+    weight_mse: 0
+    temperature: 0.5
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.6146
+  best_test_mcc: 0.5547
+  best_epoch: 100
+  n_candidates: 92
+
+H3K4me1:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 1
+    weight_mse: 0
+    temperature: 1
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.4764
+  best_test_mcc: 0.4663
+  best_epoch: 100
+  n_candidates: 64
+
+H3K4me2:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 1
+    weight_mse: 2
+    temperature: 4
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.5984
+  best_test_mcc: 0.5466
+  best_epoch: 100
+  n_candidates: 91
+
+H3K4me3:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.25
+    weight_mse: 5
+    temperature: 0.5
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.6804
+  best_test_mcc: 0.6057
+  best_epoch: 100
+  n_candidates: 92
+
+H3K9ac:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 1
+    weight_mse: 2
+    temperature: 4
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.5483
+  best_test_mcc: 0.5106
+  best_epoch: 100
+  n_candidates: 64
+
+H3K9me3:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.25
+    weight_mse: 5
+    temperature: 1.5
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.4219
+  best_test_mcc: 0.3817
+  best_epoch: 100
+  n_candidates: 91
+
+H4K20me1:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.25
+    weight_mse: 0
+    temperature: 2
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.6191
+  best_test_mcc: 0.5961
+  best_epoch: 100
+  n_candidates: 91
+
+enhancers:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.5
+    weight_mse: 0
+    temperature: 1.5
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.5118
+  best_test_mcc: 0.508
+  best_epoch: 100
+  n_candidates: 90
+
+enhancers_types:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.25
+    weight_mse: 2
+    temperature: 1
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.4791
+  best_test_mcc: 0.4469
+  best_epoch: 100
+  n_candidates: 64
+
+promoter_all:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0
+    weight_mse: 1
+    temperature: 0.5
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.7471
+  best_test_mcc: 0.7177
+  best_epoch: 100
+  n_candidates: 98
+
+promoter_no_tata:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.25
+    weight_mse: 0
+    temperature: 0.5
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.7531
+  best_test_mcc: 0.7251
+  best_epoch: 100
+  n_candidates: 90
+
+promoter_tata:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.5
+    weight_mse: 2
+    temperature: 0.5
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.8977
+  best_test_mcc: 0.8028
+  best_epoch: 100
+  n_candidates: 90
+
+splice_sites_acceptors:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.25
+    weight_mse: 0
+    temperature: 4
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.9213
+  best_test_mcc: 0.9053
+  best_epoch: 100
+  n_candidates: 64
+
+splice_sites_all:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.5
+    weight_mse: 0
+    temperature: 4
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.8891
+  best_test_mcc: 0.8702
+  best_epoch: 100
+  n_candidates: 64
+
+splice_sites_donors:
+  hyperparameters:
+    weight_ce: 0.5
+    weight_kl: 0.5
+    weight_mse: 5
+    temperature: 1
+    distill_method: null
+    kl_method: kl
+    dkd_alpha: null
+    dkd_beta: null
+    lr: 0.0001
+    batch_size: 8
+    epochs: 100
+  metadata:
+    seed: 42
+    model_size: null
+    hidden_dim: null
+  best_val_mcc: 0.9441
+  best_test_mcc: 0.9256
+  best_epoch: 100
+  n_candidates: 64
