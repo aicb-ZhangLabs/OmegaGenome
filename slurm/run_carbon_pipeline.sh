@@ -16,7 +16,10 @@ wait_drain(){ while [ "$(carbon_inflight)" -gt 0 ]; do sleep 180; done; }
 
 log "PHASE B: HP search (BASE grid, raw MSE, resume-aware) — starting NOW, fills slots continuously"
 "$PV" slurm/gen_hp_specs.py --out hp_specs.txt
-bash slurm/auto_submit_specs.sh hp_specs.txt
+# Resume-safe grid: skip any config already completed, so a re-run / stale specs file can't waste
+# compute. Grid only (NOT the phase-D 3-seed below) — though the skip is seed-aware so 3-seed
+# (--seeds 0 1 2) would be safe regardless. Propagates to jobs via auto_submit_specs.sh's --export=ALL.
+CARBON_SKIP_IF_DONE=1 bash slurm/auto_submit_specs.sh hp_specs.txt
 log "PHASE B: all HP jobs submitted; draining"
 wait_drain
 log "PHASE B done"
