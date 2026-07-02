@@ -472,7 +472,7 @@ def precompute_teacher_logits(
             if i == 0 and torch.cuda.is_available():
                 _attrs = [a for a in ("logits", "hidden_states", "attentions", "past_key_values")
                           if getattr(out, a, None) is not None] if not isinstance(out, torch.Tensor) else ["<Tensor>"]
-                _nhs = len(out.hidden_states) if (not isinstance(out, torch.Tensor) and getattr(out, "hidden_states", None)) else 0
+                _nhs = len(out.hidden_states) if (not isinstance(out, torch.Tensor) and isinstance(getattr(out, "hidden_states", None), (tuple, list))) else 0
                 print(f"[precompute] mem after fwd={torch.cuda.memory_allocated()/1e9:.2f}GB "
                       f"out_attrs={_attrs} n_hidden_states={_nhs}", flush=True)
 
