@@ -1,5 +1,8 @@
 # Vast.ai box access (Carbon-3B HP search / rebuttal)
 
+> **DESTROYED 2026-07-01** — instance terminated by user after full backup (ckpts+curves+33G wandb on lab SSD `box_backup/`, students+curves on HF). IP/port below are DEAD; kept for reference only.
+
+
 **Connect:**
 ```bash
 ssh -o StrictHostKeyChecking=no -p 26925 root@115.124.123.240
