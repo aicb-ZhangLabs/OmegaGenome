@@ -117,6 +117,15 @@ def build_glm(config: GLMConfig):
             trust_remote_code=config.trust_remote_code,
             dtype=_dtype,
         )
+        # DNABERT-2's bundled flash-attn Triton kernel calls tl.dot(..., trans_b=True), which triton>=3
+        # removed -> CompilationError at the teacher forward. bert_layers.py falls back to standard
+        # (mathematically identical) attention when its module-global flash_attn_qkvpacked_func is None,
+        # so null it out on the dynamically-loaded remote-code module. No-op for non-DNABERT-2 teachers.
+        import sys as _sys
+        for _mn, _mod in list(_sys.modules.items()):
+            if _mn.endswith(".bert_layers") and getattr(_mod, "flash_attn_qkvpacked_func", None) is not None:
+                _mod.flash_attn_qkvpacked_func = None
+                print(f"[glm] disabled DNABERT-2 triton flash-attn in {_mn} -> standard-attn fallback")
 
     # Force the load dtype. trust_remote_code models (Carbon) can ignore from_pretrained's dtype and
     # stay fp32 (-> 12GB weights -> OOM), so cast explicitly. No-op when _dtype is None (other teachers).
@@ -470,12 +479,19 @@ def evaluate_and_log_teacher(
 
         return result
 
-    _teacher_bs = getattr(config.trainer_config, "teacher_batch_size", None) or config.trainer_config.batch_size
+    # Robust against a minimal trainer_config wrapper that only carries `device`
+    # (the config-driven DKD path builds such a wrapper): fall back to the JSON
+    # teacher_batch_size, then batch_size, then a safe default of 4.
+    _teacher_bs = (
+        getattr(config.trainer_config, "teacher_batch_size", None)
+        or getattr(config.trainer_config, "batch_size", None)
+        or 4
+    )
     test_loader = DataLoader(
         test_dataset,
         batch_size=_teacher_bs,
         shuffle=False,
-        num_workers=config.trainer_config.num_workers,
+        num_workers=getattr(config.trainer_config, "num_workers", 0),
         collate_fn=collate_fn,
     )
 
