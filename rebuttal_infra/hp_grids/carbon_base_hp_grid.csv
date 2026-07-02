@@ -1,0 +1,11 @@
+param,values,note
+weight_ce,0.5,fixed
+weight_kl,0.0 | 0.25 | 0.5 | 1.0,kl=0 collapses temperature (T no-op)
+weight_mse,0.0 | 1.0 | 2.0 | 5.0,"BASE grid (excludes 0.2, 0.25)"
+temperature,0.5 | 1.0 | 1.5 | 2.0 | 4.0,applied only when kl>0
+zscore,False,fixed
+distill_method,vanilla,fixed (kl_method=kl)
+student,original_bpnet (~121k) + deploy_120k,original = same student as NT/DNABERT2/Caduceus/Enformer
+variant,raw | l2norm,MSE normalization of teacher features
+canonical_combos_per_task,64,"16 (kl,T) x 4 mse = 64"
+tasks,18,18 NT-revised downstream tasks
