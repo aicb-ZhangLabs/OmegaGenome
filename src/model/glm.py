@@ -445,10 +445,16 @@ def evaluate_and_log_teacher(
     # (autoregressive teachers ship none), else batched padding + classification pooling fail.
     _prefix = getattr(config.teacher_config, "input_prefix", "")
     _add_special = getattr(config.teacher_config, "add_special_tokens", True)
-    if teacher_tokenizer.pad_token is None and teacher_tokenizer.eos_token is not None:
-        teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
-    if getattr(teacher_model.config, "pad_token_id", None) is None and teacher_tokenizer.pad_token_id is not None:
-        teacher_model.config.pad_token_id = teacher_tokenizer.pad_token_id
+    # getattr-guarded: non-HF teacher tokenizers (e.g. Enformer's char-level EnformerTokenizer) ship
+    # no pad_token/eos_token/pad_token_id attributes at all -> bare access raises AttributeError.
+    _pad = getattr(teacher_tokenizer, "pad_token", None)
+    _eos = getattr(teacher_tokenizer, "eos_token", None)
+    if _pad is None and _eos is not None:
+        teacher_tokenizer.pad_token = _eos
+    _mcfg = getattr(teacher_model, "config", None)
+    _pad_id = getattr(teacher_tokenizer, "pad_token_id", None)
+    if _mcfg is not None and getattr(_mcfg, "pad_token_id", None) is None and _pad_id is not None:
+        _mcfg.pad_token_id = _pad_id
 
     # Collate function for teacher
     def collate_fn(batch):
