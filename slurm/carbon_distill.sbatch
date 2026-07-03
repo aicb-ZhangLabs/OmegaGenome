@@ -18,7 +18,7 @@
 #SBATCH --mem=24G
 #SBATCH --nice=0
 #SBATCH --requeue
-#SBATCH --time=03:00:00
+#SBATCH --time=12:00:00
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
