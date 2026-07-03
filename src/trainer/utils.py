@@ -1143,6 +1143,12 @@ class CaduceusFeatureExtractor(nn.Module):
                 "Warning: Could not extract hidden_dim from config, will be set during first forward pass"
             )
 
+    @property
+    def config(self):
+        """Delegate to the wrapped model's config. glm.py/trainer access teacher_model.config
+        (e.g. for pad_token_id); the bare nn.Module wrapper otherwise has none -> AttributeError."""
+        return getattr(self.model, "config", None)
+
     def forward(
         self,
         input_ids,
