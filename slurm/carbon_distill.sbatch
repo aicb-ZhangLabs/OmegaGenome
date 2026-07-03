@@ -43,6 +43,13 @@ export WANDB_INIT_TIMEOUT=300
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True  # reduce fragmentation OOM
 PY="$REPO/.venv_carbon_portable/bin/python"
 
+# Node-local triton cache: the shared ~/.triton/cache (on /home) gets poisoned across nodes with
+# different glibc — a cuda_utils.so compiled on a GLIBC_2.34 node fails to load on galaxy
+# ("GLIBC_2.34 not found"), crashing Caduceus/mamba_ssm. Pin to node-local /tmp so each node
+# compiles its own compatible kernels. No-op for teachers that don't JIT triton kernels.
+export TRITON_CACHE_DIR="/tmp/${USER}_triton_cache"
+mkdir -p "$TRITON_CACHE_DIR"
+
 # Pass ALL args through to the distill CLI so per-task runs work, e.g.:
 #   sbatch slurm/carbon_distill.sbatch carbon-raw --task-names H3K27me3 --slurm-config.mode run
 ARGS=("$@"); [ ${#ARGS[@]} -eq 0 ] && ARGS=(carbon-smoke)
