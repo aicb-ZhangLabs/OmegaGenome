@@ -86,17 +86,21 @@ _bigwig_cache: Dict[Tuple[int, str], Any] = {}
 
 # sshfs-resilience knobs for bigWig I/O: the tracks live on an sshfs mount that can transiently raise
 # ("Received an error during file opening!" on open, or an error mid-read) during a brief mount stall.
-# A bounded exponential backoff survives these blips instead of crashing a multi-hour run.
-_BW_RETRY_ATTEMPTS = 5
-_BW_RETRY_BASE_DELAY = 0.5  # seconds; backoff 0.5 -> 1 -> 2 -> 4 -> 8 (capped)
+# A bounded exponential backoff survives these blips instead of crashing a multi-hour run. Widened to
+# 8 attempts / 32s cap after a 2026-07-20 collision (two jobs' cache-load->read transitions storming
+# sshfs at once) outlasted the original 5-attempt / 8s window: total retry window is now ~63s.
+_BW_RETRY_ATTEMPTS = 8
+_BW_RETRY_BASE_DELAY = 0.5  # seconds; backoff 0.5,1,2,4,8,16,32,32 (capped at _BW_RETRY_MAX_DELAY)
+_BW_RETRY_MAX_DELAY = 32.0
 
 
 def _retry_sshfs(fn: Callable[[], Any], what: str, path: str,
                  on_retry: Callable[[], None] = None):
     """Run an sshfs-backed bigWig I/O op ``fn`` with bounded exponential-backoff retries.
 
-    Retries ``fn`` up to ``_BW_RETRY_ATTEMPTS`` times with backoff 0.5,1,2,4,8s, logging a warning per
-    retry, and only re-raises (as a RuntimeError chaining the last error) after all attempts fail. This
+    Retries ``fn`` up to ``_BW_RETRY_ATTEMPTS`` times with exponential backoff (0.5s doubling, capped at
+    ``_BW_RETRY_MAX_DELAY``), logging a warning per retry, and only re-raises (as a RuntimeError chaining
+    the last error) after all attempts fail (~63s total window with the defaults). This
     directly survives the TRANSIENT sshfs errors seen on the bigWig ``open``/``.values`` reads. Optional
     ``on_retry`` runs before each backoff sleep — used to drop a stale cached handle so the next attempt
     REOPENS it (a stale sshfs handle cannot just be re-read). ``what``/``path`` are for messages only.
@@ -115,7 +119,7 @@ def _retry_sshfs(fn: Callable[[], Any], what: str, path: str,
             if on_retry is not None:
                 on_retry()
             time.sleep(delay)
-            delay = min(delay * 2.0, 8.0)
+            delay = min(delay * 2.0, _BW_RETRY_MAX_DELAY)
 
 
 def _get_fasta_handle(fasta_path: str):

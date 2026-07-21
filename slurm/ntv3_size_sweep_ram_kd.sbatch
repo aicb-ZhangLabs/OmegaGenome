@@ -8,11 +8,13 @@
 #     numpy memmap -> the memmap-hang failure mode does not apply); NO --stage_dir, no /tmp copy.
 #   - TRITON cache -> SSD, never node-local /tmp.
 # The ONLY /tmp path used is the SSD mount /tmp/galaxy_srv_disk00/pengchx3. Full sweep idx 0-4
-# (4m/8m/30m/100m/300m) restart after the 2026-07-20 sshfs blip; the per-window bigWig reads now retry
-# transient sshfs errors (src/data/ntv3_ft_data.py _retry_sshfs), so the transient open/read no longer kills a run.
-#   sbatch slurm/ntv3_size_sweep_ram_kd.sbatch
+# (4m/8m/30m/100m/300m). After the 2026-07-20 sshfs saturation (two jobs' cache-load->read transitions
+# storming sshfs at once crashed 4m), THREE mitigations: (a) per-window bigWig reads retry transient sshfs
+# errors with a widened ~63s window (src/data/ntv3_ft_data.py _retry_sshfs, 8 attempts); (b) --num_workers 8
+# (halved from 16) to cut the per-job open-storm at the transition; (c) %1 throttle so no two jobs transition
+# at once. Submit staggered:  sbatch --array=0,3,4%1 slurm/ntv3_size_sweep_ram_kd.sbatch  (8m/30m already run).
 #SBATCH --job-name=loom_ntv3-size-ram
-#SBATCH --array=0-4%3
+#SBATCH --array=0-4%1
 #SBATCH --nodes=1
 #SBATCH --nodelist=laniakea
 #SBATCH --partition=zhanglab.p
@@ -62,6 +64,7 @@ SRC_CACHE="$SSD/ntv3_targets/teacher_cache_joint34"
       --kd_multinomial_weight 5.0 \
       --sequence_length 32768 --mini_batch_size 4 --num_accumulation_gradient 8 \
       --num_steps_training 19932 --num_steps_warmup 598 \
+      --num_workers 8 \
       --seed 0 --amp \
       --out "$OUT"
 echo "=== done $SIZE: $OUT/ntv3_finetune_result.json ==="
