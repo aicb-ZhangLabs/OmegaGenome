@@ -338,3 +338,294 @@ compared against the val-selected best **distill** config. All seed-42 (the HP-s
 574 jobs); (2) submit original **stage 2** (weight_mse 0.2) + **stage 3** (weight_mse 2,5); (3) regenerate the two
 CSVs; (4) 3-seed the best base-config params/task + any stage-2-improved params. deploy_120k CSVs kept for
 reference but are the capped model.
+
+## GOAL-B on rented vast.ai H100 — laggard-task batch mode (2026-06-28)
+**Setup:** the 7 stage-1 laggard tasks (the lab finished 11/18) are run on a rented 192-core H100 box via
+**batch mode** (`distill_task.py`: teacher loaded ONCE per task, then loops the ~32 HP configs — vs the lab's
+old per-config submitter that reloaded the 3B teacher every config). Box dirs are namespaced (`/root/carbon_out`,
+`/root/batch_<task>.log`) so they never collide with the lab's `$SSD/carbon_distillation/`. Teacher =
+`HuggingFaceBio/Carbon-3B` + per-task LoRA adapter; student = BPNet-original (317K). WANDB_MODE=offline.
+
+**ROOT-CAUSE FINDING (why the 7 laggards lagged everywhere, lab AND H100):** it was **NOT** GPU starvation —
+**5 of the 7 laggard tasks had missing/incomplete Carbon-3B LoRA teacher checkpoints** on the box. The seeding
+rsync was truncated (~128M arrived = only H3K4me1 + H3K27ac complete; `splice_sites_all/acceptors/donors` +
+`enhancers_types` had EMPTY teacher dirs; `enhancers` had only README+adapter_config, no `adapter_model.safetensors`).
+With no teacher, `find_teacher_checkpoint`→None → `prepare_task` returns None → batch exits `BATCH_EXIT=0` with
+**0 epochs, 0 students** (a silent no-op, no error logged). So those tasks never trained. **Fix:** pulled the 5
+complete adapters (98MB each) from HF `explcre/carbon-3b-lora-teachers-nt18` directly onto the box via
+`snapshot_download(allow_patterns=['{task}_finetuned/*'...])`, verified `adapter_model.safetensors` present per
+task, relaunched. All 7 batches now train with real teachers. **Lesson:** always validate `adapter_model.safetensors`
+exists per task before launching a carbon batch (added to the teacher-ckpt memory note).
+
+**PERF FINDING — carbon student training is CPU/Python-bound, not GPU-bound.** On the H100 box: GPU util **0%**,
+15GB mem (just the 2 resident teachers), 192 cores but only ~7 in use (one config per task-batch, serial within a
+task). The tiny BPNet student trains on a single core; per-epoch wall time on the H100 box is **~5× slower per
+config than a lab GPU node** (lab ~20–37 min/config vs H100 ~2–3 h/config) purely from slower per-core throughput —
+the GPU sits idle on both. Running 7 task-batches serially uses ~4% of the rented box. At that rate stage-1 across
+7×~32 configs would take days.
+
+**SPEEDUP — config-parallel batch mode (implemented + tested, deploying):** added an opt-in `--parallel K` to
+`distill_task.py` / `_distill_task_batch_parallel` in `distill.py`. Design: run config 0 once with the live teacher
+to warm the HP-independent teacher caches (logits/features + `teacher_evaluation.json`, keyed by
+`md5(X_train,teacher_ckpt,max_len)`, NOT by HP), then **free the 3B teacher** (`del`+`empty_cache`), serialize the
+`TaskContext` tensors (teacher_hidden, num_labels, data splits — everything except the live model) to
+`{out}/_parallel_ctx_cache/`, and fan the remaining configs out to K **spawn** workers (NOT fork — fork-after-CUDA
+corrupts the context). Each worker loads its own ctx copy from cache (a `_NoOpTeacher` stub stands in for the
+freed model; raises if ever invoked), so dozens of tiny students share the idle GPU and saturate the 192 cores.
+**Faithful:** per-config `set_seed` + identical teacher-cache values → results match serial; only concurrency
+differs (first config is serial for cache-warmup, speedup applies to configs 1..N-1). Default `--parallel 1` is the
+byte-identical audited serial path. **Tests:** 86/86 pass (existing 60 + new `test_distill_task_parallel.py` 26:
+serial-path-at-1, ctx-cache round-trip, K-way shard/collect, worker error isolation, teacher-freed-before-pool, CLI
+parse). Plan to deploy with `--parallel 8` per task. **No numeric distill results from the box yet** — 0 students
+finished at the time of this entry (the teacher blocker had stalled 5/7 tasks; H3K4me1/H3K27ac were at ~32 epochs,
+first configs not yet early-stopped).
+
+## ★ GOAL-B carbon ON vast.ai H100 — WORKING recipe [2026-06-28]
+After a long fight, the box runs the HP search correctly. The winning recipe (all needed together):
+1. **skip-load**: teacher logit/feature caches transferred from lab ($SSD/data/cache/carbon_3b_lora) +
+   metadata `cache_key` rewritten to the BOX teacher path (`_compute_cache_key` hashes len+first+last-seq+
+   teacher_path+max_len). `prepare_task` then skips the 3B load entirely (`teacher cache valid — skipping`).
+   ZERO teacher loads = no 10-min LoRA-merge, no thrash.
+2. **bash-parallel, NOT the Python spawn pool**: each config is its own `python -m src.train.distill <line>`
+   (single-config entry, also skip-loads). Run via a `wait -n` semaphore at N=48 (run_all_v3.sh). The
+   config-parallel spawn pool fork-bombed (pids.max=**5888**; torch default = 1 thread/core = 192/worker).
+3. **OMP_NUM_THREADS=1** (+ MKL/OPENBLAS) → each worker ~1 thread not 192 → 48 workers ≈ 48 cores, pids safe.
+4. **launch inside tmux with a MINIMAL command**: the box's ssh is so slow that complex commands
+   (pkill+sleep+launch) time out before completing; a bare `tmux new-session -d -s carbon_run "bash
+   run_all_v3.sh 48"` returns instantly and persists past ssh disconnects. Monitor with minimal grep cmds.
+Result: 48 concurrent configs, skip=47/48, teacher-loads=0, fork-errors=0, GPU ~61% util. 222 laggard configs
+churning. Code on `precompute_logits_cache` (jhliu17/OmegaGenome). Outputs at /root/carbon_out -> rsync to
+lab $SSD/carbon_distillation/original/ then `collate_runs.py --base .../original` refreshes the CSV.
+**Latest CSV refresh: 413 runs (was stale at 324); stage1+2 done for most; STAGE 3 (wmse 2,5) = 0 runs (gap).**
+
+---
+### 2026-06-28 — Box throughput root-cause + N retune + per-step debug-sync fix
+
+**Why the box looked "stuck" (done=0 for many hours):** NOT a bug. Two compounding causes:
+1. **64-way oversubscription THRASH.** 64 configs time-sliced on ONE H100: ~59/80 GB + 64 CUDA contexts
+   context-switching → pathological slowdown, and 200-epoch lockstep means NO completions until the whole
+   wave nears the end. Extrapolated ~22 days. Killed it.
+2. **Single config is overhead/IO-bound, not GPU-bound.** Measured SOLO: ~8.4 s/epoch at only **31% GPU**.
+   The BPNet student is tiny; per-epoch cost is dataloader (num_workers=0) + val-eval (early-stop) +
+   per-epoch checkpoint save + per-step `.item()` syncs — GPU math is trivial. So one config can't be made
+   much faster without changing the recipe (batch size → would break lab-comparability).
+
+**Fix that actually matters = PARALLELISM tuned to GPU saturation.** One config ≈31% GPU → ~3 saturate it.
+Re-tuned 64 → **N=6**: GPU pinned **99–100%**, mem ~6 GB (no thrash). Measured completion rate (new code):
+first wave at ~30 min, then **~12–15 configs/hour**. **Stage-1-laggard ETA ≈ ~14 h** for all 187 (vs
+effectively-never at 64-way). run_all_v3.sh arg = N; launched `bash run_all_v3.sh 6` in tmux.
+
+**Code fix (commit a06935f, deployed to box + lab):** `distillation_loss`/`kl_term` built debug f-strings
+whose `.item()`/`.tolist()` + `per_sample()`×2/`abs().mean()`/`torch.unique()` were evaluated EAGERLY every
+step even with `DISTILL_DEBUG=0` (default). Guarded the block behind `if DEBUG:` (loss math hoisted above,
+unchanged). **Result-preserving: verified bit-identical (loss/metrics/grad) DEBUG on-vs-off and vs an
+independent reference across vanilla/logit_standard × {kl,mse}** (test_distill_guard.py, all PASS).
+HONEST magnitude: a contended micro-bench showed 15×/step, but that was inflated by GPU contention (syncs
+~600 µs contended vs ~20 µs solo); real SOLO gain was only 8.4→7.4 s/epoch (~12%). It helps the *parallel*
+(contended) regime modestly and is harmless. Box file md5-verified == lab before deploy.
+
+**Takeaway:** box throughput is parallelism-bound (N=6 = sweet spot), ~14 h for stage-1 laggards. The
+**critical path remains the LAB (stage 3, ~720 configs)** — the box is a bonus engine, not the bottleneck.
+
+**N retune follow-up [2026-06-28]:** Tested N=16 vs N=6. N=16: GPU 100%, mem 14.9GB, but 0 completions in 24min
+(vs N=6's 3 by 30min) — at 16-way each config is ~5x slower than solo so all 16 finish in one late burst.
+Steady-state throughput **identical (~12/hr)** because the GPU is already TRULY saturated at N=6 (~3 configs).
+Higher N only worsens completion latency + memory, no throughput gain. **N=6 is the ceiling; reverted to it.**
+Box is at its throughput limit (~12-15 configs/hr, ~14h stage-1 laggards); no further parallelism lever exists.
+
+**N-sweep (measured aggregate epochs/min) [2026-06-28]:** N=6→15.3, **N=8→16.4 (peak)**, N=10→16.1, N=12→15.1.
+Throughput PLATEAUS flat (~15-16) across N=6-12 and declines past 8 (oversubscription) — the GPU is genuinely
+SATURATED, not overhead-bound. **Set N=8 (the measured optimum, +7% over N=6).** Because throughput is flat
+(adding configs doesn't raise the ceiling), per-config sync-removal (deferring the 4 metric .item()s +
+total_loss) would NOT raise the ceiling either — the GPU is the limit. Box ceiling ≈16 epochs/min ≈ ~12-15
+configs/hr; no further result-preserving speedup exists (batch-size/torch.compile/AMP would change numerics →
+break lab-comparability, so off-limits). Box ETA ~13h for stage-1 laggards. Relaunched at N=8.
+
+**torch.compile test [2026-06-28] — NEGATIVE.** Added env-gated `torch.compile(model)` (CARBON_COMPILE=1,
+default off) and ran a compiled solo on the box. Result: **crashes in the Inductor backend** —
+`torch/_inductor/compile_fx.py: AttributeError: 'NoneType' object has no attribute 'data'` — and sat >9 min
+in compilation before failing (never reached epoch 1). So on this BPNet + box torch, compile is non-functional
+AND carries huge per-process compile overhead. Reverted the flag (box+lab back to clean HEAD). Combined with the
+N-sweep saturation result, this closes the optimization search: **no result-preserving speedup beyond N=8 exists**
+(compile broken; sync-removal can't move a saturated ceiling; batch/AMP change numerics → off-limits). Box
+ceiling = ~16 epochs/min ≈ ~13h for stage-1 laggards at N=8.
+
+---
+### 2026-06-29 — De-duplicate box vs lab + box→STAGE 3 (the gap) + accelerate stage 1
+
+**Found duplication:** a 4-day background submitter (`auto_submit_specs.sh hp_original_stage1.txt`, PID 478193) was
+running the lab's STAGE-1 grid (galaxy), AND the box was running stage-1 laggards — the SAME configs (e.g.
+enhancers wmse0/1). Wasted compute + duplicate CSV rows.
+
+**Resolution — disjoint engines:**
+- **Lab submitter → stays on STAGE 1** (resume-aware, ~72-90% done). Caps raised (user-authorized) in
+  `submit_caps.env`: LAN 2→7, VOY 0→4, GAL 4→6 (count_node is total-aware → respects GPU counts, no
+  oversubscribe) → stage-1 finishes much faster across all 3 nodes.
+- **Box → STAGE 3** (wmse{2,5}, the ~720-config gap nothing was filling). Generated `hp_original_stage3.txt`
+  (576 configs = 18 tasks × kl{0,.25,.5,1} × mse{2,5} × T, kl=0 collapses T), resume-aware (0 done).
+- **Enabled box for all 18 tasks:** box only had 7 tasks cached. Copied the 11 missing tasks':
+  (a) logit+feature caches (3.1GB) → rewrote cache_key to box teacher path (fix_keys_11.py, 11/11 ALIGNED);
+  (b) teacher dirs MINUS the 103MB safetensors (skip-load never loads weights) → rewrote the 11
+  teacher_evaluation.json paths to /root. Verified: H2AFZ (new task) "✓ Loaded teacher outputs from cache",
+  0 "No teacher checkpoint" skips, GPU 100%. Box now runs full 18-task stage-3 @N=8.
+
+**Clean recording (no overwrite):** box stage-1 results (72) collated to a SEPARATE
+`hp_search_tables/carbon_grid_results_box_stage1_20260629.csv` (canonical CSVs untouched). Box stage-3 results
+will rsync into the canonical `original/` tree (new unique configs → no replacement) where the resume-aware
+tooling sees them, so the lab submitter never re-submits box work. **No duplication; everything recorded cleanly.**
+
+**Submitter resume-fix [2026-06-29]:** the lab submitter's specs file was the FULL 562-config stage-1 grid
+(never resume-filtered), so it would re-run 468 already-done configs — incl the box's 72 stage-1. Fix:
+(1) merged box `original/` results into the canonical lab `original/` tree (done_combos reads there);
+(2) regenerated resume-filtered list = **108 truly-remaining** (drops 454 redundant re-runs); (3) restarted the
+submitter on the 108-config file (backup: hp_original_stage1_full.bak). Submitter now skips all done (box+lab).
+No per-config skip exists in the training path — resume is ONLY at specs-gen time, so the specs file MUST be
+regenerated to reflect done work. Box stage-3 results also flow into `original/` → future regen skips them too.
+
+**Run-time resume-skip added [2026-06-29, commit d6d0aac]:** root-caused the 454 re-runs to a MISSING
+defensive guard — resume was generation-time only (gen_hp_specs.done_combos); the run path had NO per-config
+skip, and output dirs are randomized (timestamp+uuid) so nothing could stat a fixed path. Added opt-in
+`_config_already_done` + `CARBON_SKIP_IF_DONE=1` gate at the top of train_student: globs output_dir/<task>/**
+for a final_summary.json matching the FULL config identity (task,ce,kl,mse,temp,random_state) and skips if found.
+Opt-in/default-off (no behavior change); seed-aware (never skips 3-seed re-runs); l2norm-excluded; output_dir-scoped
+(matches done_combos). Subagent-audited, 20/20 tests pass. Enabled on box run_all_v3.sh (verified LIVE: 8 done
+stage-3 configs skipped on restart) + run_carbon_pipeline.sh grid phase (NOT 3-seed). Box+lab now resume-safe
+against stale specs / restarts permanently.
+
+---
+
+## 2026-07-21 — Rebuttal landed results: classification finalized, KD-method sweep, size sweep, BPNet baseline; NTv3 regression ladder IN PROGRESS
+
+Consolidated record of the rebuttal experiments that have completed since 2026-06-29. All numbers below are copied
+verbatim from the authoritative source files cited per subsection (no rounding beyond what the source shows). The
+NTv3 regression size ladder (F/E) is **explicitly IN PROGRESS — no final regression numbers exist yet.**
+
+### A. Classification rerun finalization — DNABERT-2 @200ep 3-seed + below-baseline reruns
+**Source:** `plot_repo/data/model_comparison_5teacher_formal.csv` (Type=Student rows; Type=Baseline BPNet rows).
+
+The 18-task 3-seed reruns (DNABERT-2 at 200 epochs, plus the students that had sat below the from-scratch BPNet
+baseline) are finalized. Net effect: the count of student cells below the BPNet baseline dropped **14 → 11**
+across the 5 teachers. Per-teacher below-BPNet counts now (18 tasks each):
+
+| student | 18-task mean MCC | cells below BPNet |
+|---|:-:|:-:|
+| Distilled Nucleotide Transformer | 0.6271 | 0 / 18 |
+| Distilled Enformer | 0.6202 | 1 / 18 |
+| Distilled Carbon-3B | 0.6197 | 2 / 18 |
+| Distilled Caduceus | 0.6084 | 4 / 18 |
+| **Distilled DNABERT-2** | **0.6067** | 4 / 18 |
+| — total below | — | **11** |
+
+- **DNABERT-2 18-task mean = 0.6067** (~0.607). Its 4 remaining below-BPNet cells: H3K27me3 (0.5493 vs 0.5497),
+  H3K4me3 (0.6119 vs 0.6238), H3K9ac (0.5026 vs 0.5213), H4K20me1 (0.6053 vs 0.6061) — all marginal/within noise.
+- These reruns are what **paper Table S3 and Figs 2/4** now reflect.
+
+### B. KD-method comparison — 18-task, NT-2.5B teacher, 3 seeds, method-appropriate HP
+**Sources:** `plot_repo/data/method_comparison_18task.csv` (aggregates); diagnosis
+`code_carbon/rebuttal_infra/dist_ls_collapse_diagnosis.md` (2026-07-19); root cause
+`code_carbon/rebuttal_infra/h3k9me3_rootcause.md` (2026-07-20).
+
+18-task mean MCC (± across-task sample s.d.), best method per task counted as a "win":
+
+| method | 18-task mean ± across-task s.d. | wins (best on task) |
+|---|:-:|:-:|
+| **OmegaGenome** | **0.6271 ± 0.1549** | **10** |
+| DKD | 0.6218 ± 0.1499 | 4 |
+| DIST | 0.5932 ± 0.1737 | 2 |
+| LS | 0.5879 ± 0.1581 | 2 |
+
+**Key finding — DIST/LS "collapse" on binary tasks is a 2-class degeneracy artifact, NOT a bug and NOT true
+method performance.** With OmegaGenome's KL-heavy vanilla HP (`weight_kl ≥ weight_ce`), the DIST inter-class
+term (per-sample Pearson corr of a 2-vector = exactly ±1, a singular sign-step gradient at p=0.5) and LS's 2-logit
+standardization (erases teacher confidence) trap the student in a constant-prediction basin (`val_mcc=0.0000`,
+`final_test_f1=0.3333`; no NaN/Inf). Implementations verified **faithful** to the official references (DIST
+hunto/DIST_KD, LS sunshangquan/logit-standardization-KD) — no correctness bug. The catastrophic magnitude is an
+**HP-mismatch artifact**: vanilla-tuned HP applied to un-tuned methods.
+
+**Recovery (method-appropriate kl):** all **9 collapsed cells recovered** with a per-method kl re-tune — **7 cells
+@ kl=0.5** and the **2 lowest-signal H3K9me3 cells @ kl=0.25** (tagged in the CSV `hp_note` column):
+
+- kl=0.5 fix (7): DIST {H3K27ac, H3K27me3, H3K4me1, enhancers, splice_sites_acceptors}; LS {splice_sites_acceptors, splice_sites_donors}.
+- kl=0.25 recovered (2): DIST H3K9me3 (0.3850 ± 0.0476), LS H3K9me3 (0.3530 ± 0.0256).
+
+**H3K9me3 root cause = lowest-signal task, NOT class imbalance.** H3K9me3 is **exactly 50/50 balanced** (13,719/13,719,
+parsed from the raw dataset), ruling out imbalance. It is the single **lowest-signal task in the whole suite** —
+NT-2.5B teacher MCC 0.4636 (lowest), Carbon-3B teacher 0.3502 (lowest), BPNet baseline 0.3295 (lowest), OmegaGenome
+student 0.4454 (lowest) — because it marks broad, repeat-rich constitutive heterochromatin with no sharp local motif.
+Escaping the KD basin requires the CE (true-label) gradient to overpower the degenerate KD pull; H3K9me3 has the
+weakest label separability of all 18 tasks, so it clears the escape threshold only at the lower kl=0.25. This turns
+H3K9me3 from an outlier into a controlled worst case: DIST/LS fragility is **signal-dependent and predictable**, and
+OmegaGenome/DKD are robust across all 18 tasks under a single untuned HP setting.
+
+### C. Classification student-size sweep (Fig 6B) — 18-task mean, single-seed (seed 0)
+**Sources:** `plot_repo/data/size_18task_seed0_matrix.csv`; diagnosis
+`code_carbon/rebuttal_infra/size_monotonicity_diagnosis.md`.
+
+7-point student-size curve (18-task mean MCC, seed 0):
+
+| size | 2K | 7K | 28K | 0.1M (deployed) | 0.8M | 1.8M | 3.6M |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| 18-task mean MCC | 0.5214 | 0.5680 | 0.6073 | **0.6289** | 0.6255 | 0.6340 | 0.6383 |
+
+- **Plateau:** for **13/18 tasks `|Δ(3.6M − 0.1M)| < 0.02`** — the deployed 0.1M student is at/near the capacity
+  plateau; scaling 36× to 3.6M lifts the 18-task mean only 0.6289 → 0.6383 (+0.0094).
+- **Diagnosis (read-only, nothing rerun):** the mild non-monotonicity (e.g. the 0.1M→0.8M dip) is **single-seed
+  noise** — pooled seed-to-seed σ = 0.0125 MCC (σ_adj = 0.0177), and 35/37 adjacent-size drops are within 2σ; the
+  median drop (0.005) is smaller than one seed's typical wobble (0.012–0.014). Confirmed **best-VALIDATION-selected**
+  checkpoints (no test peeking; `best_test_mcc ≥ final_test_mcc` in only 61.7% of runs — the correct signature of
+  honest best-val, not leakage). **Early stopping is NOT involved** (`--early-stop-patience 0` = disabled; all 149
+  runs ran the full 200 epochs, `early_stopped=False`). Secondary structured effects: a 0.1M "original"
+  provenance/splice discontinuity (0.1M spliced from a separate original-student run set, sits slightly high) and
+  fixed-HP diminishing returns at the large end. 3-seed means will remove essentially all wobbles.
+
+### D. BPNet from-scratch baseline — 3-seed
+**Source:** `code_carbon/rebuttal_infra/bpnet_baseline_comparison.md` (runs at `/srv/disk00/sshfs/pengchx3/bpnet_scratch_3seed/`).
+
+3-seed from-scratch BPNet, 200 epochs, best-val-selected: **18-task mean = 0.6085** (vs current single-seed paper
+baseline **0.5882**, Δ = **+0.0203**). Direction: 16/18 tasks up, 2 marginally down (H3K4me3 −0.0126, H3K9ac −0.0170,
+both within seed std). Biggest movers: H3K9me3 +0.0810 (single-seed 0.3295 was an unlucky n=1 low draw; all three
+3-seed runs 0.377/0.423/0.432 sit above it), splice_sites_all +0.0700. 100ep best-val = 0.6040 (best-val is
+budget-invariant: bit-identical to 200ep on 14/18 tasks). No collapsed/failed runs (min best_test_mcc 0.377). The
+current single-seed paper value already tracks best-val (mean|single − 200best| = 0.0236 vs |single − last-epoch| =
+0.0879). **Recommendation = adopt the 200ep 3-seed best-val (mean±std) as the BPNet baseline** (like-for-like n=1→n=3
+upgrade, now with an honest error bar). **NOT yet swapped into the paper tables** per user.
+
+### E. NTv3 regression size ladder — DESIGN + STATUS ONLY (⚠ IN PROGRESS, no final numbers yet)
+**Sources:** `code_carbon/rebuttal_infra/ntv3_size_ladder_design.md`; independent audit
+`code_carbon/rebuttal_infra/ntv3_size_audit.md`.
+
+Fills out the **regression** (34-track per-bp bigWig distillation, 650M NTv3 teacher) size-scaling curve to match the
+classification one. Adds **3 new random-init scaled tiers** (verified param counts by instantiating each config on CPU)
+and reuses the 3 existing pretrained points:
+
+| tier | embed / layers / heads / ffn / key | measured params | provenance |
+|---|---|:-:|---|
+| ntv3-4m (new) | 192 / 2 / 6 / 768 / 32 | 4.34M | random-init |
+| ntv3-8m | 256 / 2 / 8 / 1024 / 32 | 7.69M | pretrained ckpt |
+| ntv3-30m (new) | 448 / 4 / 8 / 1792 / 56 | 29.87M | random-init |
+| ntv3-100m | 768 / 6 / 12 / 3072 / 64 | 106.46M | pretrained ckpt |
+| ntv3-300m (new) | 1152 / 9 / 18 / 4608 / 64 | 303.05M | random-init |
+| ntv3-650m (teacher) | 1536 / 12 / 24 / 6144 / 64 | 651.83M | pretrained ckpt |
+
+- **Two-series design** to handle the pretraining confound (new tiers are random-init; native points are pretrained):
+  a **from-scratch distilled curve** (same KD recipe at all sizes) + a **pretrained-bonus series** (the gap between
+  the pretrained native points and the scratch curve = the pretraining bonus, a bonus result). KD recipe unchanged
+  from existing joint-34 runs: `w_ce=0.5` poisson_multinomial + `w_kl=0.5` standardized_mse, `multinomial_weight=5`,
+  seq_len 32768, best-val select.
+- **Teacher-cache change:** a combined 34-track live-teacher forward is too big to hold fully in RAM (~107 GB fp32),
+  so the sweep uses a **memmap** joint-34 teacher cache (`np.load(mmap_mode='r')` + per-batch index) → student runs are
+  teacher-free. Independent adversarial audit = **GO** (conditional on the HF-cache fix): param counts exact (all
+  within ±2%, native tiers reproduce true 8M/100M/650M), genuinely fresh random init, forward valid at all non-native
+  widths, memmap cache numerically faithful to the live teacher (max_abs_err 1.94e-3, idx alignment 0/5 mismatches),
+  joint-vs-subset guard blocks every wrong-target combo, 300M cached path holds no teacher and fits 49 GB. Dry-runs
+  A/B/C all exit 0 (job 253740).
+- **STATUS: sweep restarted** with an sshfs-retry loader + staggering (throttle=1) after a laniakea/sshfs
+  concurrency-saturation failure (see F). **Results pending — NO final regression size numbers exist yet; do not
+  report any.**
+
+### F. Infra notes (on record)
+- **node-local /tmp incident:** a voyager run overflowed the 49 GB node-local `/tmp` — fixed by RAM-loading the
+  teacher caches from the SSD mount rather than staging to node-local `/tmp`.
+- **sshfs concurrency saturation:** concurrent NTv3-ladder launches on laniakea saturated sshfs → job failure; fixed
+  with an **sshfs-retry wrapper** on the loader and **throttle=1 staggering** of launches so runs don't hit the mount
+  simultaneously. Failure modes recorded so they don't recur.
