@@ -25,6 +25,43 @@ NTV3_CROP_FRAC = 0.375
 # NTv3 transformer-tower linears (per audit): Q/K/V (`linear`), attn-out (`mha_output`), FFN (fc1/fc2).
 NTV3_LORA_TARGETS = ["linear", "mha_output", "fc1", "fc2"]
 
+# Scaled RANDOM-INIT NTv3-pretrained variants for the from-scratch size-ladder (InstaDeep publishes
+# NTv3 ONLY at 8M/100M/650M — no ckpt exists at 4M/30M/300M, so those tiers can only be built random-init
+# then distilled). Each reuses the 8m_pre snapshot's modeling .py + tokenizer as a TEMPLATE; only the
+# config width/depth dims below change (family invariants held: ffn=4*embed, conv_init_embed_dim=embed,
+# num_downsamples=7, token_embed_dim=16; head_dim=embed/heads=key_size). The 8m/100m entries carry the
+# EXISTING native dims so the from-scratch series can also instantiate those sizes random-init (the
+# same-protocol reference points that de-confound the pretrained-vs-scratch curve). Measured CPU param
+# counts (see design §3): 4m=4.34M, 8m=7.69M, 30m=29.87M, 100m=106.46M, 300m=303.05M.
+NTV3_TEMPLATE = "/extra/zhanglab0/INDV/pengchx3/ntv3_local/8m_pre"  # prepare_local_snapshot -> _loadable
+NTV3_SCALED_SIZES = {  # embed_dim, num_layers, attention_heads, ffn_embed_dim, key_size
+    "ntv3-4m":   dict(embed_dim=192,  num_layers=2, attention_heads=6,  ffn_embed_dim=768,  key_size=32),
+    "ntv3-8m":   dict(embed_dim=256,  num_layers=2, attention_heads=8,  ffn_embed_dim=1024, key_size=32),
+    "ntv3-30m":  dict(embed_dim=448,  num_layers=4, attention_heads=8,  ffn_embed_dim=1792, key_size=56),
+    "ntv3-100m": dict(embed_dim=768,  num_layers=6, attention_heads=12, ffn_embed_dim=3072, key_size=64),
+    "ntv3-300m": dict(embed_dim=1152, num_layers=9, attention_heads=18, ffn_embed_dim=4608, key_size=64),
+}
+
+
+def scaled_ntv3_config(size_key: str, template: str = NTV3_TEMPLATE):
+    """Build an NTv3 PRE config for a random-init scaled student size (a ``NTV3_SCALED_SIZES`` key),
+    using the 8m_pre snapshot as the modeling/tokenizer TEMPLATE and overriding only the width/depth
+    dims. ``conv_init_embed_dim`` is tied to ``embed_dim`` (family invariant). Returns a config ready for
+    ``AutoModelForMaskedLM.from_config(cfg, trust_remote_code=True)`` (random weights, no ckpt loaded)."""
+    from transformers import AutoConfig
+    from src.model.ntv3_teacher import prepare_local_snapshot
+
+    dims = NTV3_SCALED_SIZES[size_key]
+    cfg = AutoConfig.from_pretrained(prepare_local_snapshot(template), trust_remote_code=True,
+                                     local_files_only=True)
+    cfg.embed_dim = dims["embed_dim"]
+    cfg.conv_init_embed_dim = dims["embed_dim"]  # family invariant: conv stem width == embed_dim
+    cfg.num_layers = dims["num_layers"]
+    cfg.attention_heads = dims["attention_heads"]
+    cfg.ffn_embed_dim = dims["ffn_embed_dim"]
+    cfg.key_size = dims["key_size"]
+    return cfg
+
 
 def apply_lora(backbone, r: int = 16, alpha: int = 32, dropout: float = 0.05):
     """Wrap an NTv3 backbone with PEFT LoRA on the transformer linears (base frozen, adapters train)."""
@@ -109,10 +146,18 @@ class NTv3PreBigWigModel(nn.Module):
         super().__init__()
         from transformers import AutoConfig, AutoModelForMaskedLM
 
-        self.config = AutoConfig.from_pretrained(model_name, trust_remote_code=True,
-                                                 local_files_only=local_files_only)
-        self.backbone = AutoModelForMaskedLM.from_pretrained(
-            model_name, trust_remote_code=True, config=self.config, local_files_only=local_files_only)
+        if model_name in NTV3_SCALED_SIZES:
+            # RANDOM-INIT scaled tier (no InstaDeep ckpt at this size): build the config off the 8m_pre
+            # template with the tier's width/depth overrides and instantiate FRESH weights via from_config
+            # (the pretrained `from_pretrained` path below is untouched). Head + forward are identical —
+            # both read self.config.embed_dim, so the fresh backbone drops into the same distill/eval loop.
+            self.config = scaled_ntv3_config(model_name)
+            self.backbone = AutoModelForMaskedLM.from_config(self.config, trust_remote_code=True)
+        else:
+            self.config = AutoConfig.from_pretrained(model_name, trust_remote_code=True,
+                                                     local_files_only=local_files_only)
+            self.backbone = AutoModelForMaskedLM.from_pretrained(
+                model_name, trust_remote_code=True, config=self.config, local_files_only=local_files_only)
         self.keep_target_center_fraction = keep_target_center_fraction
         self.bigwig_head = LinearHead(self.config.embed_dim, num_tracks)
         if use_lora:
@@ -125,6 +170,96 @@ class NTv3PreBigWigModel(nn.Module):
             emb = crop_center(emb, self.keep_target_center_fraction)
         # `features` = per-bp hidden embedding (cropped to L_out) for KD feature alignment; see sibling.
         return {"bigwig_tracks_logits": self.bigwig_head(emb), "features": emb}  # [B, L_out, *]
+
+
+# NTv3 single-nucleotide tokenizer ids (vocab.json): A=6, C=8, G=9, T=7 (one token per bp). The
+# BPNet student one-hots these from the SAME ``tokens`` the transformer students receive, so it is a
+# drop-in alternative — special/pad/N tokens map to an all-zero (absent-base) column.
+NTV3_NUC_IDS = {"A": 6, "C": 8, "G": 9, "T": 7}
+NTV3_VOCAB_SIZE = 11
+
+
+def _load_carbon_bpnet_module():
+    """Load the sibling ``code_carbon`` BPNet module by file path (it is self-contained: torch + einops
+    only), so we reuse the tested architecture without coupling the two ``src`` packages."""
+    import importlib.util
+    import os
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    bp_path = os.path.normpath(os.path.join(
+        here, "..", "..", "..", "code_carbon", "src", "model", "nn", "bpnet_pytorch.py"))
+    spec = importlib.util.spec_from_file_location("carbon_bpnet_pytorch", bp_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _carbon_bpnet_backbone(model_size: str = "original", channels: int = None, n_dilated: int = None):
+    """REUSE the tested ``code_carbon`` BPNet dilated-conv tower (the same one the Carbon-3B distillation
+    distills into — full receptive field, dilation 2^i, NO cap). Returns ``(backbone_module, feat_dim)``
+    where the module maps one-hot ``[B, 4, L]`` -> per-bp features ``[B, C, L]``.
+
+    ``channels`` + ``n_dilated`` knobs build a custom-width/-depth tower with the SAME block structure
+    (stem Conv1d(4,C,25) + ``n_dilated`` ``Residual(Conv1d(C,C,3,dilation=2^i)+ReLU)`` blocks), reusing
+    the carbon ``Residual`` primitive so it stays one architecture. With both unset, returns the stock
+    ``original`` 64-ch / 9-layer ``BPNet().stem``.
+    """
+    mod = _load_carbon_bpnet_module()
+    if channels is None and n_dilated is None:
+        if model_size != "original":
+            raise ValueError(f"named size {model_size!r} not wired; pass channels/n_dilated instead")
+        return mod.BPNet().stem, 64  # stock original tower (64 ch, dilation 2..512)
+    channels = channels or 64
+    n_dilated = n_dilated or 9
+    layers = [nn.Conv1d(4, channels, 25, padding="same"), nn.ReLU()]
+    for i in range(1, n_dilated + 1):  # dilation 2^i, uncapped -> full receptive field (matches original)
+        layers.append(mod.Residual(
+            nn.Sequential(nn.Conv1d(channels, channels, 3, padding="same", dilation=2 ** i), nn.ReLU())))
+    return nn.Sequential(*layers), channels
+
+
+class BPNetTrackStudent(nn.Module):
+    """BPNet dilated-CNN student for per-bp track regression — the genomics-native architecture, tiny
+    (~0.5M params) and fast to train, as an alternative to the transformer NTv3 student.
+
+    REUSES the existing, tested ``code_carbon`` BPNet tower (``_carbon_bpnet_backbone``); this wrapper
+    only adds what the NTv3 track task needs on top: (1) one-hot the SAME single-nt ``tokens`` the NTv3
+    students receive (the carbon BPNet expects one-hot ``[B,4,L]``, NTv3 tokens are ids 6-9), (2) crop to
+    the central ``keep_target_center_fraction``, (3) the per-bp track head. Identical forward contract to
+    the NTv3 students so it drops into the same training / KD loop and metrics unchanged:
+        forward(tokens) -> {"bigwig_tracks_logits": [B, L_out, num_tracks], "features": [B, L_out, C]}
+    """
+
+    def __init__(self, model_name: str = None, num_tracks: int = 1,
+                 keep_target_center_fraction: float = NTV3_CROP_FRAC, model_size: str = "original",
+                 channels: int = None, n_dilated: int = None,
+                 nuc_ids: dict = None, vocab_size: int = NTV3_VOCAB_SIZE, **_ignored):
+        super().__init__()
+        self.keep_target_center_fraction = keep_target_center_fraction
+        self.backbone, channels = _carbon_bpnet_backbone(model_size, channels, n_dilated)
+
+        class _Cfg:  # lightweight stand-in for the HF config the NTv3 students carry (KD reads embed_dim)
+            pass
+        self.config = _Cfg()
+        self.config.embed_dim = channels
+
+        # One-hot lookup [vocab_size, 4] in ACGT channel order; non-base tokens -> all-zero row. (NTv3
+        # tokens are 6-9, vs the carbon BPNet's F.one_hot(input_ids, 4) on 0-3 — same 4 channels.)
+        nuc_ids = nuc_ids or NTV3_NUC_IDS
+        lut = torch.zeros(vocab_size, 4)
+        for ch, base in enumerate("ACGT"):
+            lut[nuc_ids[base], ch] = 1.0
+        self.register_buffer("nuc_lut", lut, persistent=False)
+
+        self.head = LinearHead(channels, num_tracks)  # LayerNorm -> Linear -> softplus (same NTv3 head)
+
+    def forward(self, tokens: torch.Tensor) -> dict:
+        x = self.nuc_lut[tokens].transpose(1, 2)        # [B, 4, L]  (Conv1d wants channels-first)
+        x = self.backbone(x)                            # [B, C, L]  (reused carbon dilated tower)
+        emb = x.transpose(1, 2)                         # [B, L, C]  (channels-last, like NTv3 emb)
+        if self.keep_target_center_fraction < 1.0:
+            emb = crop_center(emb, self.keep_target_center_fraction)
+        return {"bigwig_tracks_logits": self.head(emb), "features": emb}  # [B, L_out, *]
 
 
 def _is_pretrained_ckpt(config) -> bool:
@@ -143,6 +278,22 @@ def build_bigwig_model(model_name: str, num_tracks: int, **kwargs):
     import os
     from transformers import AutoConfig
     from src.model.ntv3_teacher import prepare_local_snapshot
+
+    # BPNet student: a from-scratch dilated CNN — no pretrained backbone to load, so dispatch early.
+    # bpnet-only kwargs are stripped here so they never reach the NTv3 constructors (the POST 650M
+    # model has no **kwargs); the NTv3 path simply ignores them.
+    is_bpnet = kwargs.pop("student_arch", None) == "bpnet"
+    bp_keys = ("model_size", "channels", "n_dilated", "nuc_ids", "vocab_size")
+    bp_kwargs = {k: kwargs.pop(k) for k in bp_keys if k in kwargs}
+    if is_bpnet:
+        if "keep_target_center_fraction" in kwargs:
+            bp_kwargs["keep_target_center_fraction"] = kwargs["keep_target_center_fraction"]
+        return BPNetTrackStudent(model_name, num_tracks, **bp_kwargs)
+
+    # Random-init scaled NTv3 tier (from-scratch size-ladder): the from_config branch in
+    # NTv3PreBigWigModel builds it fresh from NTV3_SCALED_SIZES — no path/config on disk to inspect.
+    if model_name in NTV3_SCALED_SIZES:
+        return NTv3PreBigWigModel(model_name, num_tracks, **kwargs)
 
     if os.path.isdir(model_name):
         model_name = prepare_local_snapshot(model_name)
