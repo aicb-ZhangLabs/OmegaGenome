@@ -7,10 +7,12 @@
 #   - benchmark data: read DIRECTLY from the SSD mount (pyBigWig/pyfaidx indexed file-handle reads, NOT
 #     numpy memmap -> the memmap-hang failure mode does not apply); NO --stage_dir, no /tmp copy.
 #   - TRITON cache -> SSD, never node-local /tmp.
-# The ONLY /tmp path used is the SSD mount /tmp/galaxy_srv_disk00/pengchx3. Restarts idx 3/4 (100m/300m).
+# The ONLY /tmp path used is the SSD mount /tmp/galaxy_srv_disk00/pengchx3. Full sweep idx 0-4
+# (4m/8m/30m/100m/300m) restart after the 2026-07-20 sshfs blip; the per-window bigWig reads now retry
+# transient sshfs errors (src/data/ntv3_ft_data.py _retry_sshfs), so the transient open/read no longer kills a run.
 #   sbatch slurm/ntv3_size_sweep_ram_kd.sbatch
 #SBATCH --job-name=loom_ntv3-size-ram
-#SBATCH --array=3-4%2
+#SBATCH --array=0-4%3
 #SBATCH --nodes=1
 #SBATCH --nodelist=laniakea
 #SBATCH --partition=zhanglab.p
