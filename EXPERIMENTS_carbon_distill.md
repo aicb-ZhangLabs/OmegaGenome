@@ -620,8 +620,53 @@ and reuses the 3 existing pretrained points:
   joint-vs-subset guard blocks every wrong-target combo, 300M cached path holds no teacher and fits 49 GB. Dry-runs
   A/B/C all exit 0 (job 253740).
 - **STATUS: sweep restarted** with an sshfs-retry loader + staggering (throttle=1) after a laniakea/sshfs
-  concurrency-saturation failure (see F). **Results pending — NO final regression size numbers exist yet; do not
-  report any.**
+  concurrency-saturation failure (see F). **First tier (4M) has landed — see below. 8M/30M/100M/300M still pending; no
+  final scaling-law fit yet.**
+
+#### E.1 — ntv3-4m — ✅ DONE (from-scratch + cached-KD, seed 0)
+**Source:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-4m_scratch_kd_s0/ntv3_finetune_result.json`
+(git_commit `9299f63`).
+
+- **4.34M params, random-init (from-scratch) + cached-KD, seed 0, 19932 steps, seq_len 32768.**
+- **best_val_mean_pearson = 0.4857**, **test_mean_pearson = 0.4606**.
+- KD config: `w_ce=0.5`, `w_kl=0.5`, `w_mse=0.0`, `gt_loss=poisson_multinomial`, `distill_loss=standardized_mse`,
+  teacher = cached NTv3-650M joint34 logits.
+
+**Per-assay test Pearson (grouped from 34 tracks):**
+
+| assay | #tracks | mean Pearson |
+|---|:-:|:-:|
+| ATAC-seq | 5 | 0.566 |
+| Histone ChIP-seq | 4 | 0.563 |
+| total RNA-seq | 3 | 0.478 |
+| eCLIP | 10 | 0.442 |
+| polyA RNA-seq | 2 | 0.401 |
+| PRO-cap | 10 | 0.392 |
+
+**Full per-track (track_id : test Pearson):** ENCSR046BCI_M 0.412, ENCSR046BCI_P 0.373, ENCSR100LIJ_M 0.439,
+ENCSR100LIJ_P 0.428, ENCSR114HGS_M 0.274, ENCSR114HGS_P 0.260, ENCSR154HRN_M 0.435, ENCSR154HRN_P 0.421,
+ENCSR249ROI_M 0.509, ENCSR249ROI_P 0.468, ENCSR321PWZ_M 0.515, ENCSR321PWZ_P 0.501, ENCSR325NFE 0.688,
+ENCSR410DWV 0.546, ENCSR484LTQ_M 0.373, ENCSR484LTQ_P 0.363, ENCSR487QSB 0.507, ENCSR527JGN_M 0.330,
+ENCSR527JGN_P 0.471, ENCSR619DQO_M 0.511, ENCSR619DQO_P 0.521, ENCSR628PLS 0.426, ENCSR682BFG 0.504,
+ENCSR701YIC 0.403, ENCSR754DRC 0.437, ENCSR799DGV_M 0.434, ENCSR799DGV_P 0.433, ENCSR814RGG 0.665,
+ENCSR862QCH_M 0.430, ENCSR862QCH_P 0.406, ENCSR863PSM 0.482, ENCSR935RNW_M 0.437, ENCSR935RNW_P 0.433,
+ENCSR962OTG 0.828.
+
+**Scaling context (params → test mean Pearson; note the two series — from-scratch+KD vs pretrained):**
+
+| model | params | init | test Pearson | source |
+|---|:-:|---|:-:|---|
+| NTv3-4M | 4.34M | from-scratch+KD | 0.461 | sweep (this) |
+| NTv3-8M | ~8M | pretrained baseline | 0.475 | ntv3_8m_baseline |
+| NTv3-8M | ~8M | pretrained+KD(DIST) | 0.493 | ntv3_8m_kd_dist |
+| NTv3-100M | ~100M | pretrained baseline | 0.518 | ntv3_100m_baseline |
+| NTv3-650M | 650M | teacher full-FT | 0.606 | ntv3_ft_faithful (3-seed 0.6059/0.6071/0.6061) |
+
+- **Assessment:** 4M from-scratch anchors the small end sensibly — below the teacher (0.606) and just under the
+  8M-pretrained baseline (0.475), which is expected for a random-init model at a quarter the params. Per-assay ordering
+  (ATAC/histone easy, PRO-cap/eCLIP hard) is biologically expected. The from-scratch scaling curve (4M→300M) is being
+  filled by the sweep; **full scaling-law fit is deferred until the 8M/30M/100M/300M from-scratch tiers land.**
+- **Remaining tiers: 8M / 30M / 100M / 300M sweep points still PENDING.**
 
 ### F. Infra notes (on record)
 - **node-local /tmp incident:** a voyager run overflowed the 49 GB node-local `/tmp` — fixed by RAM-loading the
