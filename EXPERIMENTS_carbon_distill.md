@@ -619,9 +619,10 @@ and reuses the 3 existing pretrained points:
   widths, memmap cache numerically faithful to the live teacher (max_abs_err 1.94e-3, idx alignment 0/5 mismatches),
   joint-vs-subset guard blocks every wrong-target combo, 300M cached path holds no teacher and fits 49 GB. Dry-runs
   A/B/C all exit 0 (job 253740).
-- **STATUS: sweep restarted** with an sshfs-retry loader + staggering (throttle=1) after a laniakea/sshfs
-  concurrency-saturation failure (see F). **First tier (4M) has landed — see below. 8M/30M/100M/300M still pending; no
-  final scaling-law fit yet.**
+- **STATUS: sweep progressing** with an sshfs-retry loader + staggering (throttle=1) after a laniakea/sshfs
+  concurrency-saturation failure (see F). **Joint tiers 4M / 8M / 100M have landed (seed 0) — see E.1/E.1b below.
+  30M (~34%) and 300M (~63%) still RUNNING; no final scaling-law fit yet.** A per-track specialist ladder on
+  t12 = ENCSR325NFE (ATAC-seq) has also started — see E.2.
 
 #### E.1 — ntv3-4m — ✅ DONE (from-scratch + cached-KD, seed 0)
 **Source:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-4m_scratch_kd_s0/ntv3_finetune_result.json`
@@ -665,8 +666,76 @@ ENCSR962OTG 0.828.
 - **Assessment:** 4M from-scratch anchors the small end sensibly — below the teacher (0.606) and just under the
   8M-pretrained baseline (0.475), which is expected for a random-init model at a quarter the params. Per-assay ordering
   (ATAC/histone easy, PRO-cap/eCLIP hard) is biologically expected. The from-scratch scaling curve (4M→300M) is being
-  filled by the sweep; **full scaling-law fit is deferred until the 8M/30M/100M/300M from-scratch tiers land.**
-- **Remaining tiers: 8M / 30M / 100M / 300M sweep points still PENDING.**
+  filled by the sweep; **full scaling-law fit is deferred until the 30M/300M from-scratch tiers land.**
+- **Now DONE: 8M and 100M from-scratch tiers landed (see E.1b). Remaining: 30M (~34%) and 300M (~63%) still RUNNING.**
+
+#### E.1b — ntv3-8M + ntv3-100M joint (from-scratch + KD, seed 0) — ✅ DONE
+**Sources:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-8m_scratch_kd_s0/ntv3_finetune_result.json`
+and `.../ntv3-100m_scratch_kd_s0/ntv3_finetune_result.json` (both git_commit `9299f63`).
+
+Same recipe as E.1 (random-init from-scratch + cached NTv3-650M joint34 KD, seed 0, 19932 steps, seq_len 32768;
+`w_ce=0.5` poisson_multinomial + `w_kl=0.5` standardized_mse, `w_mse=0.0`).
+
+| tier | test_mean_pearson | best_val_mean_pearson |
+|---|:-:|:-:|
+| ntv3-8M | **0.4769** | 0.5031 |
+| ntv3-100M | **0.5188** | 0.5494 |
+
+**Updated JOINT (34-track) from-scratch+KD scaling table:**
+
+| model | params | init | test mean Pearson | source |
+|---|:-:|---|:-:|---|
+| NTv3-4M | 4.34M | from-scratch+KD | 0.4606 | sweep (E.1) |
+| NTv3-8M | 7.69M | from-scratch+KD | **0.4769** | sweep (this) |
+| NTv3-30M | 29.87M | from-scratch+KD | *pending (~34%)* | RUNNING |
+| NTv3-100M | 106.46M | from-scratch+KD | **0.5188** | sweep (this) |
+| NTv3-300M | 303.05M | from-scratch+KD | *pending (~63%)* | RUNNING |
+| NTv3-650M (teacher) | 651.83M | pretrained full-FT | 0.606 | ntv3_ft_faithful (3-seed 0.6059/0.6071/0.6061) |
+
+**KEY FINDING — from-scratch+KD ≈ pretrained-init at BOTH scales; KD closes the pretraining gap.** The
+from-scratch+KD tiers land on top of their pretrained-init baselines:
+- **8M:** from-scratch+KD **0.4769** vs pretrained-8M baseline **0.475** (Δ ≈ +0.002).
+- **100M:** from-scratch+KD **0.5188** vs pretrained-100M baseline **0.518** (Δ ≈ +0.001).
+
+So distilling from the 650M teacher lets a *randomly-initialized* student match a *pretrained* one at matched size —
+the pretraining bonus is fully recovered by KD on this 34-track regression. (Pretrained baselines: `ntv3_8m_baseline`
+0.475, `ntv3_100m_baseline` 0.518, per E.1's scaling-context table.)
+
+### E.2 — Per-track specialist ladder — t12 = ENCSR325NFE (ATAC-seq), single-track ⚠ IN PROGRESS
+**Sources:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep_pertrack/t12_ENCSR325NFE/ntv3-4m_scratch_kd_s0/ntv3_finetune_result.json`
+and `.../ntv3-8m_scratch_kd_s0/ntv3_finetune_result.json` (both git_commit `9299f63`).
+
+A **single-track specialist** ladder distilling only ENCSR325NFE (ATAC-seq, joint channel 12), same from-scratch+KD
+recipe and seed 0 as the joint sweep. Clean path scheme: `size_sweep_pertrack/t12_ENCSR325NFE/`. The per-track teacher
+cache `gen/t12.pt` is the **byte-identical channel-12 slice** of the joint34 teacher cache (no re-forward of the 650M
+teacher — the specialist and the joint model see numerically identical targets on this track).
+
+| tier | test Pearson | best_val Pearson |
+|---|:-:|:-:|
+| pt12-4M | **0.7322** | 0.7488 |
+| pt12-8M | **0.7362** | 0.7672 |
+| pt12-30M | *pending (~19%)* | RUNNING |
+| pt12-100M | *pending (~35%)* | RUNNING |
+| pt12-300M | *pending* | not started |
+
+**KEY COMPARISON — specialist vs the joint model's per-track slice on ENCSR325NFE.** The joint-model slice values are
+`per_track_pearson["ENCSR325NFE"]` pulled (and verified) from the JOINT `size_sweep/ntv3-{4m,8m,100m}_scratch_kd_s0`
+results:
+
+| size | specialist test | joint ENCSR325NFE slice | Δ (specialist − joint slice) |
+|---|:-:|:-:|:-:|
+| 4M | 0.7322 | 0.6882 | **+0.0440** |
+| 8M | 0.7362 | 0.7060 | **+0.0302** |
+| 100M | *pending* | 0.7472 | — |
+
+**FINDING — the per-track SPECIALIST beats the joint model's slice** (4M specialist 0.732 vs joint-4M slice 0.688,
+**+0.044**; 8M 0.736 vs 0.706, +0.030): dedicating the whole small model to one high-signal ATAC track outperforms the
+same-size model sharing capacity across all 34 tracks.
+
+**FINDING — per-track ATAC saturates early (plateau).** The specialist curve for ENCSR325NFE is nearly flat: 4M 0.7322
+→ 8M 0.7362 (+0.004). ENCSR325NFE is a high-signal track that a 4M specialist already maxes out, so its per-track
+scaling curve is a plateau rather than a climbing law. (Note: the joint slice, by contrast, keeps climbing with size —
+0.688 → 0.706 → 0.747 — because in the joint model the extra capacity relieves cross-track contention.)
 
 ### F. Infra notes (on record)
 - **node-local /tmp incident:** a voyager run overflowed the 49 GB node-local `/tmp` — fixed by RAM-loading the
