@@ -27,6 +27,43 @@ MOUNT_GUARD_TRIES="${MOUNT_GUARD_TRIES:-10}"
 MOUNT_GUARD_SLEEP="${MOUNT_GUARD_SLEEP:-30}"
 MOUNT_GUARD_MAX_REQUEUE="${MOUNT_GUARD_MAX_REQUEUE:-5}"
 
+# resolve_ssd_mount <required-relative-path>... : echo the galaxy-SSD root for THIS node, or fail.
+#   SSD="$(resolve_ssd_mount ntv3_benchmark_data/human/genome.fasta)" || exit 1
+#
+# HARD /tmp POLICY (node-agnostic; these jobs may land on laniakea OR voyager OR galaxy).
+# The only acceptable "/tmp" path is the galaxy SSD, reachable as:
+#   laniakea/voyager : /tmp/galaxy_srv_disk00/$USER  = a real sshfs MOUNTPOINT
+#   galaxy           : /tmp/galaxy_srv_disk00        = a SYMLINK to the local /srv/disk00/sshfs
+# A same-named plain directory on the node's own scratch must NEVER be used: voyager's /tmp is a 49G
+# LV that has overflowed catastrophically, and silently "succeeding" onto it would both fill the node
+# and train on absent/stale data. TEST USED: a candidate is refused if it sits on the SAME FILESYSTEM
+# as the node's /tmp (st_dev comparison). That is node-agnostic — it holds on laniakea/voyager (where
+# /tmp is a real LV and the SSD is an sshfs mount) and on galaxy (where /tmp is a symlink to
+# /lv_scratch/tmp while the SSD is /dev/sda1), unlike a path-prefix or `mountpoint` test, both of
+# which this repo has now seen misfire. A candidate must also already hold the required data.
+# MOUNT_GUARD_SSD_CANDIDATES: search order, overridable ONLY so the self-test can exercise this exact
+# function against synthetic roots (never override it in a real job).
+: "${MOUNT_GUARD_SSD_CANDIDATES:=/tmp/galaxy_srv_disk00/$USER /srv/disk00/sshfs/$USER /srv/disk00/$USER}"
+resolve_ssd_mount() {
+    local cand rel ok tmpdev
+    tmpdev="$(stat -c %d -- /tmp/. 2>/dev/null || echo NONE)"
+    for cand in $MOUNT_GUARD_SSD_CANDIDATES; do
+        [ -d "$cand" ] || continue
+        if [ "$(stat -c %d -- "$cand" 2>/dev/null || echo X)" = "$tmpdev" ]; then
+            echo "[mount_guard] REFUSING $cand on $(hostname -s): it is on the node-local /tmp filesystem, not the SSD mount" >&2
+            continue
+        fi
+        ok=1
+        for rel in "$@"; do
+            [ -e "$cand/$rel" ] || { echo "[mount_guard] $cand is missing required data: $rel" >&2; ok=0; break; }
+        done
+        [ "$ok" = 1 ] || continue
+        echo "$cand"; return 0
+    done
+    echo "[mount_guard] FATAL: no usable galaxy-SSD mount on $(hostname -s) (never falling back to node-local /tmp)" >&2
+    return 1
+}
+
 # _mount_readable <path>... : 0 iff EVERY path exists AND is actually readable right now.
 # Existence alone is not enough — during the outage `stat` succeeded while open() returned EPERM,
 # so files are probed with a 1-byte read and directories with a listing.
@@ -43,8 +80,21 @@ _mount_readable() {
     return 0
 }
 
-# _job_stdout : path of THIS job's SLURM stdout file (works for any --output pattern).
+# MOUNT_GUARD_LOG : the file THIS batch script's stdout is actually attached to, resolved ONCE at
+# source time (fd 1 of the sourcing shell, i.e. the SLURM --output file).
+# WHY: `scontrol show job` re-expands the --output pattern against the job's CURRENT name, so any
+# sbatch that renames itself (`scontrol update JobId=... Name=...`, as the no-KD ladder does) gets
+# back a path that DOES NOT EXIST. `[ -f "$log" ]` then failed silently and the outage-signature
+# branch never ran — on 2026-07-23 that misfiled two genuine sshfs-blip deaths (257151_3, 257224_1)
+# as "NOT a mount failure", so they were never requeued. fd 1 is immune to renaming.
+MOUNT_GUARD_LOG="${MOUNT_GUARD_LOG:-$(readlink -f "/proc/$$/fd/1" 2>/dev/null || true)}"
+
+# _job_stdout : path of THIS job's SLURM stdout file (works for any --output pattern, and for jobs
+# that rename themselves). Prefers the fd-1 target; falls back to scontrol only if that is not a file.
 _job_stdout() {
+    if [ -n "${MOUNT_GUARD_LOG:-}" ] && [ -f "$MOUNT_GUARD_LOG" ]; then
+        echo "$MOUNT_GUARD_LOG"; return 0
+    fi
     [ -n "${SLURM_JOB_ID:-}" ] || return 0
     scontrol show job "$SLURM_JOB_ID" 2>/dev/null | tr ' ' '\n' | sed -n 's/^StdOut=//p' | head -1
 }

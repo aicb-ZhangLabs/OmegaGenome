@@ -13,24 +13,35 @@
 # errors with a widened ~63s window (src/data/ntv3_ft_data.py _retry_sshfs, 8 attempts); (b) --num_workers 8
 # (halved from 16) to cut the per-job open-storm at the transition; (c) %1 throttle so no two jobs transition
 # at once. Submit staggered:  sbatch --array=0,3,4%1 slurm/ntv3_size_sweep_ram_kd.sbatch  (8m/30m already run).
+#
+# NODE PLACEMENT (2026-07-23): NOT pinned to laniakea any more — this sweep was monopolising it.
+# `--exclude=galaxy` leaves laniakea (RTX 6000 Ada 49G) AND voyager (H100 NVL 96G) eligible, so a tier
+# starts on whichever frees first; galaxy stays excluded because its 3090s (24G) cannot hold these
+# seq-32768 tiers. Both eligible nodes have >=1TB RAM for the 53GB in-RAM teacher cache (--mem 180G).
+# `--nice=200` keeps it behind the other projects' jobs, so it backfills rather than crowds.
 #SBATCH --job-name=loom_ntv3-size-ram
 #SBATCH --array=0-4%1
 #SBATCH --nodes=1
-#SBATCH --nodelist=laniakea
+#SBATCH --exclude=galaxy
 #SBATCH --partition=zhanglab.p
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=180G
+#SBATCH --nice=200
 #SBATCH --requeue
 #SBATCH --time=30-00:00:00
 #SBATCH --output=slurm-%x-%A_%a.out
 set -euo pipefail
 REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
 cd "$REPO"
-SSD=/tmp/galaxy_srv_disk00/pengchx3
-mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3
-# GUARD: SSD mount must be present (all data/cache/caches live there); never fall back to node-local /tmp.
-[ -d "$SSD/ntv3_targets/teacher_cache_joint34" ] || { echo "FATAL: SSD mount missing at $SSD"; exit 1; }
+# MOUNT GUARD (see slurm/_mount_guard.sh): sourced FIRST because resolve_ssd_mount picks the SSD root.
+source "$REPO/slurm/_mount_guard.sh"
+# Node-agnostic SSD resolution + HARD /tmp policy: refuses any root on the node's own /tmp filesystem
+# (voyager's /tmp is only 49G and has overflowed before) and dies rather than falling back to it.
+SSD="$(resolve_ssd_mount ntv3_benchmark_data/human/genome.fasta \
+                         ntv3_targets/teacher_cache_joint34/logits.npy)" || exit 1
+# Everything scratch-like goes on the SSD, incl. TMPDIR: nothing this job writes may touch node-local /tmp.
+export TMPDIR="$SSD/tmp_scratch_${USER}_$(hostname -s)"; mkdir -p "$TMPDIR"
 # HF cache -> SSD archive (tokenizer template resolve only; students are random-init, teacher-free).
 HOME_HF="$SSD/hf_cache_archive_from_code_carbon"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF" TRANSFORMERS_CACHE="$HOME_HF"
@@ -55,10 +66,9 @@ echo "=== [array ${SLURM_ARRAY_TASK_ID}] size=$SIZE -> $OUT (host $(hostname -s)
 SRC_CACHE="$SSD/ntv3_targets/teacher_cache_joint34"
 [ -f "$SRC_CACHE/logits.npy" ] && [ -f "$SRC_CACHE/meta.pt" ] || { echo "FATAL: joint-34 cache missing at $SRC_CACHE"; exit 1; }
 
-# MOUNT GUARD (see slurm/_mount_guard.sh): the 2026-07-23 sshfs outage EPERM'd every SSD path and
-# killed this sweep at step 19500/19932. Preflight the exact files the run reads, and on a mount-caused
-# crash requeue instead of dying — the trainer then RESUMES from latest_state.pth.
-source "$REPO/slurm/_mount_guard.sh"
+# MOUNT GUARD (sourced above): the 2026-07-23 sshfs outage EPERM'd every SSD path and killed this sweep
+# at step 19500/19932. Preflight the exact files the run reads, and on a mount-caused crash requeue
+# instead of dying — the trainer then RESUMES from latest_state.pth.
 GUARD_PATHS=("$SSD/ntv3_benchmark_data/human/genome.fasta"
              "$SSD/ntv3_benchmark_data/human/genome.fasta.fai"
              "$SSD/ntv3_benchmark_data/human/functional_tracks"

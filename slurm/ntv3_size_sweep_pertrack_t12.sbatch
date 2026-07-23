@@ -18,10 +18,14 @@
 #     the running/pending joint sweep. Submit e.g.:
 #       ssh voyager 'bash -lc "module load slurm; cd <REPO>; sbatch --array=0-4%2 slurm/ntv3_size_sweep_pertrack_t12.sbatch"'
 #     Array idx -> size:  0=4m 1=8m 2=30m 3=100m 4=300m.
+#
+# NODE PLACEMENT (2026-07-23): NOT pinned to laniakea any more (the NTv3 sweep was monopolising it).
+# `--exclude=galaxy` leaves laniakea AND voyager eligible so a tier starts on whichever frees first;
+# galaxy's 24G 3090s cannot hold these seq-32768 tiers. nice=200 keeps it a backfill citizen.
 #SBATCH --job-name=loom_ntv3-pertrack-t12
 #SBATCH --array=0-4%2
 #SBATCH --nodes=1
-#SBATCH --nodelist=laniakea
+#SBATCH --exclude=galaxy
 #SBATCH --partition=zhanglab.p
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
@@ -33,11 +37,14 @@
 set -euo pipefail
 REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
 cd "$REPO"
-SSD=/tmp/galaxy_srv_disk00/pengchx3
-mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3
-# On galaxy the SSD is the LOCAL /srv/disk00 mount (not an sshfs mountpoint); accept either.
-[ -d "$SSD/ntv3_targets/teacher_cache_joint34" ] || SSD=/srv/disk00/sshfs/pengchx3
-[ -d "$SSD/ntv3_targets/teacher_cache_joint34" ] || { echo "FATAL: SSD mount missing at $SSD"; exit 1; }
+# MOUNT GUARD (see slurm/_mount_guard.sh): sourced FIRST because resolve_ssd_mount picks the SSD root.
+source "$REPO/slurm/_mount_guard.sh"
+# Node-agnostic SSD resolution + HARD /tmp policy: refuses any root on the node's own /tmp filesystem
+# (voyager's /tmp is only 49G and has overflowed before) and dies rather than falling back to it.
+SSD="$(resolve_ssd_mount ntv3_benchmark_data/human/genome.fasta \
+                         ntv3_cache/teacher_logits/gen/t12.pt)" || exit 1
+# Everything scratch-like goes on the SSD, incl. TMPDIR: nothing this job writes may touch node-local /tmp.
+export TMPDIR="$SSD/tmp_scratch_${USER}_$(hostname -s)"; mkdir -p "$TMPDIR"
 # HF cache -> SSD archive (tokenizer template resolve only; students are random-init, teacher-free).
 HOME_HF="$SSD/hf_cache_archive_from_code_carbon"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF" TRANSFORMERS_CACHE="$HOME_HF"
@@ -65,11 +72,10 @@ T12_CACHE="$SSD/ntv3_cache/teacher_logits/gen/t12.pt"
 echo "=== [array ${SLURM_ARRAY_TASK_ID}] size=$SIZE track=12/ENCSR325NFE -> $OUT (host $(hostname -s)) ==="
 echo "    per-track cache: $T12_CACHE"
 
-# MOUNT GUARD (see slurm/_mount_guard.sh): the 2026-07-23 sshfs outage EPERM'd every SSD path — it killed
-# the t12 30m/100m runs mid-training and the 300m run in 15s on the HF tokenizer module under $HOME_HF
-# (hence that path is preflighted too). On a mount-caused crash, requeue instead of dying; the trainer then
+# MOUNT GUARD (sourced above): the 2026-07-23 sshfs outage EPERM'd every SSD path — it killed the t12
+# 30m/100m runs mid-training and the 300m run in 15s on the HF tokenizer module under $HOME_HF (hence
+# that path is preflighted too). On a mount-caused crash, requeue instead of dying; the trainer then
 # RESUMES from latest_state.pth.
-source "$REPO/slurm/_mount_guard.sh"
 GUARD_PATHS=("$SSD/ntv3_benchmark_data/human/genome.fasta"
              "$SSD/ntv3_benchmark_data/human/genome.fasta.fai"
              "$SSD/ntv3_benchmark_data/human/functional_tracks"
