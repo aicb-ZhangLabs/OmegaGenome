@@ -55,6 +55,17 @@ echo "=== [array ${SLURM_ARRAY_TASK_ID}] size=$SIZE -> $OUT (host $(hostname -s)
 SRC_CACHE="$SSD/ntv3_targets/teacher_cache_joint34"
 [ -f "$SRC_CACHE/logits.npy" ] && [ -f "$SRC_CACHE/meta.pt" ] || { echo "FATAL: joint-34 cache missing at $SRC_CACHE"; exit 1; }
 
+# MOUNT GUARD (see slurm/_mount_guard.sh): the 2026-07-23 sshfs outage EPERM'd every SSD path and
+# killed this sweep at step 19500/19932. Preflight the exact files the run reads, and on a mount-caused
+# crash requeue instead of dying — the trainer then RESUMES from latest_state.pth.
+source "$REPO/slurm/_mount_guard.sh"
+GUARD_PATHS=("$SSD/ntv3_benchmark_data/human/genome.fasta"
+             "$SSD/ntv3_benchmark_data/human/genome.fasta.fai"
+             "$SSD/ntv3_benchmark_data/human/functional_tracks"
+             "$SRC_CACHE/logits.npy" "$SRC_CACHE/meta.pt" "$HOME_HF")
+mount_preflight "${GUARD_PATHS[@]}" || exit 1
+
+set +e
 "$PV" -u -m src.train.finetune_ntv3 \
       --data_dir "$SSD/ntv3_benchmark_data" \
       --model "$SIZE" \
@@ -67,4 +78,7 @@ SRC_CACHE="$SSD/ntv3_targets/teacher_cache_joint34"
       --num_workers 8 \
       --seed 0 --amp \
       --out "$OUT"
+rc=$?
+set -e
+requeue_if_mount_failure "$rc" "${GUARD_PATHS[@]}" || exit "$rc"
 echo "=== done $SIZE: $OUT/ntv3_finetune_result.json ==="

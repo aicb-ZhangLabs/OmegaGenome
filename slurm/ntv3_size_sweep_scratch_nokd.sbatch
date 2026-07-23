@@ -73,8 +73,18 @@ OUT="$SSD/ntv3_targets/size_sweep/${SIZE}_scratch_nokd_s0"
 command -v scontrol >/dev/null 2>&1 && scontrol update JobId="${SLURM_JOB_ID}" Name="loom_ntv3-size-nokd-${SIZE}" 2>/dev/null || true
 echo "=== [array ${SLURM_ARRAY_TASK_ID}] NO-KD size=$SIZE -> $OUT (host $(hostname -s)) ==="
 
+# MOUNT GUARD (see slurm/_mount_guard.sh): the 2026-07-23 sshfs outage EPERM'd every SSD path and killed
+# the 8m/30m runs at step ~500 (before their first checkpoint). On a mount-caused crash, requeue instead of
+# dying; the trainer then RESUMES from latest_state.pth (or restarts clean if none was written yet).
+source "$REPO/slurm/_mount_guard.sh"
+GUARD_PATHS=("$SSD/ntv3_benchmark_data/human/genome.fasta"
+             "$SSD/ntv3_benchmark_data/human/genome.fasta.fai"
+             "$SSD/ntv3_benchmark_data/human/functional_tracks" "$HOME_HF")
+mount_preflight "${GUARD_PATHS[@]}" || exit 1
+
 # NO --teacher, NO --cached_teacher_logits, NO --stage_dir: pure GT-labels-only training, teacher-free,
 # SSD-direct bigWig reads with the hardened sshfs-retry loader. See header for the verified no-KD path.
+set +e
 "$PV" -u -m src.train.finetune_ntv3 \
       --data_dir "$SSD/ntv3_benchmark_data" \
       --model "$SIZE" \
@@ -85,4 +95,7 @@ echo "=== [array ${SLURM_ARRAY_TASK_ID}] NO-KD size=$SIZE -> $OUT (host $(hostna
       --num_workers 8 \
       --seed 0 --amp \
       --out "$OUT"
+rc=$?
+set -e
+requeue_if_mount_failure "$rc" "${GUARD_PATHS[@]}" || exit "$rc"
 echo "=== done $SIZE: $OUT/ntv3_finetune_result.json ==="

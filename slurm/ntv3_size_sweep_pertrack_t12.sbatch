@@ -65,9 +65,21 @@ T12_CACHE="$SSD/ntv3_cache/teacher_logits/gen/t12.pt"
 echo "=== [array ${SLURM_ARRAY_TASK_ID}] size=$SIZE track=12/ENCSR325NFE -> $OUT (host $(hostname -s)) ==="
 echo "    per-track cache: $T12_CACHE"
 
+# MOUNT GUARD (see slurm/_mount_guard.sh): the 2026-07-23 sshfs outage EPERM'd every SSD path — it killed
+# the t12 30m/100m runs mid-training and the 300m run in 15s on the HF tokenizer module under $HOME_HF
+# (hence that path is preflighted too). On a mount-caused crash, requeue instead of dying; the trainer then
+# RESUMES from latest_state.pth.
+source "$REPO/slurm/_mount_guard.sh"
+GUARD_PATHS=("$SSD/ntv3_benchmark_data/human/genome.fasta"
+             "$SSD/ntv3_benchmark_data/human/genome.fasta.fai"
+             "$SSD/ntv3_benchmark_data/human/functional_tracks"
+             "$T12_CACHE" "$HOME_HF" "$HOME_HF/modules/transformers_modules")
+mount_preflight "${GUARD_PATHS[@]}" || exit 1
+
 # --track_subset 12 => 1-track head; the .pt cache (track_subset==[12]) is loaded whole into RAM by
 # torch.load (no --cache_in_ram; that is the DIR-memmap flag). bigWig data read DIRECTLY off the SSD
 # (indexed file-handle reads, NOT numpy memmap) with the per-window sshfs-retry loader; NO /tmp staging.
+set +e
 "$PV" -u -m src.train.finetune_ntv3 \
       --data_dir "$SSD/ntv3_benchmark_data" \
       --model "$SIZE" \
@@ -81,4 +93,7 @@ echo "    per-track cache: $T12_CACHE"
       --num_workers 8 \
       --seed 0 --amp \
       --out "$OUT"
+rc=$?
+set -e
+requeue_if_mount_failure "$rc" "${GUARD_PATHS[@]}" || exit "$rc"
 echo "=== done $SIZE: $OUT/ntv3_finetune_result.json ==="
