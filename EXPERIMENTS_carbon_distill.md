@@ -737,6 +737,71 @@ same-size model sharing capacity across all 34 tracks.
 scaling curve is a plateau rather than a climbing law. (Note: the joint slice, by contrast, keeps climbing with size —
 0.688 → 0.706 → 0.747 — because in the joint model the extra capacity relieves cross-track contention.)
 
+**INTERPRETATION (⚠ HYPOTHESIS, not an established result) — a specialist→joint CROSSOVER is expected at ~100M.**
+Reading the two curves together, the specialist advantage is *shrinking with scale*: Δ = **+0.0440** at 4M →
+**+0.0302** at 8M. The mechanism is visible in the two component curves measured above:
+- the **joint** slice climbs steadily with capacity: 0.6882 (4M) → 0.7060 (8M) → **0.7472 (100M)**;
+- the **specialist** is flat/saturated: 0.7322 (4M) → 0.7362 (8M) (+0.004), i.e. already at its ceiling (~0.736).
+
+Extrapolating those two trends, the joint model's ENCSR325NFE slice at 100M (**0.7472**) is *already above* the
+saturated specialist level (~0.736). If the specialist stays on its plateau, the two curves cross somewhere around
+**~100M**: per-track specialization helps at **low** capacity (where a joint model must split capacity across 34
+tracks), while **joint multi-track training likely wins at higher capacity** (cross-track transfer + enough capacity
+that cross-track contention no longer binds).
+
+⚠ **This is an extrapolation from 2 specialist points and 3 joint points — a HYPOTHESIS, NOT a result.** The
+decisive test is the **pending per-track 100M / 300M specialist runs** (100M ~35% RUNNING, 300M not started): if
+pt12-100M lands below the joint 100M slice (0.7472) the crossover is confirmed; if it climbs past it, the specialist
+advantage persists and this note must be retracted. Nothing goes in the paper until those tiers land.
+
+### E.3 — FROM-SCRATCH NO-KD (labels-only) baseline arm — DESIGN + STATUS ONLY (⚠ IN PROGRESS, no results yet)
+
+The third arm of the size ladder, added to **isolate what KD actually contributes at each student size**. The arms
+already on record are:
+- **(a) from-scratch + KD** — random-init + cached NTv3-650M joint34 teacher (E.1 / E.1b), available at every tier;
+- **(b) pretrained-init reference baselines** — `ntv3_8m_baseline` 0.475, `ntv3_100m_baseline` 0.518 — available
+  **only at 8M / 100M**, because InstaDeep publishes **no NTv3 checkpoint at 4M / 30M / 300M**.
+
+What was missing is the **from-scratch, labels-only** column: random-init trained on the ground-truth bigWig labels
+with **ZERO teacher / distillation signal**. Without it, the E.1b key finding ("from-scratch+KD ≈ pretrained-init")
+can only be read as *KD closes the pretraining gap* on faith — the labels-only arm is what turns it into a measured
+KD contribution (scratch+KD − scratch-no-KD) at each size.
+
+**Config** — identical to the scratch+KD arm except the loss weights and the absence of a teacher:
+- same registry random-init tiers `ntv3-{4m,8m,30m,100m,300m}` (via `NTV3_SCALED_SIZES` → `from_config`, fresh
+  weights — same param counts as the tier table at the top of E);
+- joint **34-track**, **seed 0**, **19932 steps**, **seq_len 32768**, GT loss `poisson_multinomial`;
+- **`--kd_w_ce 1.0 --kd_w_kl 0 --kd_w_mse 0`**, with **NO `--teacher`** and **NO `--cached_teacher_logits`**.
+
+**Methodological point (deliberate, worth recording):** the weights are set **EXPLICITLY** rather than left at the KD
+defaults (0.5 / 0.5 / 0.2) relying on the teacher merely being absent. Two reasons: (i) the label loss then runs at
+**full weight** (`w_ce=1.0`), so the no-KD arm is not silently a half-weighted-label run; (ii) every `result.json`
+**self-documents** the labels-only condition in its recorded config, so this arm can never be confused with a KD run
+after the fact. Against the scratch+KD arm (`w_ce=0.5` / `w_kl=0.5`) this gives a clean 1:1 contrast: same init, same
+data, same steps, same schedule — teacher signal ON vs OFF.
+
+**Paths / logs** (non-overlapping with the existing `_scratch_kd_s0` dirs, so nothing can be overwritten):
+- run dirs: `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-<size>_scratch_nokd_s0/`
+- job / log names: `loom_ntv3-size-nokd-<size>`
+
+**STATUS: ⚠ IN PROGRESS — dry-run validating; the 5-size ladder is queued as low-RAM backfill** (no teacher cache to
+hold or memmap, so these are the cheapest jobs in the sweep and are scheduled to fill idle low-RAM slots).
+**NO results yet — nothing in this subsection is a measured number for this arm.**
+
+**Target comparison table (skeleton — pending cells are placeholders, NOT predictions):**
+
+| tier | scratch no-KD (E.3) | scratch + KD (E.1/E.1b) | pretrained-init baseline |
+|---|:-:|:-:|:-:|
+| NTv3-4M | *pending* | 0.4606 | n/a (no public ckpt) |
+| NTv3-8M | *pending* | 0.4769 | 0.475 |
+| NTv3-30M | *pending* | *pending (RUNNING)* | n/a (no public ckpt) |
+| NTv3-100M | *pending* | 0.5188 | 0.518 |
+| NTv3-300M | *pending* | *pending (RUNNING)* | n/a (no public ckpt) |
+
+Once the no-KD column lands, the quantity of interest is the per-size **KD delta** = (scratch+KD − scratch-no-KD),
+the first direct measurement of the teacher's contribution as a function of student capacity on this 34-track
+regression. **Not computable yet.**
+
 ### F. Infra notes (on record)
 - **node-local /tmp incident:** a voyager run overflowed the 49 GB node-local `/tmp` — fixed by RAM-loading the
   teacher caches from the SSD mount rather than staging to node-local `/tmp`.
