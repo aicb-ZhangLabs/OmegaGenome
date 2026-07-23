@@ -40,8 +40,21 @@ source "$REPO/slurm/_mount_guard.sh"
 # (voyager's /tmp is only 49G and has overflowed before) and dies rather than falling back to it.
 SSD="$(resolve_ssd_mount ntv3_benchmark_data/human/genome.fasta \
                          ntv3_targets/teacher_cache_joint34/logits.npy)" || exit 1
-# Everything scratch-like goes on the SSD, incl. TMPDIR: nothing this job writes may touch node-local /tmp.
-export TMPDIR="$SSD/tmp_scratch_${USER}_$(hostname -s)"; mkdir -p "$TMPDIR"
+# TMPDIR MUST STAY NODE-LOCAL (do NOT move it onto the SSD mount).
+# It holds ONLY multiprocessing's AF_UNIX rendezvous sockets (a few bytes each) and small python
+# tempfiles -- never DATA, so it does not violate the "no node-local /tmp data staging" policy.
+# WHY IT MUST NOT BE ON THE SSD: sshfs's mknod() returns EPERM for every non-regular file, so
+# bind()ing an AF_UNIX socket under an sshfs path ALWAYS fails with
+#   PermissionError: [Errno 1] Operation not permitted   (multiprocessing/connection.py, _socket.bind)
+# torch's default `file_descriptor` sharing strategy routes every DataLoader worker->main batch
+# through multiprocessing.resource_sharer.DupFd, which needs exactly such a listener socket. The
+# exception is raised in the queue FEEDER THREAD, so the trainer does not exit -- it HANGS at step 0
+# holding a GPU. Commit 7f72c3d pointed TMPDIR at "$SSD/tmp_scratch_..." and thereby hung every job
+# submitted after it (2026-07-23: 257235_4 and 257236_4 burned ~1 GPU-hour each producing 0 steps;
+# 257441_1/_2, 257439_2, 257444_4 reproduced it identically). Job-scoped so concurrent tiers on one
+# node never collide, and removed on exit so nothing accumulates on the node's /tmp.
+export TMPDIR="/tmp/ntv3_sock_${USER}_${SLURM_JOB_ID:-$$}"; mkdir -p "$TMPDIR"
+trap 'rm -rf "$TMPDIR"' EXIT
 # HF cache -> SSD archive (tokenizer template resolve only; students are random-init, teacher-free).
 HOME_HF="$SSD/hf_cache_archive_from_code_carbon"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF" TRANSFORMERS_CACHE="$HOME_HF"
