@@ -619,10 +619,32 @@ and reuses the 3 existing pretrained points:
   widths, memmap cache numerically faithful to the live teacher (max_abs_err 1.94e-3, idx alignment 0/5 mismatches),
   joint-vs-subset guard blocks every wrong-target combo, 300M cached path holds no teacher and fits 49 GB. Dry-runs
   A/B/C all exit 0 (job 253740).
-- **STATUS: sweep progressing** with an sshfs-retry loader + staggering (throttle=1) after a laniakea/sshfs
-  concurrency-saturation failure (see F). **Joint tiers 4M / 8M / 30M / 100M have landed (seed 0) — see E.1/E.1b below.
-  Only 300M (~63%) still RUNNING; no final scaling-law fit yet.** A per-track specialist ladder on
-  t12 = ENCSR325NFE (ATAC-seq) has also progressed (**4M / 8M / 30M / 100M landed; only 300M pending**) — see E.2.
+- **STATUS: joint from-scratch+KD ladder COMPLETE** with an sshfs-retry loader + staggering (throttle=1) after a
+  laniakea/sshfs concurrency-saturation failure (see F). **All 5 joint tiers 4M / 8M / 30M / 100M / 300M have landed
+  (seed 0) — see E.1/E.1b below; the 300M tier closed the ladder (test 0.5309, git `bae128d`).** A per-track specialist
+  ladder on t12 = ENCSR325NFE (ATAC-seq) has progressed (**4M / 8M / 30M / 100M landed; only 300M pending**) — see E.2.
+  The no-KD (labels-only) ablation arm now has **matched 4M / 8M landed; 30M / 100M / 300M pending** — see E.3.
+
+#### E.0 — Consolidated size-ladder summary (all three arms) — the organized at-a-glance view
+Single table across all three arms and all five sizes. Cells are seed-0 test-set metrics; *pending* marks tiers not
+yet landed. **Note the per-track column is a different metric** (single ENCSR325NFE ATAC track Pearson, E.2) and is
+**not level-comparable** with the two joint columns (34-track mean Pearson); it is included so the three arms sit in
+one view.
+
+| size | joint scratch+KD (34-track mean) | joint no-KD matched (34-track mean) | per-track t12 specialist (single ATAC track) |
+|---|:-:|:-:|:-:|
+| 4M | 0.4606 | 0.4349 | 0.7322 |
+| 8M | 0.4769 | 0.4483 | 0.7362 |
+| 30M | 0.4958 | *pending* | 0.7521 |
+| 100M | 0.5188 | *pending* | 0.7631 |
+| 300M | **0.5309** | *pending* | *pending* |
+| teacher-650M | 0.606 | — | — |
+
+- **Joint scratch+KD** — E.1/E.1b, monotonic 4M→300M, complete.
+- **Joint no-KD matched** — E.3(a), identical 63,707-window stream as the KD arm (teacher the only difference);
+  matched 4M/8M landed, 30M/100M/300M pending.
+- **Per-track t12 specialist** — E.2, single-track ENCSR325NFE distillation; 4M–100M landed, 300M pending.
+- Still pending across the ladder: **per-track 300M**; **no-KD matched 30M / 100M / 300M**.
 
 #### E.1 — ntv3-4m — ✅ DONE (from-scratch + cached-KD, seed 0)
 **Source:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-4m_scratch_kd_s0/ntv3_finetune_result.json`
@@ -665,14 +687,15 @@ ENCSR962OTG 0.828.
 
 - **Assessment:** 4M from-scratch anchors the small end sensibly — below the teacher (0.606) and just under the
   8M-pretrained baseline (0.475), which is expected for a random-init model at a quarter the params. Per-assay ordering
-  (ATAC/histone easy, PRO-cap/eCLIP hard) is biologically expected. The from-scratch scaling curve (4M→300M) is being
-  filled by the sweep; **full scaling-law fit is deferred until the 30M/300M from-scratch tiers land.**
-- **Now DONE: 8M, 30M and 100M from-scratch tiers landed (see E.1b). Remaining: only 300M (~63%) still RUNNING.**
+  (ATAC/histone easy, PRO-cap/eCLIP hard) is biologically expected. The from-scratch scaling curve (4M→300M) is now
+  **fully populated** by the sweep.
+- **Now COMPLETE: 8M, 30M, 100M and 300M from-scratch tiers all landed (see E.1b) — the joint ladder is closed.**
 
-#### E.1b — ntv3-8M + ntv3-30M + ntv3-100M joint (from-scratch + KD, seed 0) — ✅ DONE
+#### E.1b — ntv3-8M + ntv3-30M + ntv3-100M + ntv3-300M joint (from-scratch + KD, seed 0) — ✅ DONE (ladder complete)
 **Sources:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-8m_scratch_kd_s0/ntv3_finetune_result.json`,
-`.../ntv3-30m_scratch_kd_s0/ntv3_finetune_result.json` (git_commit `bb281a7`) and
-`.../ntv3-100m_scratch_kd_s0/ntv3_finetune_result.json` (8M/100M git_commit `9299f63`).
+`.../ntv3-30m_scratch_kd_s0/ntv3_finetune_result.json` (git_commit `bb281a7`),
+`.../ntv3-100m_scratch_kd_s0/ntv3_finetune_result.json` (8M/100M git_commit `9299f63`) and
+`.../ntv3-300m_scratch_kd_s0/ntv3_finetune_result.json` (git_commit `bae128d`).
 
 Same recipe as E.1 (random-init from-scratch + cached NTv3-650M joint34 KD, seed 0, 19932 steps, seq_len 32768;
 `w_ce=0.5` poisson_multinomial + `w_kl=0.5` standardized_mse, `w_mse=0.0`).
@@ -682,6 +705,7 @@ Same recipe as E.1 (random-init from-scratch + cached NTv3-650M joint34 KD, seed
 | ntv3-8M | **0.4769** | 0.5031 |
 | ntv3-30M | **0.4958** | 0.5264 |
 | ntv3-100M | **0.5188** | 0.5494 |
+| ntv3-300M | **0.5309** | 0.5572 |
 
 **Updated JOINT (34-track) from-scratch+KD scaling table:**
 
@@ -691,12 +715,13 @@ Same recipe as E.1 (random-init from-scratch + cached NTv3-650M joint34 KD, seed
 | NTv3-8M | 7.69M | from-scratch+KD | **0.4769** | sweep (this) |
 | NTv3-30M | 29.87M | from-scratch+KD | **0.4958** | sweep (E.1b, git `bb281a7`) |
 | NTv3-100M | 106.46M | from-scratch+KD | **0.5188** | sweep (this) |
-| NTv3-300M | 303.05M | from-scratch+KD | *pending (~63%)* | RUNNING |
+| NTv3-300M | 303.05M | from-scratch+KD | **0.5309** | sweep (E.1b, git `bae128d`) |
 | NTv3-650M (teacher) | 651.83M | pretrained full-FT | 0.606 | ntv3_ft_faithful (3-seed 0.6059/0.6071/0.6061) |
 
-**JOINT ladder is now MONOTONIC in size:** 4M 0.4606 → 8M 0.4769 → 30M 0.4958 → 100M 0.5188 → (300M pending) →
-teacher-650M 0.606. Every landed tier rises with capacity; the 30M point (0.4958) sits cleanly between 8M and 100M.
-Only the **300M** tier remains RUNNING before the from-scratch scaling-law fit.
+**JOINT ladder is COMPLETE and MONOTONIC in size:** 4M 0.4606 → 8M 0.4769 → 30M 0.4958 → 100M 0.5188 → 300M 0.5309
+→ teacher-650M 0.606. Every tier rises with capacity; the 300M point (0.5309, best_val 0.5572) closes the ladder and
+sits cleanly below the 650M teacher. All five from-scratch+KD tiers have landed — the from-scratch scaling-law fit is
+now computable end-to-end.
 
 **KEY FINDING — from-scratch+KD ≈ pretrained-init at BOTH scales; KD closes the pretraining gap.** The
 from-scratch+KD tiers land on top of their pretrained-init baselines:
@@ -786,56 +811,88 @@ were both overturned as the ladder filled in. Two successive predictions from pa
 points per curve on this ladder, trend extrapolation has no track record here. Future reads of E.2 should be stated
 as measured pairs only, and nothing goes in the paper ahead of the tier that would test it.
 
-### E.3 — FROM-SCRATCH NO-KD (labels-only) baseline arm — ⚠ IN PROGRESS (4M landed; 8M/30M/100M/300M pending)
+### E.3 — FROM-SCRATCH NO-KD (labels-only) ablation arm — matched 4M/8M LANDED (30M/100M/300M pending)
 
 The third arm of the size ladder, added to **isolate what KD actually contributes at each student size**. The arms
-already on record are:
-- **(a) from-scratch + KD** — random-init + cached NTv3-650M joint34 teacher (E.1 / E.1b), available at every tier;
-- **(b) pretrained-init reference baselines** — `ntv3_8m_baseline` 0.475, `ntv3_100m_baseline` 0.518 — available
-  **only at 8M / 100M**, because InstaDeep publishes **no NTv3 checkpoint at 4M / 30M / 300M**.
+on record are:
+- **(a) from-scratch + KD** — random-init + cached NTv3-650M joint34 teacher (E.1 / E.1b), at every tier;
+- **(b) pretrained-init reference baselines** — `ntv3_8m_baseline` 0.475, `ntv3_100m_baseline` 0.518 — only at
+  8M / 100M (InstaDeep publishes no NTv3 checkpoint at 4M / 30M / 300M);
+- **(c) from-scratch, labels-only (no-KD)** — random-init trained on the ground-truth bigWig labels with **ZERO
+  teacher / distillation signal** (`kd_w_ce=1.0`, `kd_w_kl=0`, `kd_w_mse=0`, no teacher).
 
-What was missing is the **from-scratch, labels-only** column: random-init trained on the ground-truth bigWig labels
-with **ZERO teacher / distillation signal**. Without it, the E.1b key finding ("from-scratch+KD ≈ pretrained-init")
-can only be read as *KD closes the pretraining gap* on faith — the labels-only arm is what turns it into a measured
-KD contribution (scratch+KD − scratch-no-KD) at each size.
+Without arm (c), the E.1b key finding ("from-scratch+KD ≈ pretrained-init") can only be read as *KD closes the
+pretraining gap* on faith; the labels-only arm turns it into a measured KD contribution (scratch+KD − scratch-no-KD)
+at each size.
 
-**Config** — identical to the scratch+KD arm except the loss weights and the absence of a teacher:
-- same registry random-init tiers `ntv3-{4m,8m,30m,100m,300m}` (via `NTV3_SCALED_SIZES` → `from_config`, fresh
-  weights — same param counts as the tier table at the top of E);
-- joint **34-track**, **seed 0**, **19932 steps**, **seq_len 32768**, GT loss `poisson_multinomial`;
-- **`--kd_w_ce 1.0 --kd_w_kl 0 --kd_w_mse 0`**, with **NO `--teacher`** and **NO `--cached_teacher_logits`**.
+**There are TWO variants of the no-KD arm and they must not be conflated.** The **matched** variant reads the identical
+training stream as the KD arm at the same size (63,707 windows); the older **unmatched** variant trained on a vastly
+larger 65,051,340-window stream. They are kept in separate tables below so a reader is never confused by the two (or by
+the pretrained baselines) — the matched table is the clean ablation; the unmatched run is kept only for transparency.
 
-**Methodological point (deliberate, worth recording):** the weights are set **EXPLICITLY** rather than left at the KD
-defaults (0.5 / 0.5 / 0.2) relying on the teacher merely being absent. Two reasons: (i) the label loss then runs at
-**full weight** (`w_ce=1.0`), so the no-KD arm is not silently a half-weighted-label run; (ii) every `result.json`
-**self-documents** the labels-only condition in its recorded config, so this arm can never be confused with a KD run
-after the fact. Against the scratch+KD arm (`w_ce=0.5` / `w_kl=0.5`) this gives a clean 1:1 contrast: same init, same
-data, same steps, same schedule — teacher signal ON vs OFF.
+**Config (both variants)** — identical to the scratch+KD arm except the loss weights and the absence of a teacher:
+same registry random-init tiers `ntv3-{4m,8m,30m,100m,300m}` (fresh weights, same param counts as the tier table at
+the top of E); joint **34-track**, **seed 0**, **19932 steps**, **seq_len 32768**, GT loss `poisson_multinomial`;
+**`--kd_w_ce 1.0 --kd_w_kl 0 --kd_w_mse 0`**, **NO `--teacher`**, **NO `--cached_teacher_logits`**. Weights are set
+EXPLICITLY (not left at the KD defaults 0.5/0.5/0.2) so the label loss runs at **full weight** and every `result.json`
+**self-documents** the labels-only condition. Paths are non-overlapping with `_scratch_kd_s0`, so nothing is
+overwritten; job/log names `loom_ntv3-size-nokd-<size>`.
 
-**Paths / logs** (non-overlapping with the existing `_scratch_kd_s0` dirs, so nothing can be overwritten):
-- run dirs: `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-<size>_scratch_nokd_s0/`
-- job / log names: `loom_ntv3-size-nokd-<size>`
+#### E.3(a) — DATA-MATCHED KD ablation (the headline — clean apples-to-apples, ONLY the teacher differs)
 
-**STATUS: ⚠ IN PROGRESS — the 4M no-KD tier has LANDED (seed 0); 8M / 30M / 100M / 300M still pending** (queued as
-low-RAM backfill — no teacher cache to hold or memmap, so these are the cheapest jobs in the sweep).
-**Source (4M):** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-4m_scratch_nokd_s0/ntv3_finetune_result.json`
-(git_commit `9299f63`; config verified `kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, no teacher — the labels-only
-condition self-documented in the recorded config as designed).
+The matched no-KD runs consume the **identical 63,707-window training stream** as the KD arm at the same size
+(`n_train_windows=63707` recorded in each `result.json`), so init, data, steps, and schedule are all held fixed and the
+**only** difference between the two columns is teacher signal ON vs OFF.
 
-| tier | scratch no-KD (E.3) | scratch + KD (E.1/E.1b) | pretrained-init baseline |
+| size | scratch+KD | scratch no-KD (matched) | **KD delta** |
 |---|:-:|:-:|:-:|
-| NTv3-4M | **0.4393** (best_val 0.4595) | 0.4606 | n/a (no public ckpt) |
-| NTv3-8M | *pending* | 0.4769 | 0.475 |
-| NTv3-30M | *pending* | 0.4958 | n/a (no public ckpt) |
-| NTv3-100M | *pending* | 0.5188 | 0.518 |
-| NTv3-300M | *pending* | *pending (RUNNING)* | n/a (no public ckpt) |
+| 4M | 0.4606 | 0.4349 | **+0.0257** |
+| 8M | 0.4769 | 0.4483 | **+0.0286** |
+| 30M | 0.4958 | *pending* | — |
+| 100M | 0.5188 | *pending* | — |
+| 300M | 0.5309 | *pending* | — |
 
-**FIRST MEASURED KD DELTA — at 4M, KD delta = (scratch+KD − scratch-no-KD) = 0.4606 − 0.4393 = +0.0213** (full
-precision 0.460647 − 0.439316 = 0.021331). This is the first direct measurement of the teacher's contribution as a
-function of student capacity on this 34-track regression: at the small (4M) end, distilling from the 650M teacher buys
-**+0.0213 test mean Pearson** over training the identical random-init model on ground-truth labels alone (same init,
-data, steps, schedule; teacher signal the only difference).
-The remaining tiers (8M/30M/100M/300M) are pending; the KD-delta-vs-capacity curve is not yet computable beyond 4M.
+**FINDING — with data matched (identical 63,707-window stream, teacher the only difference), KD adds +0.0257 at 4M and
++0.0286 at 8M — and the benefit GROWS with size.** Deltas computed, not copied: 0.4606 − 0.4349 = 0.0257;
+0.4769 − 0.4483 = 0.0286. This is the first *clean* measurement of the teacher's contribution as a function of student
+capacity on the 34-track regression: the KD delta rises from +0.0257 (4M) to +0.0286 (8M) as capacity grows. The
+30M / 100M / 300M matched cells are **pending** (queued as low-RAM backfill — the no-KD arm holds no teacher cache).
+- **Matched sources** (git `bae128d`; each verified `kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, `teacher=None`,
+  `n_train_windows=63707`):
+  `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-4m_scratch_nokd_matched_s0/ntv3_finetune_result.json`
+  (test 0.4349191411066653, best_val 0.4613544748069352) and
+  `.../ntv3-8m_scratch_nokd_matched_s0/ntv3_finetune_result.json`
+  (test 0.4483069102471927, best_val 0.47814321235315793).
+
+#### E.3(b) — SUPERSEDED UNMATCHED no-KD run (kept for transparency — NOT the clean ablation)
+
+The original no-KD 4M run trained on a **65,051,340-window** stream (~1021× more diverse than the KD arm's
+63,707-window stream), so it differs from the KD arm in **BOTH** teacher AND data diversity — it is not an
+apples-to-apples KD ablation.
+
+| size | scratch no-KD (UNMATCHED) | stream (train windows) | scratch+KD | delta vs KD |
+|---|:-:|:-:|:-:|:-:|
+| 4M | 0.4393 (best_val 0.4595) | 65,051,340 | 0.4606 | +0.0213 |
+
+**Why the unmatched value was a conservative lower bound (and why the matched delta confirms it).** The unmatched no-KD
+run had a data-diversity ADVANTAGE (1021× more windows) yet **still LOST to KD by +0.0213**. Because the no-KD side was
+handed extra diversity and still fell behind, +0.0213 was necessarily a *lower bound* on the true teacher contribution
+at matched data. The now-landed matched delta (**+0.0257**) is indeed **larger** than the unmatched +0.0213 — directly
+confirming the lower-bound reasoning. **Unmatched source** (distinguishable on disk/HF from the matched run):
+`/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-4m_scratch_nokd_s0/ntv3_finetune_result.json` (git `9299f63`;
+`kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, no teacher). Both the unmatched (`*_scratch_nokd_s0`) and matched
+(`*_scratch_nokd_matched_s0`) paths are cited so the two are unambiguously distinguishable on disk/HF.
+
+#### E.3 — on record (provenance + one documented asymmetry)
+- **Data-stream identity is now provable from artifacts:** `n_train_windows` is written into **every** `result.json`
+  as of commit **9d7942c**, so stream identity between the KD and no-KD arms is verifiable from the artifacts (the
+  matched no-KD 4M/8M and their KD counterparts all read 63,707; the unmatched 4M run predates the field, its
+  65,051,340-window stream recorded in its run log).
+- **One inherent KD-vs-plain-label asymmetry, documented, NOT a data confound:** the KD arm's ground-truth term carries
+  `w_ce=0.5` (the remaining 0.5 is the KL/distill term), whereas the no-KD arm runs the full `poisson_multinomial`
+  label loss at `w_ce=1.0`. This is the intrinsic difference between a KD *total* loss and a plain *label* loss — it is
+  called out in the sbatch header — and is **not** a data confound: the training stream is identical between the two
+  arms.
 
 ### F. Infra notes (on record)
 - **node-local /tmp incident:** a voyager run overflowed the 49 GB node-local `/tmp` — fixed by RAM-loading the
