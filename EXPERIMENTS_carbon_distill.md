@@ -646,7 +646,7 @@ Deltas are computed from full-precision values, not from the rounded cells.
 |---|:-:|:-:|:-:|:-:|:-:|
 | 4M | 4.34M | 0.4606 (0.4857) | 0.4349 (0.4614) | **+0.0257** | — |
 | 8M | 7.69M | 0.4769 (0.5031) | 0.4483 (0.4781) | **+0.0286** | 0.4748 (0.5010) |
-| 30M | 29.87M | 0.4958 (0.5264) | *pending* | — | — |
+| 30M | 29.87M | 0.4958 (0.5264) | 0.4681 (0.4909) | **+0.0277** | — |
 | 100M | 106.46M | 0.5188 (0.5494) | *pending* | — | 0.5178 (0.5441) |
 | 300M | 303.05M | **0.5309 (0.5572)** | *pending* | — | — |
 | **650M teacher** | 651.83M | **0.606** (3-seed 0.6059/0.6071/0.6061) | — | — | pretrained full-FT |
@@ -705,7 +705,7 @@ cache, no-KD flags, data-match, mount guards).
 tier. Full 34-track breakdowns are in each `result.json`; the 4M per-track list, for the record: ENCSR325NFE
 0.688, ENCSR962OTG 0.828, ENCSR814RGG 0.665 the strongest; ENCSR114HGS_M/P ~0.26–0.27 the weakest.)
 
-##### E.2.2 — Joint no-KD (labels-only) ablation — matched 4M/8M ✅; 30M/100M/300M pending
+##### E.2.2 — Joint no-KD (labels-only) ablation — matched 4M/8M/30M ✅; 100M/300M pending
 **Config delta vs E.2.1:** `kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, **no `--teacher`**, **no
 `--cached_teacher_logits`** — the label loss runs at full weight and each `result.json` self-documents the
 labels-only condition. Two variants; **do not conflate them**:
@@ -718,12 +718,13 @@ records `n_train_windows=63707`), so init, data, steps, and schedule are all hel
 |---|:-:|:-:|:-:|:-:|---|
 | 4M | 0.4606 | 0.4349191411066653 (val 0.4613544748069352) | **+0.0257** | `bae128d` | `ntv3-4m_scratch_nokd_matched_s0` |
 | 8M | 0.4769 | 0.4483069102471927 (val 0.47814321235315793) | **+0.0286** | `bae128d` | `ntv3-8m_scratch_nokd_matched_s0` |
-| 30M | 0.4958 | *pending* | — | — | (ckpt saved 2026-07-24, no `result.json` yet) |
+| 30M | 0.4958 | 0.46807474264756777 (val 0.4909315548558588) | **+0.0277** | `bae128d` | `ntv3-30m_scratch_nokd_matched_s0` |
 | 100M | 0.5188 | *pending* | — | — | not started |
 | 300M | 0.5309 | *pending* | — | — | not started |
 
 Deltas computed, not copied: 0.4606471669 − 0.4349191411 = **0.0257280258**; 0.4768708368 − 0.4483069102 =
-**0.0285639265**. Each matched run verified `kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, `teacher=None`,
+**0.0285639265**; 0.4958241975 − 0.4680747426 = **0.0277494549** (→ +0.0277 at 4dp, NOT 0.0278 — single-round
+of 0.0277495). Each matched run verified `kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, `teacher=None`,
 `n_train_windows=63707`.
 
 **(b) SUPERSEDED UNMATCHED run (kept for transparency — NOT the clean ablation).** The original no-KD 4M run
@@ -767,11 +768,26 @@ The from-scratch+KD tiers land on top of their pretrained-init baselines:
 Distilling from the 650M teacher lets a *randomly-initialized* student match a *pretrained* one at matched
 size — the pretraining bonus is fully recovered by KD on this 34-track regression.
 
-**Finding 2 — the KD contribution (matched ablation) GROWS with size.** With data matched (identical
-63,707-window stream, teacher the only difference), KD adds **+0.0257 at 4M** and **+0.0286 at 8M**. This is
-the first *clean* measurement of the teacher's contribution as a function of student capacity on the 34-track
-regression. The 30M/100M/300M matched cells are **pending** (30M checkpoint already saved; queued as low-RAM
-backfill since the no-KD arm holds no teacher cache).
+**Finding 2 — the KD contribution (matched ablation) is ~~GROWS with size~~ roughly constant at ~+0.027
+across 4M–30M (no clear size trend from three points).** With data matched (identical 63,707-window stream,
+teacher the only difference), the measured KD deltas are **+0.0257 (4M) → +0.0286 (8M) → +0.0277 (30M)** — the
+delta rose then dipped, i.e. it is **roughly constant at ~+0.026–0.029** across this range, NOT monotonically
+growing. This is the first *clean* measurement of the teacher's contribution as a function of student capacity
+on the 34-track regression; whether the delta trends at all awaits the **pending 100M/300M** matched cells.
+
+- **~~Superseded read — "the KD contribution GROWS with size".~~ [REVISED 2026-07-24]** Original text kept
+  for the record: *"the KD contribution (matched ablation) GROWS with size. … KD adds +0.0257 at 4M and +0.0286
+  at 8M."* That read came from **only the 4M→8M pair**; the landed 30M point (+0.0277) sits *below* 8M, breaking
+  the monotonic-growth story. The three points show a ~stable +0.027 with **no clear trend** — and this is
+  **not** a claim that the delta is proven flat either (three points cannot establish flatness), only that
+  there is no monotonic climb.
+- ⚠ **THIRD 2-point-extrapolation overreach on record (reinforces, not replaces, the caution under Finding 3).**
+  This is now the third claim in section E where a partial-data extrapolation overstated: the per-track
+  **plateau** claim and the ~100M **crossover** claim (both Finding 3, both overturned as tiers landed), and now
+  the KD-delta **"grows with size"** read (overturned by the 30M point). Same lesson already on record under
+  Finding 3: with 2–3 points per curve, trend extrapolation has no track record here — state measured pairs
+  only, and nothing about a KD-delta trend goes in the paper ahead of the 100M/300M matched tiers that would
+  actually test it.
 
 **Finding 3 — the per-track specialist beats the joint slice at EVERY size tested, with DIMINISHING
 returns; and both prior extrapolations from this arm were overturned.** Measured pairs (specialist − joint
@@ -859,15 +875,14 @@ The regression ladder above is the companion to the **classification** experimen
 **Landed (seed 0, verified `result.json`):**
 - Joint scratch+KD: **all 5 tiers** (4M/8M/30M/100M/300M) — ladder COMPLETE.
 - Per-track t12 specialist: **4M/8M/30M/100M**.
-- Joint no-KD matched: **4M/8M**.
+- Joint no-KD matched: **4M/8M/30M**.
 - Reference points: 650M teacher (3-seed), pretrained-init 8M/100M, `ntv3_8m_kd_dist`.
 
 **Pending (re-checked 2026-07-24; checkpoint files present but no `result.json` yet):**
 - **Per-track t12 300M** — `best_model.pth`/`latest_state.pth` written 2026-07-24 11:51, final test eval not
   yet emitted.
-- **Joint no-KD matched 30M** — `best_model.pth` 11:30 / `latest_state.pth` 12:00, `result.json` imminent.
 - **Joint no-KD matched 100M / 300M** — not started.
 
 **What completes the picture:** the per-track 300M closes the specialist ladder (and gives the 300M
-specialist-vs-joint pair that could still show a crossover at large scale); the no-KD matched 30M/100M/300M
-complete the KD-delta-vs-size curve begun by the 4M/8M pair.
+specialist-vs-joint pair that could still show a crossover at large scale); the no-KD matched 100M/300M
+complete the KD-delta-vs-size curve begun by the 4M/8M/30M points.
