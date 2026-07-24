@@ -548,6 +548,13 @@ def main():
         "cached_teacher_logits": getattr(args, "cached_teacher_logits", None)}
     result = {"model": args.model, "mode": "lora" if args.use_lora else "full-FT",
               "sequence_length": args.sequence_length, "n_tracks": T,
+              # DATA-STREAM identity (added 2026-07-24): the realised train window count together with the
+              # RESOLVED overlap/limit (config below records them POST-override, i.e. what actually ran).
+              # Two arms are data-matched iff these three agree — provable from result.json alone, without
+              # re-deriving the tiling. (A cached-teacher run forces overlap=0 + limit=cache's
+              # limit_num_samples; a teacher-free run keeps whatever --train_overlap/--max_train_samples say.)
+              "n_train_windows": int(len(train_ds)),
+              "n_val_windows": int(len(val_ds)), "n_test_windows": int(len(test_ds)),
               # self-documenting track identity (so a result is never ambiguous about WHICH track):
               "track_subset_idx": idx, "track_ids": list(bw_ids), "track_assays": list(track_assays),
               "best_val_mean_pearson": float(best_val), "test_mean_pearson": float(tm["mean/pearson"]),
