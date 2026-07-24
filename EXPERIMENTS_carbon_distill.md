@@ -622,7 +622,7 @@ and reuses the 3 existing pretrained points:
 - **STATUS: sweep progressing** with an sshfs-retry loader + staggering (throttle=1) after a laniakea/sshfs
   concurrency-saturation failure (see F). **Joint tiers 4M / 8M / 30M / 100M have landed (seed 0) — see E.1/E.1b below.
   Only 300M (~63%) still RUNNING; no final scaling-law fit yet.** A per-track specialist ladder on
-  t12 = ENCSR325NFE (ATAC-seq) has also progressed (4M / 8M / 30M landed) — see E.2.
+  t12 = ENCSR325NFE (ATAC-seq) has also progressed (**4M / 8M / 30M / 100M landed; only 300M pending**) — see E.2.
 
 #### E.1 — ntv3-4m — ✅ DONE (from-scratch + cached-KD, seed 0)
 **Source:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-4m_scratch_kd_s0/ntv3_finetune_result.json`
@@ -707,10 +707,10 @@ So distilling from the 650M teacher lets a *randomly-initialized* student match 
 the pretraining bonus is fully recovered by KD on this 34-track regression. (Pretrained baselines: `ntv3_8m_baseline`
 0.475, `ntv3_100m_baseline` 0.518, per E.1's scaling-context table.)
 
-### E.2 — Per-track specialist ladder — t12 = ENCSR325NFE (ATAC-seq), single-track ⚠ IN PROGRESS
+### E.2 — Per-track specialist ladder — t12 = ENCSR325NFE (ATAC-seq), single-track ⚠ IN PROGRESS (4M/8M/30M/100M landed; 300M pending)
 **Sources:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep_pertrack/t12_ENCSR325NFE/ntv3-4m_scratch_kd_s0/ntv3_finetune_result.json`
 and `.../ntv3-8m_scratch_kd_s0/ntv3_finetune_result.json` (git_commit `9299f63`); `.../ntv3-30m_scratch_kd_s0/ntv3_finetune_result.json`
-(git_commit `bb281a7`).
+and `.../ntv3-100m_scratch_kd_s0/ntv3_finetune_result.json` (git_commit `bb281a7`).
 
 A **single-track specialist** ladder distilling only ENCSR325NFE (ATAC-seq, joint channel 12), same from-scratch+KD
 recipe and seed 0 as the joint sweep. Clean path scheme: `size_sweep_pertrack/t12_ENCSR325NFE/`. The per-track teacher
@@ -722,24 +722,26 @@ teacher — the specialist and the joint model see numerically identical targets
 | pt12-4M | **0.7322** | 0.7488 |
 | pt12-8M | **0.7362** | 0.7672 |
 | pt12-30M | **0.7521** | 0.7704 |
-| pt12-100M | *pending (~35%)* | RUNNING |
+| pt12-100M | **0.7631** | 0.7830 |
 | pt12-300M | *pending* | not started |
 
 **KEY COMPARISON — specialist vs the joint model's per-track slice on ENCSR325NFE.** The joint-model slice values are
 `per_track_pearson["ENCSR325NFE"]` pulled (and verified) from the JOINT `size_sweep/ntv3-{4m,8m,30m,100m}_scratch_kd_s0`
-results (the 30M slice = **0.7255**, read from the joint-30M `ntv3_finetune_result.json`, git `bb281a7`, and verified):
+results (the 30M slice = **0.7255**, git `bb281a7`; the 100M slice = **0.7472**, re-verified from the joint-100M
+`ntv3_finetune_result.json`, full precision 0.7471823661275808):
 
 | size | specialist test | joint ENCSR325NFE slice | Δ (specialist − joint slice) |
 |---|:-:|:-:|:-:|
 | 4M | 0.7322 | 0.6882 | **+0.0440** |
 | 8M | 0.7362 | 0.7060 | **+0.0302** |
 | 30M | 0.7521 | 0.7255 | **+0.0266** |
-| 100M | *pending* | 0.7472 | — |
+| 100M | **0.7631** | 0.7472 | **+0.0159** |
 
-**FINDING — the per-track SPECIALIST beats the joint model's slice** (4M specialist 0.732 vs joint-4M slice 0.688,
-**+0.044**; 8M 0.736 vs 0.706, +0.030; 30M 0.752 vs 0.726, **+0.027**): dedicating the whole small model to one
-high-signal ATAC track outperforms the same-size model sharing capacity across all 34 tracks — the specialist stays
-ahead at every landed tier through 30M.
+**FINDING — the per-track SPECIALIST beats the joint model's slice at EVERY size tested, 4M through 100M** (4M
+specialist 0.732 vs joint-4M slice 0.688, **+0.044**; 8M 0.736 vs 0.706, +0.030; 30M 0.752 vs 0.726, +0.027; 100M
+**0.7631** vs **0.7472**, **+0.0159**, full precision 0.7631253286436455 − 0.7471823661275808 = 0.015943): dedicating
+the whole model to one high-signal ATAC track outperforms the same-size model sharing capacity across all 34 tracks,
+and it does so at all four landed tiers.
 
 **~~FINDING — per-track ATAC saturates early (plateau).~~ [REVISED 2026-07-23 — SUPERSEDED, see below]** The original
 claim (kept for the record): *"The specialist curve for ENCSR325NFE is nearly flat: 4M 0.7322 → 8M 0.7362 (+0.004).
@@ -752,27 +754,37 @@ magnitude larger than the 8M step (+0.004) that the plateau claim was built on. 
 not saturated. The earlier "saturates by 4M / maxed at ~0.736" read was **premature — it extrapolated a plateau from
 only two adjacent points (4M/8M)** whose tiny gap is well within the seed/HP wobble at this size; the third point
 shows a genuine capacity-driven rise. The specialist scaling curve for ENCSR325NFE is a **climbing law (0.732 → 0.736
-→ 0.752)**, not a plateau. (The joint slice also keeps climbing with size — 0.6882 → 0.7060 → 0.7255 → 0.7472 — as
+→ 0.752 → 0.763 at 100M, added 2026-07-24)**, not a plateau. (The joint slice also keeps climbing with size — 0.6882 → 0.7060 → 0.7255 → 0.7472 — as
 extra capacity relieves cross-track contention.)
 
-**INTERPRETATION (⚠ HYPOTHESIS, not an established result) — the ~100M CROSSOVER now looks UNLIKELY; the specialist
-advantage persists through 30M.** With 3 specialist points and 4 joint-slice points, what the numbers actually show:
-- **specialist** (4/8/30M): 0.7322 → 0.7362 → **0.7521** — climbing, with the largest step at 30M;
-- **joint slice** (4/8/30/100M): 0.6882 → 0.7060 → 0.7255 → **0.7472** — climbing steadily;
-- **Δ (specialist − joint slice):** **+0.0440 (4M) → +0.0302 (8M) → +0.0266 (30M)** — still shrinking, but the
-  shrinkage has **decelerated sharply** (−0.0138 over 4M→8M vs only −0.0036 over 8M→30M).
+**~~INTERPRETATION — a specialist→joint CROSSOVER is expected at ~100M.~~ [REFUTED 2026-07-24 by the landed pt12-100M
+run]** The original claim (kept for the record, from the 2026-07-22 version of this section): *"a specialist→joint
+CROSSOVER is expected at ~100M … the joint model's ENCSR325NFE slice at 100M (0.7472) is already above the saturated
+specialist level (~0.736). If the specialist stays on its plateau, the two curves cross somewhere around ~100M:
+per-track specialization helps at low capacity …, while joint multi-track training likely wins at higher capacity."*
+The 2026-07-23 interim note had already downgraded this to *"the ~100M CROSSOVER now looks UNLIKELY"* once the 30M
+specialist point killed the plateau premise; it too was explicitly flagged as a HYPOTHESIS, not a result.
 
-The earlier crossover-at-~100M read was premised on the specialist being *flat at ~0.736*; that premise is now false.
-Critically, the **specialist at 30M (0.7521) already exceeds the joint slice at 100M (0.7472)** — so for the joint
-model to overtake, its 100M slice would have to beat a specialist that is itself still climbing past 30M. An early
-(~100M) crossover therefore looks unlikely on current evidence; the specialist advantage is narrowing only slowly and
-still holds at 30M. It remains possible that the joint slice accelerates and the specialist finally saturates at larger
-scale, so a crossover at *some* capacity is not ruled out — but the data no longer point to ~100M.
+**REFUTATION (2026-07-24) — the crossover did NOT occur. The specialist RETAINS its advantage at every size tested,
+including 100M (Δ = +0.0159).** The decisive test named above has landed: **pt12-100M = 0.7631** vs the joint-100M
+ENCSR325NFE slice **0.7472**. The specialist did not fall below the joint slice at 100M; it climbed past it, exactly
+the outcome the note said would require retraction of the crossover claim. What the four measured pairs show:
+- **specialist** (4/8/30/100M): 0.7322 → 0.7362 → 0.7521 → **0.7631** — climbing at every step;
+- **joint slice** (4/8/30/100M): 0.6882 → 0.7060 → 0.7255 → **0.7472** — climbing at every step;
+- **Δ (specialist − joint slice):** **+0.0440 → +0.0302 → +0.0266 → +0.0159** — positive at all four sizes and
+  **shrinking monotonically with scale**, i.e. diminishing returns to specialization as capacity grows.
 
-⚠ **This is still a HYPOTHESIS from 3 specialist + 4 joint points, NOT a result.** The decisive test is the **pending
-per-track 100M / 300M specialist runs** (100M ~35% RUNNING, 300M not started): if pt12-100M lands **below** the joint
-100M slice (0.7472) an early crossover is back on the table; if it climbs past it (the direction the 30M point favors)
-the specialist advantage persists. Nothing goes in the paper until those tiers land.
+**CORRECTED HEADLINE — "per-track specialization holds its advantage across the ladder, with diminishing returns",
+NOT "joint overtakes".** Both curves rise with capacity, the specialist stays ahead throughout 4M→100M, and the gap
+narrows as capacity grows. A crossover at *larger* scale (300M+) is **not excluded** by these data — the specialist Δ
+is still shrinking at the top of the measured range — and the remaining test is the **pending per-track 300M vs joint
+300M** pair. No specific crossover point is predicted here: the record states only what the four measured pairs show.
+
+⚠ **CAUTION ON RECORD — this is the SECOND correction in E.2.** The plateau claim (revised 2026-07-23, extrapolated
+from the 4M/8M pair) and the ~100M crossover claim (refuted here, extrapolated from 2 specialist + 3 joint points)
+were both overturned as the ladder filled in. Two successive predictions from partial data, both wrong: with 2–3
+points per curve on this ladder, trend extrapolation has no track record here. Future reads of E.2 should be stated
+as measured pairs only, and nothing goes in the paper ahead of the tier that would test it.
 
 ### E.3 — FROM-SCRATCH NO-KD (labels-only) baseline arm — ⚠ IN PROGRESS (4M landed; 8M/30M/100M/300M pending)
 
