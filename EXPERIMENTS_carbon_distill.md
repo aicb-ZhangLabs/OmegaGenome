@@ -620,9 +620,9 @@ and reuses the 3 existing pretrained points:
   joint-vs-subset guard blocks every wrong-target combo, 300M cached path holds no teacher and fits 49 GB. Dry-runs
   A/B/C all exit 0 (job 253740).
 - **STATUS: sweep progressing** with an sshfs-retry loader + staggering (throttle=1) after a laniakea/sshfs
-  concurrency-saturation failure (see F). **Joint tiers 4M / 8M / 100M have landed (seed 0) — see E.1/E.1b below.
-  30M (~34%) and 300M (~63%) still RUNNING; no final scaling-law fit yet.** A per-track specialist ladder on
-  t12 = ENCSR325NFE (ATAC-seq) has also started — see E.2.
+  concurrency-saturation failure (see F). **Joint tiers 4M / 8M / 30M / 100M have landed (seed 0) — see E.1/E.1b below.
+  Only 300M (~63%) still RUNNING; no final scaling-law fit yet.** A per-track specialist ladder on
+  t12 = ENCSR325NFE (ATAC-seq) has also progressed (4M / 8M / 30M landed) — see E.2.
 
 #### E.1 — ntv3-4m — ✅ DONE (from-scratch + cached-KD, seed 0)
 **Source:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-4m_scratch_kd_s0/ntv3_finetune_result.json`
@@ -667,11 +667,12 @@ ENCSR962OTG 0.828.
   8M-pretrained baseline (0.475), which is expected for a random-init model at a quarter the params. Per-assay ordering
   (ATAC/histone easy, PRO-cap/eCLIP hard) is biologically expected. The from-scratch scaling curve (4M→300M) is being
   filled by the sweep; **full scaling-law fit is deferred until the 30M/300M from-scratch tiers land.**
-- **Now DONE: 8M and 100M from-scratch tiers landed (see E.1b). Remaining: 30M (~34%) and 300M (~63%) still RUNNING.**
+- **Now DONE: 8M, 30M and 100M from-scratch tiers landed (see E.1b). Remaining: only 300M (~63%) still RUNNING.**
 
-#### E.1b — ntv3-8M + ntv3-100M joint (from-scratch + KD, seed 0) — ✅ DONE
-**Sources:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-8m_scratch_kd_s0/ntv3_finetune_result.json`
-and `.../ntv3-100m_scratch_kd_s0/ntv3_finetune_result.json` (both git_commit `9299f63`).
+#### E.1b — ntv3-8M + ntv3-30M + ntv3-100M joint (from-scratch + KD, seed 0) — ✅ DONE
+**Sources:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-8m_scratch_kd_s0/ntv3_finetune_result.json`,
+`.../ntv3-30m_scratch_kd_s0/ntv3_finetune_result.json` (git_commit `bb281a7`) and
+`.../ntv3-100m_scratch_kd_s0/ntv3_finetune_result.json` (8M/100M git_commit `9299f63`).
 
 Same recipe as E.1 (random-init from-scratch + cached NTv3-650M joint34 KD, seed 0, 19932 steps, seq_len 32768;
 `w_ce=0.5` poisson_multinomial + `w_kl=0.5` standardized_mse, `w_mse=0.0`).
@@ -679,6 +680,7 @@ Same recipe as E.1 (random-init from-scratch + cached NTv3-650M joint34 KD, seed
 | tier | test_mean_pearson | best_val_mean_pearson |
 |---|:-:|:-:|
 | ntv3-8M | **0.4769** | 0.5031 |
+| ntv3-30M | **0.4958** | 0.5264 |
 | ntv3-100M | **0.5188** | 0.5494 |
 
 **Updated JOINT (34-track) from-scratch+KD scaling table:**
@@ -687,10 +689,14 @@ Same recipe as E.1 (random-init from-scratch + cached NTv3-650M joint34 KD, seed
 |---|:-:|---|:-:|---|
 | NTv3-4M | 4.34M | from-scratch+KD | 0.4606 | sweep (E.1) |
 | NTv3-8M | 7.69M | from-scratch+KD | **0.4769** | sweep (this) |
-| NTv3-30M | 29.87M | from-scratch+KD | *pending (~34%)* | RUNNING |
+| NTv3-30M | 29.87M | from-scratch+KD | **0.4958** | sweep (E.1b, git `bb281a7`) |
 | NTv3-100M | 106.46M | from-scratch+KD | **0.5188** | sweep (this) |
 | NTv3-300M | 303.05M | from-scratch+KD | *pending (~63%)* | RUNNING |
 | NTv3-650M (teacher) | 651.83M | pretrained full-FT | 0.606 | ntv3_ft_faithful (3-seed 0.6059/0.6071/0.6061) |
+
+**JOINT ladder is now MONOTONIC in size:** 4M 0.4606 → 8M 0.4769 → 30M 0.4958 → 100M 0.5188 → (300M pending) →
+teacher-650M 0.606. Every landed tier rises with capacity; the 30M point (0.4958) sits cleanly between 8M and 100M.
+Only the **300M** tier remains RUNNING before the from-scratch scaling-law fit.
 
 **KEY FINDING — from-scratch+KD ≈ pretrained-init at BOTH scales; KD closes the pretraining gap.** The
 from-scratch+KD tiers land on top of their pretrained-init baselines:
@@ -703,7 +709,8 @@ the pretraining bonus is fully recovered by KD on this 34-track regression. (Pre
 
 ### E.2 — Per-track specialist ladder — t12 = ENCSR325NFE (ATAC-seq), single-track ⚠ IN PROGRESS
 **Sources:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep_pertrack/t12_ENCSR325NFE/ntv3-4m_scratch_kd_s0/ntv3_finetune_result.json`
-and `.../ntv3-8m_scratch_kd_s0/ntv3_finetune_result.json` (both git_commit `9299f63`).
+and `.../ntv3-8m_scratch_kd_s0/ntv3_finetune_result.json` (git_commit `9299f63`); `.../ntv3-30m_scratch_kd_s0/ntv3_finetune_result.json`
+(git_commit `bb281a7`).
 
 A **single-track specialist** ladder distilling only ENCSR325NFE (ATAC-seq, joint channel 12), same from-scratch+KD
 recipe and seed 0 as the joint sweep. Clean path scheme: `size_sweep_pertrack/t12_ENCSR325NFE/`. The per-track teacher
@@ -714,47 +721,60 @@ teacher — the specialist and the joint model see numerically identical targets
 |---|:-:|:-:|
 | pt12-4M | **0.7322** | 0.7488 |
 | pt12-8M | **0.7362** | 0.7672 |
-| pt12-30M | *pending (~19%)* | RUNNING |
+| pt12-30M | **0.7521** | 0.7704 |
 | pt12-100M | *pending (~35%)* | RUNNING |
 | pt12-300M | *pending* | not started |
 
 **KEY COMPARISON — specialist vs the joint model's per-track slice on ENCSR325NFE.** The joint-model slice values are
-`per_track_pearson["ENCSR325NFE"]` pulled (and verified) from the JOINT `size_sweep/ntv3-{4m,8m,100m}_scratch_kd_s0`
-results:
+`per_track_pearson["ENCSR325NFE"]` pulled (and verified) from the JOINT `size_sweep/ntv3-{4m,8m,30m,100m}_scratch_kd_s0`
+results (the 30M slice = **0.7255**, read from the joint-30M `ntv3_finetune_result.json`, git `bb281a7`, and verified):
 
 | size | specialist test | joint ENCSR325NFE slice | Δ (specialist − joint slice) |
 |---|:-:|:-:|:-:|
 | 4M | 0.7322 | 0.6882 | **+0.0440** |
 | 8M | 0.7362 | 0.7060 | **+0.0302** |
+| 30M | 0.7521 | 0.7255 | **+0.0266** |
 | 100M | *pending* | 0.7472 | — |
 
 **FINDING — the per-track SPECIALIST beats the joint model's slice** (4M specialist 0.732 vs joint-4M slice 0.688,
-**+0.044**; 8M 0.736 vs 0.706, +0.030): dedicating the whole small model to one high-signal ATAC track outperforms the
-same-size model sharing capacity across all 34 tracks.
+**+0.044**; 8M 0.736 vs 0.706, +0.030; 30M 0.752 vs 0.726, **+0.027**): dedicating the whole small model to one
+high-signal ATAC track outperforms the same-size model sharing capacity across all 34 tracks — the specialist stays
+ahead at every landed tier through 30M.
 
-**FINDING — per-track ATAC saturates early (plateau).** The specialist curve for ENCSR325NFE is nearly flat: 4M 0.7322
-→ 8M 0.7362 (+0.004). ENCSR325NFE is a high-signal track that a 4M specialist already maxes out, so its per-track
-scaling curve is a plateau rather than a climbing law. (Note: the joint slice, by contrast, keeps climbing with size —
-0.688 → 0.706 → 0.747 — because in the joint model the extra capacity relieves cross-track contention.)
+**~~FINDING — per-track ATAC saturates early (plateau).~~ [REVISED 2026-07-23 — SUPERSEDED, see below]** The original
+claim (kept for the record): *"The specialist curve for ENCSR325NFE is nearly flat: 4M 0.7322 → 8M 0.7362 (+0.004).
+ENCSR325NFE is a high-signal track that a 4M specialist already maxes out, so its per-track scaling curve is a plateau
+rather than a climbing law."*
 
-**INTERPRETATION (⚠ HYPOTHESIS, not an established result) — a specialist→joint CROSSOVER is expected at ~100M.**
-Reading the two curves together, the specialist advantage is *shrinking with scale*: Δ = **+0.0440** at 4M →
-**+0.0302** at 8M. The mechanism is visible in the two component curves measured above:
-- the **joint** slice climbs steadily with capacity: 0.6882 (4M) → 0.7060 (8M) → **0.7472 (100M)**;
-- the **specialist** is flat/saturated: 0.7322 (4M) → 0.7362 (8M) (+0.004), i.e. already at its ceiling (~0.736).
+**REVISION (2026-07-23) — the specialist does NOT plateau by 8M; it resumes a clear climb at 30M.** The new 30M
+point contradicts the plateau read: **4M 0.7322 → 8M 0.7362 → 30M 0.7521**, i.e. **+0.0159 from 8M→30M** — an order of
+magnitude larger than the 8M step (+0.004) that the plateau claim was built on. The specialist is **still climbing**,
+not saturated. The earlier "saturates by 4M / maxed at ~0.736" read was **premature — it extrapolated a plateau from
+only two adjacent points (4M/8M)** whose tiny gap is well within the seed/HP wobble at this size; the third point
+shows a genuine capacity-driven rise. The specialist scaling curve for ENCSR325NFE is a **climbing law (0.732 → 0.736
+→ 0.752)**, not a plateau. (The joint slice also keeps climbing with size — 0.6882 → 0.7060 → 0.7255 → 0.7472 — as
+extra capacity relieves cross-track contention.)
 
-Extrapolating those two trends, the joint model's ENCSR325NFE slice at 100M (**0.7472**) is *already above* the
-saturated specialist level (~0.736). If the specialist stays on its plateau, the two curves cross somewhere around
-**~100M**: per-track specialization helps at **low** capacity (where a joint model must split capacity across 34
-tracks), while **joint multi-track training likely wins at higher capacity** (cross-track transfer + enough capacity
-that cross-track contention no longer binds).
+**INTERPRETATION (⚠ HYPOTHESIS, not an established result) — the ~100M CROSSOVER now looks UNLIKELY; the specialist
+advantage persists through 30M.** With 3 specialist points and 4 joint-slice points, what the numbers actually show:
+- **specialist** (4/8/30M): 0.7322 → 0.7362 → **0.7521** — climbing, with the largest step at 30M;
+- **joint slice** (4/8/30/100M): 0.6882 → 0.7060 → 0.7255 → **0.7472** — climbing steadily;
+- **Δ (specialist − joint slice):** **+0.0440 (4M) → +0.0302 (8M) → +0.0266 (30M)** — still shrinking, but the
+  shrinkage has **decelerated sharply** (−0.0138 over 4M→8M vs only −0.0036 over 8M→30M).
 
-⚠ **This is an extrapolation from 2 specialist points and 3 joint points — a HYPOTHESIS, NOT a result.** The
-decisive test is the **pending per-track 100M / 300M specialist runs** (100M ~35% RUNNING, 300M not started): if
-pt12-100M lands below the joint 100M slice (0.7472) the crossover is confirmed; if it climbs past it, the specialist
-advantage persists and this note must be retracted. Nothing goes in the paper until those tiers land.
+The earlier crossover-at-~100M read was premised on the specialist being *flat at ~0.736*; that premise is now false.
+Critically, the **specialist at 30M (0.7521) already exceeds the joint slice at 100M (0.7472)** — so for the joint
+model to overtake, its 100M slice would have to beat a specialist that is itself still climbing past 30M. An early
+(~100M) crossover therefore looks unlikely on current evidence; the specialist advantage is narrowing only slowly and
+still holds at 30M. It remains possible that the joint slice accelerates and the specialist finally saturates at larger
+scale, so a crossover at *some* capacity is not ruled out — but the data no longer point to ~100M.
 
-### E.3 — FROM-SCRATCH NO-KD (labels-only) baseline arm — DESIGN + STATUS ONLY (⚠ IN PROGRESS, no results yet)
+⚠ **This is still a HYPOTHESIS from 3 specialist + 4 joint points, NOT a result.** The decisive test is the **pending
+per-track 100M / 300M specialist runs** (100M ~35% RUNNING, 300M not started): if pt12-100M lands **below** the joint
+100M slice (0.7472) an early crossover is back on the table; if it climbs past it (the direction the 30M point favors)
+the specialist advantage persists. Nothing goes in the paper until those tiers land.
+
+### E.3 — FROM-SCRATCH NO-KD (labels-only) baseline arm — ⚠ IN PROGRESS (4M landed; 8M/30M/100M/300M pending)
 
 The third arm of the size ladder, added to **isolate what KD actually contributes at each student size**. The arms
 already on record are:
@@ -784,23 +804,26 @@ data, same steps, same schedule — teacher signal ON vs OFF.
 - run dirs: `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-<size>_scratch_nokd_s0/`
 - job / log names: `loom_ntv3-size-nokd-<size>`
 
-**STATUS: ⚠ IN PROGRESS — dry-run validating; the 5-size ladder is queued as low-RAM backfill** (no teacher cache to
-hold or memmap, so these are the cheapest jobs in the sweep and are scheduled to fill idle low-RAM slots).
-**NO results yet — nothing in this subsection is a measured number for this arm.**
-
-**Target comparison table (skeleton — pending cells are placeholders, NOT predictions):**
+**STATUS: ⚠ IN PROGRESS — the 4M no-KD tier has LANDED (seed 0); 8M / 30M / 100M / 300M still pending** (queued as
+low-RAM backfill — no teacher cache to hold or memmap, so these are the cheapest jobs in the sweep).
+**Source (4M):** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-4m_scratch_nokd_s0/ntv3_finetune_result.json`
+(git_commit `9299f63`; config verified `kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, no teacher — the labels-only
+condition self-documented in the recorded config as designed).
 
 | tier | scratch no-KD (E.3) | scratch + KD (E.1/E.1b) | pretrained-init baseline |
 |---|:-:|:-:|:-:|
-| NTv3-4M | *pending* | 0.4606 | n/a (no public ckpt) |
+| NTv3-4M | **0.4393** (best_val 0.4595) | 0.4606 | n/a (no public ckpt) |
 | NTv3-8M | *pending* | 0.4769 | 0.475 |
-| NTv3-30M | *pending* | *pending (RUNNING)* | n/a (no public ckpt) |
+| NTv3-30M | *pending* | 0.4958 | n/a (no public ckpt) |
 | NTv3-100M | *pending* | 0.5188 | 0.518 |
 | NTv3-300M | *pending* | *pending (RUNNING)* | n/a (no public ckpt) |
 
-Once the no-KD column lands, the quantity of interest is the per-size **KD delta** = (scratch+KD − scratch-no-KD),
-the first direct measurement of the teacher's contribution as a function of student capacity on this 34-track
-regression. **Not computable yet.**
+**FIRST MEASURED KD DELTA — at 4M, KD delta = (scratch+KD − scratch-no-KD) = 0.4606 − 0.4393 = +0.0213** (full
+precision 0.460647 − 0.439316 = 0.021331). This is the first direct measurement of the teacher's contribution as a
+function of student capacity on this 34-track regression: at the small (4M) end, distilling from the 650M teacher buys
+**+0.0213 test mean Pearson** over training the identical random-init model on ground-truth labels alone (same init,
+data, steps, schedule; teacher signal the only difference).
+The remaining tiers (8M/30M/100M/300M) are pending; the KD-delta-vs-capacity curve is not yet computable beyond 4M.
 
 ### F. Infra notes (on record)
 - **node-local /tmp incident:** a voyager run overflowed the 49 GB node-local `/tmp` — fixed by RAM-loading the
