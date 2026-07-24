@@ -36,6 +36,9 @@ REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
 cd "$REPO"
 # MOUNT GUARD (see slurm/_mount_guard.sh): sourced FIRST because resolve_ssd_mount picks the SSD root.
 source "$REPO/slurm/_mount_guard.sh"
+# HANG WATCHDOG (see slurm/_hang_watchdog.sh): the mount guard classifies non-zero EXITS; a HUNG trainer
+# never exits. Sourced here, ARMED just before the trainer, DISARMED by the EXIT trap below.
+source "$REPO/slurm/_hang_watchdog.sh"
 # Node-agnostic SSD resolution + HARD /tmp policy: refuses any root on the node's own /tmp filesystem
 # (voyager's /tmp is only 49G and has overflowed before) and dies rather than falling back to it.
 SSD="$(resolve_ssd_mount ntv3_benchmark_data/human/genome.fasta \
@@ -54,7 +57,9 @@ SSD="$(resolve_ssd_mount ntv3_benchmark_data/human/genome.fasta \
 # 257441_1/_2, 257439_2, 257444_4 reproduced it identically). Job-scoped so concurrent tiers on one
 # node never collide, and removed on exit so nothing accumulates on the node's /tmp.
 export TMPDIR="/tmp/ntv3_sock_${USER}_${SLURM_JOB_ID:-$$}"; mkdir -p "$TMPDIR"
-trap 'rm -rf "$TMPDIR"' EXIT
+# hang_watchdog_stop FIRST on every exit path (success, failure, requeue): a finished job must never
+# leave a watchdog process behind that could requeue it after the fact.
+trap 'hang_watchdog_stop; rm -rf "$TMPDIR"' EXIT
 # HF cache -> SSD archive (tokenizer template resolve only; students are random-init, teacher-free).
 HOME_HF="$SSD/hf_cache_archive_from_code_carbon"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF" TRANSFORMERS_CACHE="$HOME_HF"
@@ -88,6 +93,12 @@ GUARD_PATHS=("$SSD/ntv3_benchmark_data/human/genome.fasta"
              "$SRC_CACHE/logits.npy" "$SRC_CACHE/meta.pt" "$HOME_HF")
 mount_preflight "${GUARD_PATHS[@]}" || exit 1
 
+# HANG WATCHDOG armed here, on THIS job's own stdout: if the log stops growing for 4h before the first
+# `step N/` line (startup grace: covers the teacher-cache load) or 4h after it (stall timeout), the job
+# is requeued and RESUMES from latest_state.pth. Thresholds measured from this ladder's own logs; see
+# slurm/_hang_watchdog.sh. It shares the mount guard's requeue budget and its one-requeue-per-dispatch
+# stamp, so the two mechanisms can never both requeue the same dispatch.
+hang_watchdog_start
 set +e
 "$PV" -u -m src.train.finetune_ntv3 \
       --data_dir "$SSD/ntv3_benchmark_data" \

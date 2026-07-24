@@ -179,7 +179,7 @@ mount_preflight "${GUARD_PATHS[@]}" || exit 1
 # --train_overlap 0 --max_train_samples $CACHE_LIMIT: DATA-MATCH to the KD arm (see header). These are the
 # ONLY difference from the pre-2026-07-24 unmatched no-KD ladder; the loss path is unchanged.
 # HANG WATCHDOG armed here, on THIS job's own stdout: if the log stops growing for 4h before the first
-# `step N/` line (startup grace: covers the teacher-cache load) or 3h after it (stall timeout), the job
+# `step N/` line (startup grace: covers the teacher-cache load) or 4h after it (stall timeout), the job
 # is requeued and RESUMES from latest_state.pth. Thresholds measured from this ladder's own logs; see
 # slurm/_hang_watchdog.sh. It shares the mount guard's requeue budget and its one-requeue-per-dispatch
 # stamp, so the two mechanisms can never both requeue the same dispatch.

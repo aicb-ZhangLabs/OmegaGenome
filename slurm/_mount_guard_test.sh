@@ -24,6 +24,10 @@ exit 0
 EOF
 chmod +x "$TD/bin/scontrol"
 export PATH="$TD/bin:$PATH"
+# The one-requeue-per-dispatch stamp (see GUARD_REQUEUE_STAMP_DIR in _mount_guard.sh) must not leak
+# into $HOME, and each case below is an INDEPENDENT dispatch, so reset it with the call log.
+export GUARD_REQUEUE_STAMP_DIR="$TD/stamps"
+reset_calls(){ : > "$TD/scontrol.calls"; rm -rf "$TD/stamps"; }
 
 # shellcheck disable=SC1090
 source "$GUARD"
@@ -45,22 +49,40 @@ echo "== mount_preflight"
 echo "== requeue_if_mount_failure"
 ( unset SLURM_JOB_ID; requeue_if_mount_failure 0 "$TD/missing.txt" >/dev/null 2>&1 ); check "rc=0 short-circuits, never requeues" $? 0
 
-: > "$TD/scontrol.calls"; : > "$TD/fake.log"; echo "RuntimeError: CUDA out of memory" > "$TD/fake.log"
+reset_calls; : > "$TD/fake.log"; echo "RuntimeError: CUDA out of memory" > "$TD/fake.log"
 SLURM_JOB_ID=1 SLURM_RESTART_COUNT=0 requeue_if_mount_failure 1 "$TD/good.txt" >/dev/null 2>&1
 check "non-mount failure stays FAILED" $? 1
 grep -q requeue "$TD/scontrol.calls" && bad "non-mount failure must NOT requeue" || ok "non-mount failure did not requeue"
 
-: > "$TD/scontrol.calls"; echo "PermissionError: [Errno 1] Operation not permitted: /x/genome.fasta" > "$TD/fake.log"
+reset_calls; echo "PermissionError: [Errno 1] Operation not permitted: /x/genome.fasta" > "$TD/fake.log"
 SLURM_JOB_ID=1 SLURM_RESTART_COUNT=0 MOUNT_GUARD_MAX_REQUEUE=1 \
   timeout 5 bash -c 'source "$0"; requeue_if_mount_failure 1 "$1"' "$GUARD" "$TD/good.txt" >/dev/null 2>&1
 grep -q "requeue 1" "$TD/scontrol.calls" && ok "recovered-mount outage signature in log DOES requeue" \
   || bad "recovered-mount outage signature in log DOES requeue"
 
-: > "$TD/scontrol.calls"; : > "$TD/fake.log"
+reset_calls; : > "$TD/fake.log"
 SLURM_JOB_ID=1 SLURM_RESTART_COUNT=0 \
   timeout 5 bash -c 'source "$0"; requeue_if_mount_failure 1 "$1"' "$GUARD" "$TD/missing.txt" >/dev/null 2>&1
 grep -q "requeue 1" "$TD/scontrol.calls" && ok "currently-dead mount DOES requeue" \
   || bad "currently-dead mount DOES requeue"
+
+# ONE REQUEUE PER DISPATCH (the interlock shared with slurm/_hang_watchdog.sh): the stamp written by
+# the first requeue must block a second one for the SAME dispatch, so the mount guard and the hang
+# watchdog can never both spend a restart on one job -- but a LATER dispatch (higher
+# SLURM_RESTART_COUNT) must still be allowed to requeue.
+reset_calls; : > "$TD/fake.log"
+SLURM_JOB_ID=1 SLURM_RESTART_COUNT=0 \
+  timeout 5 bash -c 'source "$0"; requeue_if_mount_failure 1 "$1"' "$GUARD" "$TD/missing.txt" >/dev/null 2>&1
+: > "$TD/scontrol.calls"   # keep the stamp, clear the call log
+SLURM_JOB_ID=1 SLURM_RESTART_COUNT=0 \
+  timeout 5 bash -c 'source "$0"; requeue_if_mount_failure 1 "$1"' "$GUARD" "$TD/missing.txt" >/dev/null 2>&1
+grep -q "requeue 1" "$TD/scontrol.calls" && bad "second requeue of the SAME dispatch must be refused" \
+  || ok "second requeue of the same dispatch is refused (no double-requeue)"
+: > "$TD/scontrol.calls"   # same job, NEXT dispatch -> different stamp key -> must be allowed again
+SLURM_JOB_ID=1 SLURM_RESTART_COUNT=1 MOUNT_GUARD_MAX_REQUEUE=5 \
+  timeout 5 bash -c 'source "$0"; requeue_if_mount_failure 1 "$1"' "$GUARD" "$TD/missing.txt" >/dev/null 2>&1
+grep -q "requeue 1" "$TD/scontrol.calls" && ok "a LATER dispatch is not blocked by the previous stamp" \
+  || bad "a LATER dispatch is not blocked by the previous stamp"
 
 # REGRESSION (2026-07-23): a job that renames itself makes `scontrol show job` report a StdOut path
 # that does not exist (--output %x is re-expanded against the NEW name). The outage signature must
@@ -72,21 +94,21 @@ echo "\$@" >> "$TD/scontrol.calls"
 exit 0
 EOF
 chmod +x "$TD/bin/scontrol"
-: > "$TD/scontrol.calls"
+reset_calls
 echo "pyfaidx.FastaNotFoundError: Cannot read FASTA from file /x/genome.fasta" > "$TD/fake.log"
 SLURM_JOB_ID=1 SLURM_RESTART_COUNT=0 MOUNT_GUARD_MAX_REQUEUE=1 MOUNT_GUARD_LOG="$TD/fake.log" \
   timeout 5 bash -c 'source "$0"; requeue_if_mount_failure 1 "$1"' "$GUARD" "$TD/good.txt" >/dev/null 2>&1
 grep -q "requeue 1" "$TD/scontrol.calls" && ok "renamed job (bogus scontrol StdOut) still requeues via fd-1 log" \
   || bad "renamed job (bogus scontrol StdOut) still requeues via fd-1 log"
 # ...and the fd-1 path must not turn every failure into a requeue: a real bug still stays FAILED.
-: > "$TD/scontrol.calls"; echo "RuntimeError: CUDA out of memory" > "$TD/fake.log"
+reset_calls; echo "RuntimeError: CUDA out of memory" > "$TD/fake.log"
 SLURM_JOB_ID=1 SLURM_RESTART_COUNT=0 MOUNT_GUARD_LOG="$TD/fake.log" \
   requeue_if_mount_failure 1 "$TD/good.txt" >/dev/null 2>&1
 check "non-mount failure still stays FAILED with fd-1 log" $? 1
 grep -q requeue "$TD/scontrol.calls" && bad "non-mount failure must NOT requeue (fd-1 path)" \
   || ok "non-mount failure did not requeue (fd-1 path)"
 
-: > "$TD/scontrol.calls"
+reset_calls
 SLURM_JOB_ID=1 SLURM_RESTART_COUNT=9 MOUNT_GUARD_MAX_REQUEUE=5 \
   requeue_if_mount_failure 1 "$TD/missing.txt" >/dev/null 2>&1
 check "requeue budget exhausted -> hard fail" $? 1
