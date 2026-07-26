@@ -590,8 +590,9 @@ current single-seed paper value already tracks best-val (mean|single − 200best
 0.0879). **Recommendation = adopt the 200ep 3-seed best-val (mean±std) as the BPNet baseline** (like-for-like n=1→n=3
 upgrade, now with an honest error bar). **NOT yet swapped into the paper tables** per user.
 
-### E. NTv3 regression size ladder — COMPLETE ORGANIZED MASTER RECORD
-**Sources (all numbers below re-verified against these artifacts on 2026-07-24):** per-run
+### E. NTv3 regression size ladder — COMPLETE ORGANIZED MASTER RECORD ✅ (all 20 tiers, 2026-07-25)
+**Sources (all numbers below re-verified against these artifacts; final 8 cells re-verified 2026-07-25, the
+rest 2026-07-24):** per-run
 `ntv3_finetune_result.json` under `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/` (joint arms),
 `.../size_sweep_pertrack/t12_ENCSR325NFE/` (per-track arm), and the reference runs
 `.../ntv3_ft_faithful_s{0,1,2}`, `.../ntv3_8m_baseline`, `.../ntv3_100m_baseline`, `.../ntv3_8m_kd_dist`.
@@ -599,7 +600,7 @@ Design + audit: `code_carbon/rebuttal_infra/ntv3_size_ladder_design.md`, `.../nt
 
 #### E.0 — Overview
 This ladder fills out the **regression** (34-track per-bp bigWig, NTv3-650M teacher) size-scaling curve to
-match the classification one. It runs **three from-scratch arms** across five sizes, plus reference points,
+match the classification one. It runs **four from-scratch arms** across five sizes, plus reference points,
 all **random-init `from_config`** students from the `NTV3_SCALED_SIZES` registry (param counts verified by
 CPU instantiation), trained with the **same recipe** (seed 0, 19,932 steps / 598 warmup, seq_len 32768,
 `poisson_multinomial` GT loss) and **best-val checkpoint selection via the repo's own `finetune_ntv3.py`**
@@ -610,8 +611,12 @@ CPU instantiation), trained with the **same recipe** (seed 0, 19,932 steps / 598
 2. **Joint no-KD (labels-only, data-matched)** — random-init trained on the ground-truth bigWig labels
    with **zero teacher** (`w_ce=1.0`/`w_kl=0`/`w_mse=0`), on the **identical training stream** as arm 1
    (matched ablation → only the teacher differs).
-3. **Per-track t12 specialist** — random-init + KD on a **single** track (ENCSR325NFE ATAC-seq, joint
+3. **Per-track t12 specialist (KD)** — random-init + KD on a **single** track (ENCSR325NFE ATAC-seq, joint
    channel 12); same recipe/seed.
+4. **Per-track t12 no-KD (labels-only, data-matched)** — random-init trained on the single-track
+   (ENCSR325NFE) ground-truth bigWig with **zero teacher** (`kd_w_ce=1.0`/`kd_w_kl=0`/`kd_w_mse=0`), on the
+   identical 63,707-window stream as arm 3 → the matched specialist ablation (teacher signal ON vs OFF on
+   one track). Sbatch `slurm/ntv3_size_sweep_pertrack_t12_nokd.sbatch` (commit `6fd7970`).
 
 **Reference points (not part of the from-scratch arms):** the **650M teacher** (`ntv3_ft_faithful`,
 pretrained full-FT, 3-seed ≈ 0.606) and the two **pretrained-init** native tiers `ntv3_8m_baseline` (0.475)
@@ -637,8 +642,8 @@ references exist only at those sizes.
 | ntv3-650m (teacher) | 1536 / 12 / 24 / 6144 / 64 | 651.83M | pretrained full-FT |
 
 #### E.1 — MASTER RESULTS TABLE (all arms × all sizes, seed 0)
-Cells are seed-0 **test** mean Pearson with **(best-val)** in parentheses; *pending* = tier not yet landed.
-Deltas are computed from full-precision values, not from the rounded cells.
+Cells are seed-0 **test** mean Pearson with **(best-val)** in parentheses; all 20 tiers landed (no pending).
+4dp cells use round-half-up; deltas are computed from full-precision values, not from the rounded cells.
 
 **(1) Joint arms (34-track mean Pearson) + KD ablation + pretrained-init reference**
 
@@ -647,25 +652,27 @@ Deltas are computed from full-precision values, not from the rounded cells.
 | 4M | 4.34M | 0.4606 (0.4857) | 0.4349 (0.4614) | **+0.0257** | — |
 | 8M | 7.69M | 0.4769 (0.5031) | 0.4483 (0.4781) | **+0.0286** | 0.4748 (0.5010) |
 | 30M | 29.87M | 0.4958 (0.5264) | 0.4681 (0.4909) | **+0.0277** | — |
-| 100M | 106.46M | 0.5188 (0.5494) | *pending* | — | 0.5178 (0.5441) |
-| 300M | 303.05M | **0.5309 (0.5572)** | *pending* | — | — |
+| 100M | 106.46M | 0.5188 (0.5494) | 0.4848 (0.5140) | **+0.0341** | 0.5178 (0.5441) |
+| 300M | 303.05M | **0.5309 (0.5572)** | 0.4969 (0.5283) | **+0.0341** | — |
 | **650M teacher** | 651.83M | **0.606** (3-seed 0.6059/0.6071/0.6061) | — | — | pretrained full-FT |
 
 **(2) Per-track t12 = ENCSR325NFE specialist (single-ATAC-track Pearson) vs the joint model's slice**
 ⚠ **Footnote — NOT level-comparable to the joint columns above:** these are a **single ATAC track**
-Pearson, not the 34-track mean; the specialist column is included only so the third arm sits in one view.
+Pearson, not the 34-track mean; the specialist columns are included only so the two single-track arms sit
+in one view.
 
-| size | per-track t12 specialist | joint ENCSR325NFE slice | **Δ** (specialist − joint slice) |
-|---|:-:|:-:|:-:|
-| 4M | 0.7322 (0.7488) | 0.6882 | **+0.0440** |
-| 8M | 0.7362 (0.7672) | 0.7060 | **+0.0302** |
-| 30M | 0.7521 (0.7704) | 0.7255 | **+0.0266** |
-| 100M | 0.7631 (0.7830) | 0.7472 | **+0.0159** |
-| 300M | *pending* | 0.7585 | — |
-| **650M teacher slice** | — | 0.832 (3-seed 0.8326/0.8327/0.8322) | — |
+| size | specialist KD | specialist no-KD (matched) | **per-track KD Δ** (KD − no-KD) | joint ENCSR325NFE slice | Δ (specialist − joint slice) |
+|---|:-:|:-:|:-:|:-:|:-:|
+| 4M | 0.7322 (0.7488) | 0.7160 (0.7379) | **+0.0162** | 0.6882 | **+0.0440** |
+| 8M | 0.7362 (0.7672) | 0.7183 (0.7389) | **+0.0179** | 0.7060 | **+0.0302** |
+| 30M | 0.7521 (0.7704) | 0.7396 (0.7660) | **+0.0126** | 0.7255 | **+0.0266** |
+| 100M | 0.7631 (0.7830) | 0.7448 (0.7725) | **+0.0183** | 0.7472 | **+0.0159** |
+| 300M | 0.7681 (0.7907) | 0.7562 (0.7795) | **+0.0119** | 0.7585 | **+0.0095** |
+| **650M teacher slice** | — | — | — | 0.832 (3-seed 0.8326/0.8327/0.8322) | — |
 
-Reference-point slices for context: pretrained `ntv3_8m_baseline` ENCSR325NFE slice = 0.6850,
-`ntv3_100m_baseline` slice = 0.7379.
+**per-track KD Δ** = single-track KD − single-track no-KD (matched 63,707-window stream), computed from
+full precision (see E.2.4). Reference-point slices for context: pretrained `ntv3_8m_baseline` ENCSR325NFE
+slice = 0.6850, `ntv3_100m_baseline` slice = 0.7379.
 
 #### E.2 — PER-ARM DETAIL (protocol, config, per-tier numbers)
 
@@ -705,7 +712,7 @@ cache, no-KD flags, data-match, mount guards).
 tier. Full 34-track breakdowns are in each `result.json`; the 4M per-track list, for the record: ENCSR325NFE
 0.688, ENCSR962OTG 0.828, ENCSR814RGG 0.665 the strongest; ENCSR114HGS_M/P ~0.26–0.27 the weakest.)
 
-##### E.2.2 — Joint no-KD (labels-only) ablation — matched 4M/8M/30M ✅; 100M/300M pending
+##### E.2.2 — Joint no-KD (labels-only) ablation — matched all 5 tiers ✅ COMPLETE
 **Config delta vs E.2.1:** `kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, **no `--teacher`**, **no
 `--cached_teacher_logits`** — the label loss runs at full weight and each `result.json` self-documents the
 labels-only condition. Two variants; **do not conflate them**:
@@ -719,13 +726,16 @@ records `n_train_windows=63707`), so init, data, steps, and schedule are all hel
 | 4M | 0.4606 | 0.4349191411066653 (val 0.4613544748069352) | **+0.0257** | `bae128d` | `ntv3-4m_scratch_nokd_matched_s0` |
 | 8M | 0.4769 | 0.4483069102471927 (val 0.47814321235315793) | **+0.0286** | `bae128d` | `ntv3-8m_scratch_nokd_matched_s0` |
 | 30M | 0.4958 | 0.46807474264756777 (val 0.4909315548558588) | **+0.0277** | `bae128d` | `ntv3-30m_scratch_nokd_matched_s0` |
-| 100M | 0.5188 | *pending* | — | — | not started |
-| 300M | 0.5309 | *pending* | — | — | not started |
+| 100M | 0.5188 | 0.48478547398375205 (val 0.5139648434186777) | **+0.0341** | `6fd7970` | `ntv3-100m_scratch_nokd_matched_s0` |
+| 300M | 0.5309 | 0.49685810910058640 (val 0.5283428630936765) | **+0.0341** | `6fd7970` | `ntv3-300m_scratch_nokd_matched_s0` |
 
 Deltas computed, not copied: 0.4606471669 − 0.4349191411 = **0.0257280258**; 0.4768708368 − 0.4483069102 =
 **0.0285639265**; 0.4958241975 − 0.4680747426 = **0.0277494549** (→ +0.0277 at 4dp, NOT 0.0278 — single-round
-of 0.0277495). Each matched run verified `kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, `teacher=None`,
-`n_train_windows=63707`.
+of 0.0277495); 0.5188377911 − 0.4847854740 = **0.0340523171** (→ +0.0341); 0.5309141745 − 0.4968581091 =
+**0.0340560654** (→ +0.0341). Each matched run verified `kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`,
+`teacher=None`, `n_train_windows=63707` (100M/300M jsons re-checked 2026-07-25: all four fields confirmed).
+Note the 4dp display cells round half-up (100M test 0.4847854→**0.4848**, 300M 0.4968581→**0.4969**), matching
+the round-half-up convention used throughout E.1/E.2; the KD Δ is computed from full precision, not the cells.
 
 **(b) SUPERSEDED UNMATCHED run (kept for transparency — NOT the clean ablation).** The original no-KD 4M run
 used `train_overlap=0.999` → a **65,051,340-window** stream (~1021× more diverse than the KD arm's
@@ -741,7 +751,7 @@ conservative *lower bound* on the true teacher contribution at matched data. The
 8M/30M/100M/300M hold checkpoint files but **no `result.json`** — those unmatched runs are superseded and not
 reported.)
 
-##### E.2.3 — Per-track t12 = ENCSR325NFE (ATAC-seq) specialist — 4M/8M/30M/100M ✅; 300M pending
+##### E.2.3 — Per-track t12 = ENCSR325NFE (ATAC-seq) specialist (KD) — all 5 tiers ✅ COMPLETE
 **Config delta vs E.2.1:** `track_subset=12` (single track ENCSR325NFE), `cached_teacher_logits` =
 `ntv3_cache/teacher_logits/gen/t12.pt` — the **byte-identical channel-12 slice** of the joint-34 teacher
 cache (no re-forward of the 650M teacher; specialist and joint see numerically identical targets on this
@@ -753,10 +763,51 @@ track). Path scheme `size_sweep_pertrack/t12_ENCSR325NFE/`.
 | ntv3-8m | 0.7361891537787985 | 0.7671725292651699 | `9299f63` | `ntv3-8m_scratch_kd_s0` |
 | ntv3-30m | 0.7521458578345879 | 0.7704396083646101 | `bb281a7` | `ntv3-30m_scratch_kd_s0` |
 | ntv3-100m | 0.7631253286436455 | 0.7829635845309715 | `bb281a7` | `ntv3-100m_scratch_kd_s0` |
-| ntv3-300m | *pending* | — | — | (ckpt saved 2026-07-24 11:51, no `result.json` yet) |
+| ntv3-300m | 0.768078039219381 | 0.7907219401730075 | `6fd7970` | `ntv3-300m_scratch_kd_s0` |
+
+The 300M row landed 2026-07-25 (`result.json` written 19:41; test 0.768078039219381 → **0.7681** at 4dp
+round-half-up, val 0.7907219401730075), closing the specialist KD ladder.
 
 Joint slices `per_track_pearson["ENCSR325NFE"]` pulled + verified from the joint runs: 4M 0.6882138349565987,
 8M 0.705974003088749, 30M 0.7254992718402737, 100M 0.7471823661275808, 300M 0.7585421291297799.
+
+##### E.2.4 — Per-track t12 = ENCSR325NFE no-KD (labels-only, data-matched) — all 5 tiers ✅ COMPLETE
+**NEW ARM.** The single-track counterpart of E.2.2: the matched no-KD ablation for the specialist, isolating
+what the teacher adds on one track (ENCSR325NFE ATAC-seq) at each capacity. **Config delta vs E.2.3:**
+`kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, **no `--teacher`**, **no `--cached_teacher_logits`** (each
+`result.json` self-documents `"kd": null`, `teacher: null`); `track_subset=[12]` → **single track
+ENCSR325NFE** (`n_tracks=1`, `track_ids=['ENCSR325NFE']`). Data-matched to the specialist KD arm:
+`train_overlap=0.0` → **`n_train_windows=63707`** (identical stream; only the teacher signal differs).
+Sbatch `slurm/ntv3_size_sweep_pertrack_t12_nokd.sbatch`, commit `6fd7970`. Path scheme
+`size_sweep_pertrack/t12_ENCSR325NFE/ntv3-<size>_scratch_nokd_matched_s0/`.
+
+| tier | test | best-val | git_commit | run-dir |
+|---|:-:|:-:|:-:|---|
+| ntv3-4m | 0.7160343804293897 | 0.7378933486018797 | `6fd7970` | `ntv3-4m_scratch_nokd_matched_s0` |
+| ntv3-8m | 0.7182608479411978 | 0.7388721768919715 | `6fd7970` | `ntv3-8m_scratch_nokd_matched_s0` |
+| ntv3-30m | 0.7395822453215777 | 0.7660014435196796 | `6fd7970` | `ntv3-30m_scratch_nokd_matched_s0` |
+| ntv3-100m | 0.7448439142014617 | 0.7724969704651115 | `6fd7970` | `ntv3-100m_scratch_nokd_matched_s0` |
+| ntv3-300m | 0.7562202260856036 | 0.7794590736694671 | `6fd7970` | `ntv3-300m_scratch_nokd_matched_s0` |
+
+All five re-verified 2026-07-25 against `result.json`: `n_tracks=1`, `track_ids=['ENCSR325NFE']`,
+`kd_w_ce=1.0`, `kd_w_kl=0.0`, `kd_w_mse=0.0`, `teacher=None`, `n_train_windows=63707` — matched to the
+specialist KD arm at every size.
+
+**Per-track KD Δ (specialist KD − specialist no-KD, from full precision, single-round 4dp):**
+
+| size | specialist KD | specialist no-KD | **KD Δ** | full-precision diff |
+|---|:-:|:-:|:-:|:-:|
+| 4M | 0.7322410774399275 | 0.7160343804293897 | **+0.0162** | 0.0162066970 |
+| 8M | 0.7361891537787985 | 0.7182608479411978 | **+0.0179** | 0.0179283058 |
+| 30M | 0.7521458578345879 | 0.7395822453215777 | **+0.0126** | 0.0125636125 |
+| 100M | 0.7631253286436455 | 0.7448439142014617 | **+0.0183** | 0.0182814144 |
+| 300M | 0.768078039219381 | 0.7562202260856036 | **+0.0119** | 0.0118578131 |
+
+⚠ **Precision note (verified, no fabrication).** These KD Δ's are single-rounds of the full-precision
+differences (the doc-wide E.2.2 convention). Subtracting the *rounded* 4dp display cells instead would give
++0.0180 (8M: 0.7362−0.7182) and +0.0118 (300M: 0.7680−0.7562) — off by one in the last digit at those two
+sizes because 8M no-KD (0.71826→0.7183) and the KD 300M (0.76807→0.7681) round up. The full-precision Δ's
+above (+0.0179, +0.0119) are the correct ones.
 
 #### E.3 — FINDINGS (with evidence and full revision history preserved)
 
@@ -768,12 +819,25 @@ The from-scratch+KD tiers land on top of their pretrained-init baselines:
 Distilling from the 650M teacher lets a *randomly-initialized* student match a *pretrained* one at matched
 size — the pretraining bonus is fully recovered by KD on this 34-track regression.
 
-**Finding 2 — the KD contribution (matched ablation) is ~~GROWS with size~~ roughly constant at ~+0.027
-across 4M–30M (no clear size trend from three points).** With data matched (identical 63,707-window stream,
-teacher the only difference), the measured KD deltas are **+0.0257 (4M) → +0.0286 (8M) → +0.0277 (30M)** — the
-delta rose then dipped, i.e. it is **roughly constant at ~+0.026–0.029** across this range, NOT monotonically
-growing. This is the first *clean* measurement of the teacher's contribution as a function of student capacity
-on the 34-track regression; whether the delta trends at all awaits the **pending 100M/300M** matched cells.
+**Finding 2 — the KD contribution (matched ablation) is ~~GROWS with size~~ ~~roughly constant at ~+0.027
+across 4M–30M~~ flat (~+0.027) through 30M, then a step up to ~+0.034 at 100M–300M [COMPLETE, all 5 tiers,
+2026-07-25].** With data matched (identical 63,707-window stream, teacher the only difference), the full
+five-point KD-delta curve is **+0.0257 (4M) → +0.0286 (8M) → +0.0277 (30M) → +0.0341 (100M) → +0.0341
+(300M)**. The shape is **flat-then-step**: essentially constant at ~+0.026–0.029 across 4M/8M/30M, then a
+modest, clearly-separated lift to **+0.0341 at both 100M and 300M** (identical to 4dp). So KD's benefit is
+**modestly larger at the top of this size range**, not smoothly growing and not flat throughout — the honest
+read is the five measured values and the flat-then-step shape, **not** an extrapolated trend line. This is the
+first *clean, complete* measurement of the teacher's contribution as a function of student capacity on the
+34-track regression.
+
+- **[REVISED 2026-07-25 — completed with the landed 100M/300M matched cells.]** This refines (does not
+  contradict) the 2026-07-24 "~stable +0.027" read, which was **explicitly conditioned** on the then-pending
+  100M/300M tiers ("whether the delta trends at all awaits the pending 100M/300M matched cells"). Those cells
+  now land at **+0.0341 each** — above the +0.026–0.029 of 4M–30M — so the complete picture is flat through
+  30M then a step up, not flat throughout. Deltas verified from full precision (0.5188377911 − 0.4847854740 =
+  0.0340523171; 0.5309141745 − 0.4968581091 = 0.0340560654; both → +0.0341). Do **not** overclaim a smooth
+  monotonic climb: 8M (+0.0286) sits above 30M (+0.0277), and the top two tiers are tied — it is a two-level
+  step, reported as five measured values.
 
 - **~~Superseded read — "the KD contribution GROWS with size".~~ [REVISED 2026-07-24]** Original text kept
   for the record: *"the KD contribution (matched ablation) GROWS with size. … KD adds +0.0257 at 4M and +0.0286
@@ -819,6 +883,28 @@ rises at every capacity step: **4M 0.4606 → 8M 0.4769 → 30M 0.4958 → 100M 
 toward the **650M teacher 0.606**. The 300M point (test 0.5309, best-val 0.5572, git `bae128d`) closes the
 ladder and sits cleanly below the teacher, so the from-scratch scaling-law fit is computable end-to-end.
 
+**Finding 5 — KD helps the 34-track JOINT model ~2× more than the 1-track SPECIALIST, at EVERY size.**
+With both matched no-KD ablations now complete across all five sizes, the clean teacher-contribution (KD −
+matched no-KD) can be compared arm-for-arm:
+
+| size | joint KD Δ (34-track) | per-track KD Δ (1-track) | ratio (joint / per-track) |
+|---|:-:|:-:|:-:|
+| 4M | +0.0257 | +0.0162 | 1.6× |
+| 8M | +0.0286 | +0.0179 | 1.6× |
+| 30M | +0.0277 | +0.0126 | 2.2× |
+| 100M | +0.0341 | +0.0183 | 1.9× |
+| 300M | +0.0341 | +0.0119 | 2.9× |
+| **range / mean** | **+0.0257 … +0.0341 (mean ~+0.030)** | **+0.0119 … +0.0183 (mean ~+0.015)** | **~2×** |
+
+At **every one of the five sizes** the joint KD delta exceeds the per-track KD delta, by roughly 2× on average
+(joint mean ~+0.030 vs per-track mean ~+0.015). **Interpretation:** the teacher's value is largely
+**cross-track structure** that a joint 34-track head can absorb but a single-track specialist cannot — a
+specialist already has the full label signal for its one track, so the teacher mostly adds correlations *across*
+tracks (co-regulation shared across assays/loci), which only the joint model can exploit. This is supported by
+**all 5 sizes** (not a 2-point extrapolation), and the gap holds throughout the ladder. Both deltas are
+computed from full precision (E.2.2 / E.2.4); per-track means/ranges use the corrected full-precision values
+(300M per-track Δ = +0.0119, not the +0.0118 that subtracting rounded cells would give).
+
 #### E.4 — Related classification experiments (cross-links, recorded earlier in this doc)
 The regression ladder above is the companion to the **classification** experiments recorded in the
 **2026-07-21 block, sub-sections A–D** of this doc (not duplicated here):
@@ -835,13 +921,16 @@ The regression ladder above is the companion to the **classification** experimen
   prior incremental section-E entries at `9d4cd3c` (30M tiers + no-KD 4M; revise plateau), `67c4c03`
   (per-track 100M; refute crossover), `0f8a8d6` (joint 300M complete; matched no-KD 4M/8M; reorganize E.3).
 - **Code / sbatch:** on branch `ntv3-size-ladder` — key commits: data-match fix `9d7942c` (record
-  `n_train_windows`, `train_overlap` matching), hang-watchdog `bae128d`, TMPDIR/node-local fix `bb281a7`.
-  (Run `git_commit` stamps in the `result.json`s: `9299f63`, `bb281a7`, `bae128d`.)
+  `n_train_windows`, `train_overlap` matching), hang-watchdog `bae128d`, TMPDIR/node-local fix `bb281a7`,
+  per-track no-KD baseline sbatch `slurm/ntv3_size_sweep_pertrack_t12_nokd.sbatch` = commit `6fd7970` (the
+  E.2.4 arm, and the git-stamp on the last-landed 100M/300M joint no-KD + 300M per-track KD runs).
+  (Run `git_commit` stamps across the `result.json`s: `9299f63`, `bb281a7`, `bae128d`, `6fd7970`.)
 - **HF:** `explcre/omegagenome-distilled-students/regression/size_ladder/{joint34_scratch_kd,
-  joint34_scratch_nokd, pertrack_t12_ENCSR325NFE}` — each tier carries `best_model.pth` + `result.json` +
-  logs + README.
+  joint34_scratch_nokd, pertrack_t12_ENCSR325NFE_kd, pertrack_t12_ENCSR325NFE_nokd}` — each tier carries
+  `best_model.pth` + `result.json` + logs + README. (Final HF sync of the newly-landed cells — joint no-KD
+  100M/300M, per-track KD 300M, per-track no-KD ×5 — is a remaining deliverable; see E.7.)
 - **SSD run-dirs:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-<size>_scratch_{kd,nokd,
-  nokd_matched}_s0/` (joint), `.../size_sweep_pertrack/t12_ENCSR325NFE/ntv3-<size>_scratch_kd_s0/`
+  nokd_matched}_s0/` (joint), `.../size_sweep_pertrack/t12_ENCSR325NFE/ntv3-<size>_scratch_{kd,nokd_matched}_s0/`
   (per-track), `.../ntv3_ft_faithful_s{0,1,2}`, `.../ntv3_{8m,100m}_baseline`, `.../ntv3_8m_kd_dist` (refs).
 - **Repo-native pipeline:** distillation, validation, and best-val checkpoint selection all use the repo's
   own `finetune_ntv3.py` (`track_kd_loss`, `poisson_multinomial_loss`, `best_model.pth` selection, test
@@ -871,18 +960,21 @@ The regression ladder above is the companion to the **classification** experimen
   label loss at `w_ce=1.0`. This is the intrinsic difference between a KD *total* loss and a plain *label*
   loss (called out in the sbatch header) — the training **stream** is identical between the two matched arms.
 
-#### E.7 — Status (landed vs pending)
-**Landed (seed 0, verified `result.json`):**
-- Joint scratch+KD: **all 5 tiers** (4M/8M/30M/100M/300M) — ladder COMPLETE.
-- Per-track t12 specialist: **4M/8M/30M/100M**.
-- Joint no-KD matched: **4M/8M/30M**.
+#### E.7 — Status: ✅ COMPLETE (all 20 tiers = 4 arms × 5 sizes, seed 0, verified `result.json`) [2026-07-25]
+**All four from-scratch arms landed across all five sizes (4M/8M/30M/100M/300M):**
+- Joint scratch+KD (34-track): **all 5 tiers** ✅.
+- Joint no-KD matched (34-track): **all 5 tiers** ✅ (100M/300M landed 2026-07-24/25).
+- Per-track t12 specialist KD (1-track): **all 5 tiers** ✅ (300M landed 2026-07-25).
+- Per-track t12 no-KD matched (1-track): **all 5 tiers** ✅ (NEW arm, E.2.4).
 - Reference points: 650M teacher (3-seed), pretrained-init 8M/100M, `ntv3_8m_kd_dist`.
 
-**Pending (re-checked 2026-07-24; checkpoint files present but no `result.json` yet):**
-- **Per-track t12 300M** — `best_model.pth`/`latest_state.pth` written 2026-07-24 11:51, final test eval not
-  yet emitted.
-- **Joint no-KD matched 100M / 300M** — not started.
+Every one of the 20 cells re-verified against its `ntv3_finetune_result.json` on 2026-07-25 (test + best-val
++, for the no-KD arms, `n_train_windows=63707` / `kd_w_kl=0` / `teacher=None` / correct `n_tracks` &
+`track_ids`). No pending training. The KD-delta-vs-size curve (both joint 34-track and per-track 1-track) and
+the specialist-vs-joint-slice curve are now complete end-to-end.
 
-**What completes the picture:** the per-track 300M closes the specialist ladder (and gives the 300M
-specialist-vs-joint pair that could still show a crossover at large scale); the no-KD matched 100M/300M
-complete the KD-delta-vs-size curve begun by the 4M/8M/30M points.
+**Remaining deliverables (not experiments — packaging):**
+- **Plots:** regenerate the ladder figures with the newly-landed cells (joint no-KD 100M/300M KD-Δ; per-track
+  KD 300M; the full per-track no-KD arm + per-track KD-Δ curve).
+- **Final HF sync:** upload the 8 newly-landed run-dirs (joint no-KD 100M/300M, per-track KD 300M, per-track
+  no-KD ×5) to `explcre/omegagenome-distilled-students/regression/size_ladder/` (see E.5).
