@@ -927,8 +927,8 @@ The regression ladder above is the companion to the **classification** experimen
   (Run `git_commit` stamps across the `result.json`s: `9299f63`, `bb281a7`, `bae128d`, `6fd7970`.)
 - **HF:** `explcre/omegagenome-distilled-students/regression/size_ladder/{joint34_scratch_kd,
   joint34_scratch_nokd, pertrack_t12_ENCSR325NFE_kd, pertrack_t12_ENCSR325NFE_nokd}` — each tier carries
-  `best_model.pth` + `result.json` + logs + README. (Final HF sync of the newly-landed cells — joint no-KD
-  100M/300M, per-track KD 300M, per-track no-KD ×5 — is a remaining deliverable; see E.7.)
+  `best_model.pth` + `result.json` + logs + README. ✅ All 20 tiers synced (21 dirs incl. legacy unmatched 4M;
+  86 files; 6.04 GB newly uploaded, sha256-verified; README = full matrix + KD-delta table) [2026-07-25].
 - **SSD run-dirs:** `/srv/disk00/sshfs/pengchx3/ntv3_targets/size_sweep/ntv3-<size>_scratch_{kd,nokd,
   nokd_matched}_s0/` (joint), `.../size_sweep_pertrack/t12_ENCSR325NFE/ntv3-<size>_scratch_{kd,nokd_matched}_s0/`
   (per-track), `.../ntv3_ft_faithful_s{0,1,2}`, `.../ntv3_{8m,100m}_baseline`, `.../ntv3_8m_kd_dist` (refs).
@@ -973,8 +973,10 @@ Every one of the 20 cells re-verified against its `ntv3_finetune_result.json` on
 `track_ids`). No pending training. The KD-delta-vs-size curve (both joint 34-track and per-track 1-track) and
 the specialist-vs-joint-slice curve are now complete end-to-end.
 
-**Remaining deliverables (not experiments — packaging):**
-- **Plots:** regenerate the ladder figures with the newly-landed cells (joint no-KD 100M/300M KD-Δ; per-track
-  KD 300M; the full per-track no-KD arm + per-track KD-Δ curve).
-- **Final HF sync:** upload the 8 newly-landed run-dirs (joint no-KD 100M/300M, per-track KD 300M, per-track
-  no-KD ×5) to `explcre/omegagenome-distilled-students/regression/size_ladder/` (see E.5).
+**Packaging deliverables — ✅ DONE [2026-07-25]:**
+- **Plots:** ✅ 3 figures generated from the complete 20-tier data (verified against `result.json`), committed
+  `ab34ba2` — `figs_size_ladder/{fig1_joint34_scaling,fig2_pertrack_t12_scaling,fig3_kd_delta}.png` + the
+  reproducible `plot_size_ladder.py`.
+- **Final HF sync:** ✅ all 20 tiers on `explcre/omegagenome-distilled-students/regression/size_ladder/`
+  (21 tier dirs incl. the legacy unmatched 4M; 86 files; the newly-landed cells = 6.04 GB, sha256-verified),
+  README rewritten for the full 4-arm × 5-size matrix + KD-delta table.
