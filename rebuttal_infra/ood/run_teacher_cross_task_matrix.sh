@@ -46,6 +46,7 @@ export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:T
 EXTRA=()
 [ "${SMOKE:-0}" = "1" ] && EXTRA+=(--smoke)
 [ -n "${TASKS:-}" ] && EXTRA+=(--tasks "$TASKS")
+[ -n "${MAX_LEN:-}" ] && EXTRA+=(--max-len "$MAX_LEN")
 [ -n "${STRICT_DIAG:-}" ] && EXTRA+=(--strict-diag)
 
 echo "[run] model=$MODEL N=$N bs=$BATCH_SIZE host=$(hostname) py=$PY"

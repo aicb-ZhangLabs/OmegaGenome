@@ -1,18 +1,12 @@
-TEACHER cross-task OOD matrix -- model=caduceus n=0 max_len=1000
-diagonal within tol (0.02): 12/18
-  MISMATCH H3K27me3: matrix=+0.5336 cached=+0.5631 delta=-0.0296
-  MISMATCH H3K36me3: matrix=+0.5160 cached=+0.5997 delta=-0.0837
-  MISMATCH H3K4me1: matrix=+0.3266 cached=+0.4551 delta=-0.1285
-  MISMATCH H3K4me2: matrix=+0.3718 cached=+0.5503 delta=-0.1785
-  MISMATCH H3K9me3: matrix=+0.3458 cached=+0.4025 delta=-0.0567
-  MISMATCH H4K20me1: matrix=+0.5409 cached=+0.6234 delta=-0.0826
+TEACHER cross-task OOD matrix -- model=caduceus n=0 max_len=1024
+diagonal within tol (0.02): 18/18
 
 --- BINARY sub-matrix (16 tasks) ---
-  mean in-task (diag)  MCC = +0.5475
-  mean off-task (cross) MCC = +0.2367
-  transfer drop (diag - cross) = +0.3109
+  mean in-task (diag)  MCC = +0.5845
+  mean off-task (cross) MCC = +0.2592
+  transfer drop (diag - cross) = +0.3253
 
 --- TERNARY (3-label) sub-matrix (2 tasks) ---
-  mean in-task (diag)  MCC = +0.3610
-  mean off-task (cross) MCC = +0.2380
-  transfer drop (diag - cross) = +0.1231
+  mean in-task (diag)  MCC = +0.3714
+  mean off-task (cross) MCC = +0.2366
+  transfer drop (diag - cross) = +0.1348
