@@ -105,8 +105,8 @@ while :; do
       in_squeue "$t" "$a" && continue
       is_ready "$t" "$a" || continue
       key="$t:$a"; [ "${ATTEMPTS[$key]:-0}" -ge "$MAX_ATTEMPTS" ] && continue
-      if [ "$a" = replaceK ]; then node=$(pick_node voyager laniakea galaxy)
-      else                         node=$(pick_node galaxy laniakea voyager); fi
+      if [ "$a" = onehot ]; then node=$(pick_node galaxy laniakea voyager)
+      else                       node=$(pick_node galaxy); fi
       [ -z "$node" ] && continue
       ATTEMPTS[$key]=$(( ${ATTEMPTS[$key]:-0} + 1 ))
       jid=$(bash "$SUBMIT" "$t" "$a" "$node" 2>>"$LOG")
