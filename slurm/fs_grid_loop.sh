@@ -1,85 +1,100 @@
 #!/bin/bash
-# Exp-1b self-throttling distribution loop for the from-scratch (CE-only, no-KD) grid.
-# Fills the 54 REMAINING arms (6 R7-tasks x replace4  +  12 new-tasks x {onehot,replaceK,replace4,latefuse})
-# across galaxy/laniakea/voyager, leaving ONE GPU free per server via per-node caps.
+# Exp-1b self-throttling distribution loop (v2: CACHE-FILE gating + per-arm CSVs).
+# Fills the remaining from-scratch (CE-only, no-KD) arms across galaxy/laniakea/voyager, one GPU
+# free per server (caps galaxy<=5, laniakea<=7, voyager<=3; counts ALL my RUNNING+PENDING on a node).
 #
-# Design (why no SLURM afterok deps):
-#   The loop gates each arm on ARTIFACT presence (a completed row in the shared CSV) -- "verify from
-#   artifacts". This (a) enforces the per-task cache-primer ordering (new-task replace4/latefuse only
-#   after that task's replaceK row lands = cache built), (b) SERIALIZES appends to the shared per-task
-#   CSV (avoids the concurrent-append race), and (c) makes every running arm occupy exactly ONE cap
-#   slot (a pending afterok chain would waste cap headroom). Each arm therefore occupies 1 GPU at a time.
-#   onehot writes a DISTINCT _onehot.csv sibling so it never races the embedding arms.
+# v2 change (max backfill speed): each arm writes a DISTINCT per-arm CSV (submit_fs_arm.sh:
+# onehot->_onehot, replace4->_replace4, latefuse->_latefuse, replaceK->main), so there is NO
+# shared-CSV append race and hence NO need to serialize dependents on the primer's ROW. Instead a
+# new-task replace4/latefuse becomes submittable the moment that task's per-bp CACHE FILES exist
+# (all splits' token_embeddings.npy + metadata.json) -- written at end-of-precompute (~1h in), a full
+# 200-epoch training-cycle BEFORE the primer's row lands. All ready arms then compete for free GPUs.
 #
-# Caps (leave 1 GPU free/server): galaxy<=5 (of 6), laniakea<=7 (of 8), voyager<=3 (of 4).
-# Counts ALL my RUNNING+PENDING jobs assigned to a node. Only ever SUBMITS/counts; never scancels.
+# Gate:   ready(replaceK|onehot)=independent ;  ready(replace4|latefuse)=cache-files-present(task).
+# Dedup:  skip if a job named fs13_<task>_<arm> is RUNNING/PENDING (protects in-flight 264035-264049),
+#         and skip if the arm's completed row is present in its per-arm CSV OR the main CSV (covers the
+#         already-done R7 rows + the 3 in-flight replace4 launched under the old main-CSV scheme).
+# Only ever SUBMITS; never scancels (non-fs jobs untouched).  DRYRUN=1 -> classify WORK and exit.
 set -uo pipefail
 SB=/pkg/slurm/22.05.3/bin
 REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
 SUBMIT="$REPO/slurm/submit_fs_arm.sh"
-RESDIR=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch/results   # login node = galaxy mount, for row checks
+SSD=/srv/disk00/sshfs/pengchx3            # login node = galaxy mount, for row/cache-file checks
+RESDIR="$SSD/rebuttal_nt/run_fromscratch/results"
+CACHEDIR="$SSD/rebuttal_nt/run_fromscratch/data/cache_embedding/nt_adapters"
 LOG="$REPO/slurm/fs_grid_loop.log"
 
 R7="splice_sites_donors splice_sites_all promoter_all promoter_tata promoter_no_tata H3K4me3"
 NEW="H2AFZ H3K27ac H3K27me3 H3K36me3 H3K4me1 H3K4me2 H3K9ac H3K9me3 H4K20me1 enhancers enhancers_types splice_sites_acceptors"
 
 declare -A CAP=( [galaxy]=5 [laniakea]=7 [voyager]=3 )
-declare -A ATTEMPTS=()   # arm-key -> submit attempts (bound retries)
+declare -A ATTEMPTS=()
 MAX_ATTEMPTS=3
+DRYRUN="${DRYRUN:-0}"
 
 log(){ echo "[$(date '+%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
 main_csv(){ echo "$RESDIR/r13_fromscratch_$1.csv"; }
-oh_csv(){   echo "$RESDIR/r13_fromscratch_$1_onehot.csv"; }
 
-# arm-row present? (a completed 200-epoch append)
+# completed 200-epoch row present? checks per-arm CSV OR main CSV (old-scheme in-flight + done R7).
 have_row(){ # task arm
-  local t="$1" a="$2"
+  local t="$1" a="$2" main; main="$(main_csv "$t")"
   case "$a" in
-    onehot)   grep -q ",onehot," "$(oh_csv "$t")" 2>/dev/null ;;
-    replace4) grep -q ",nt,mid,replace4," "$(main_csv "$t")" 2>/dev/null ;;
-    replaceK) grep -q ",nt,mid,replaceK," "$(main_csv "$t")" 2>/dev/null ;;
-    latefuse) grep -q ",nt,mid,latefuse_onehot," "$(main_csv "$t")" 2>/dev/null ;;
+    onehot)   grep -q ",onehot," "$RESDIR/r13_fromscratch_${t}_onehot.csv" 2>/dev/null ;;
+    replace4) grep -q ",nt,mid,replace4," "$RESDIR/r13_fromscratch_${t}_replace4.csv" 2>/dev/null \
+              || grep -q ",nt,mid,replace4," "$main" 2>/dev/null ;;
+    replaceK) grep -q ",nt,mid,replaceK," "$main" 2>/dev/null ;;
+    latefuse) grep -q ",nt,mid,latefuse_onehot," "$RESDIR/r13_fromscratch_${t}_latefuse.csv" 2>/dev/null \
+              || grep -q ",nt,mid,latefuse_onehot," "$main" 2>/dev/null ;;
   esac
 }
 
-# arm ready to submit? (predecessor artifact gate)
+# all 3 splits' per-bp cache fully written? (token_embeddings.npy + metadata.json; metadata renamed LAST)
+cache_present(){ # task
+  local t="$1" s
+  for s in train val test; do
+    [ -f "$CACHEDIR/$t/${s}_mid_token_embeddings.npy" ] || return 1
+    [ -f "$CACHEDIR/$t/${s}_mid_metadata.json" ]        || return 1
+  done
+  return 0
+}
+
 is_ready(){ # task arm
-  local t="$1" a="$2"
-  case "$a" in
-    onehot|replaceK) return 0 ;;                         # independent / primer
-    replace4)
-      # R7 tasks: cache already exists -> ready. New tasks: need replaceK row first.
-      if echo " $R7 " | grep -q " $t "; then return 0; fi
-      have_row "$t" replaceK ;;
-    latefuse) have_row "$t" replace4 ;;                  # serialize append after replace4
+  case "$2" in
+    onehot|replaceK) return 0 ;;
+    replace4|latefuse) cache_present "$1" ;;
   esac
 }
 
-# a job for this arm already queued/running?
-in_squeue(){ # task arm
-  $SB/squeue -u pengchx3 -h -o '%j' 2>/dev/null | grep -qx "fs13_$1_$2"
-}
-
-# my RUNNING+PENDING jobs on a node
+in_squeue(){ $SB/squeue -u pengchx3 -h -o '%j' 2>/dev/null | grep -qx "fs13_$1_$2"; }
 node_count(){ $SB/squeue -u pengchx3 -h -t RUNNING,PENDING -w "$1" -o '%i' 2>/dev/null | grep -c .; }
+pick_node(){ local n c; for n in "$@"; do c=$(node_count "$n"); [ "$c" -lt "${CAP[$n]}" ] && { echo "$n"; return 0; }; done; echo ""; }
 
-pick_node(){ # $1..=node pref order -> prints first node under cap, else empty
-  local n c
-  for n in "$@"; do c=$(node_count "$n"); [ "$c" -lt "${CAP[$n]}" ] && { echo "$n"; return 0; }; done
-  echo ""
-}
-
-# Build the work list: "task:arm"
+# Work list: 6 R7 replace4 + 12 new x {replaceK,onehot,replace4,latefuse}
 WORK=()
 for t in $R7;  do WORK+=("$t:replace4"); done
 for t in $NEW; do for a in replaceK onehot replace4 latefuse; do WORK+=("$t:$a"); done; done
 
-log "=== fs_grid_loop start: ${#WORK[@]} arms to fill ==="
+# Classification (used by DRYRUN and by the live loop's opening audit)
+classify(){
+  local done=0 inflight=0 ready=0 waiting=0 t a st
+  for item in "${WORK[@]}"; do
+    t="${item%%:*}"; a="${item##*:}"
+    if   have_row "$t" "$a";  then st="DONE";     done=$((done+1))
+    elif in_squeue "$t" "$a"; then st="INFLIGHT($($SB/squeue -u pengchx3 -h -o '%i' -n fs13_${t}_${a} 2>/dev/null))"; inflight=$((inflight+1))
+    elif is_ready "$t" "$a";  then st="READY";    ready=$((ready+1))
+    else                           st="WAIT(cache)"; waiting=$((waiting+1)); fi
+    printf '  %-26s %-9s %s\n' "$t" "$a" "$st" | tee -a "$LOG"   # per-line tee keeps counters in main shell
+  done
+  log "CLASSIFY totals: DONE=$done INFLIGHT=$inflight READY=$ready WAIT=$waiting  (of ${#WORK[@]})"
+}
+
+log "=== fs_grid_loop v2 start (DRYRUN=$DRYRUN): ${#WORK[@]} arms; cache-file gate + per-arm CSVs ==="
+classify
+if [ "$DRYRUN" = "1" ]; then log "DRYRUN: no submits. exiting."; exit 0; fi
 
 while :; do
-  remaining=0; submitted_this_pass=0
-  # Priority: primers (new replaceK) first so the 12 precomputes start ASAP; then the rest.
+  remaining=0; subs=0
   for phase in replaceK other; do
     for item in "${WORK[@]}"; do
       t="${item%%:*}"; a="${item##*:}"
@@ -90,17 +105,15 @@ while :; do
       in_squeue "$t" "$a" && continue
       is_ready "$t" "$a" || continue
       key="$t:$a"; [ "${ATTEMPTS[$key]:-0}" -ge "$MAX_ATTEMPTS" ] && continue
-      # node preference: heavy primers favor voyager(H100); others favor galaxy then laniakea.
       if [ "$a" = replaceK ]; then node=$(pick_node voyager laniakea galaxy)
       else                         node=$(pick_node galaxy laniakea voyager); fi
       [ -z "$node" ] && continue
       ATTEMPTS[$key]=$(( ${ATTEMPTS[$key]:-0} + 1 ))
       jid=$(bash "$SUBMIT" "$t" "$a" "$node" 2>>"$LOG")
-      if [ -n "$jid" ]; then log "submitted $key -> node=$node jid=$jid (attempt ${ATTEMPTS[$key]})"; submitted_this_pass=$((submitted_this_pass+1)); sleep 3; fi
+      [ -n "$jid" ] && { log "submitted $key -> node=$node jid=$jid (attempt ${ATTEMPTS[$key]})"; subs=$((subs+1)); sleep 3; }
     done
   done
-  if [ "$remaining" -eq 0 ]; then log "=== ALL 54 arms have completed rows. done. ==="; break; fi
-  g=$(node_count galaxy); l=$(node_count laniakea); v=$(node_count voyager)
-  log "remaining=$remaining submitted_this_pass=$submitted_this_pass | node counts galaxy=$g/5 laniakea=$l/7 voyager=$v/3"
+  if [ "$remaining" -eq 0 ]; then log "=== ALL arms have completed rows. done. ==="; break; fi
+  log "remaining=$remaining submitted_this_pass=$subs | galaxy=$(node_count galaxy)/5 laniakea=$(node_count laniakea)/7 voyager=$(node_count voyager)/3"
   sleep 90
 done

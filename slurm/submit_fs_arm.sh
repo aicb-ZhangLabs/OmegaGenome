@@ -33,11 +33,15 @@ RNT="$SSD/rebuttal_nt"
 CACHE_BASE="$RNT/run_fromscratch"
 RESDIR="$CACHE_BASE/results"
 
+# Each arm writes a DISTINCT per-arm CSV sibling (onehot/replace4/latefuse), so NO two arms ever
+# append to the same file -> no concurrent-append race -> the loop needs no per-task serialization.
+# replaceK keeps the main CSV (exactly one primer per task; nothing else writes it). The results
+# reader must glob r13_fromscratch_<task>{,_onehot,_replace4,_latefuse}.csv AND the main CSV.
 case "$ARM" in
-  onehot)   ARMS_TOK=onehot;             CSV="$RESDIR/r13_fromscratch_${TASK}_onehot.csv"; SIZE_ENV="MODEL_SIZE=original" ;;
-  replace4) ARMS_TOK=replace4_nt;        CSV="$RESDIR/r13_fromscratch_${TASK}.csv";        SIZE_ENV="PARAM_MATCHED=1" ;;
-  replaceK) ARMS_TOK=replaceK_nt;        CSV="$RESDIR/r13_fromscratch_${TASK}.csv";        SIZE_ENV="PARAM_MATCHED=1" ;;
-  latefuse) ARMS_TOK=latefuse_onehot_nt; CSV="$RESDIR/r13_fromscratch_${TASK}.csv";        SIZE_ENV="PARAM_MATCHED=1" ;;
+  onehot)   ARMS_TOK=onehot;             CSV="$RESDIR/r13_fromscratch_${TASK}_onehot.csv";   SIZE_ENV="MODEL_SIZE=original" ;;
+  replace4) ARMS_TOK=replace4_nt;        CSV="$RESDIR/r13_fromscratch_${TASK}_replace4.csv"; SIZE_ENV="PARAM_MATCHED=1" ;;
+  replaceK) ARMS_TOK=replaceK_nt;        CSV="$RESDIR/r13_fromscratch_${TASK}.csv";          SIZE_ENV="PARAM_MATCHED=1" ;;
+  latefuse) ARMS_TOK=latefuse_onehot_nt; CSV="$RESDIR/r13_fromscratch_${TASK}_latefuse.csv"; SIZE_ENV="PARAM_MATCHED=1" ;;
   *) echo "[ERR] unknown arm '$ARM'" >&2; exit 2 ;;
 esac
 
