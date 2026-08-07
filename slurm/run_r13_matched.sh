@@ -66,6 +66,7 @@ COMMON=( --task-name "$TASK" --best-hp "$BEST_HP" --results-csv "$RESULTS_CSV"
          --teacher-batch-size "${TEACHER_BS:-8}" )
 [ -n "${EPOCHS:-}" ] && COMMON+=( --epochs "$EPOCHS" )
 [ -n "${PATIENCE:-}" ] && COMMON+=( --early-stop-patience "$PATIENCE" )
+[ -n "${NUM_WORKERS:-}" ] && COMMON+=( --num-workers "$NUM_WORKERS" )
 # Optional student-size override (e.g. MODEL_SIZE=original to force the 0.12M deployable student even
 # when best_hp lists medium). Best-HP loss weights/T/lr/epochs are unchanged; only student width changes.
 # In PARAM_MATCHED=1 mode this single MODEL_SIZE is IGNORED in favor of a PER-ARM matched size (below),

@@ -233,6 +233,9 @@ def main():
     p.add_argument("--early-stop-patience", type=int, default=None,
                    help="stop training if val MCC has not improved for this many epochs (best-val ckpt is "
                         "still reloaded for the test eval, so the reported MCC is unchanged). None/0 = full schedule.")
+    p.add_argument("--num-workers", type=int, default=8,
+                   help="DataLoader worker processes (result-preserving: parallel fetch/collate only). "
+                        "Matters for the 2560-dim embedding input; 0 = single-threaded (old behavior).")
     p.add_argument("--smoke", action="store_true", help="subset data + few steps to validate end-to-end")
     p.add_argument("--emb-cache", type=lambda s: s.lower() in ("1", "true", "yes"), default=None,
                    help="force embedding-cache use on/off (default: off in --smoke, on otherwise). Set to 1 "
@@ -442,9 +445,17 @@ def main():
         val_ds = SeqDataset(X_val, y_val, args.max_len)
         test_ds = SeqDataset(X_test, y_test, args.max_len)
     pin = device == "cuda"
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, pin_memory=pin)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, pin_memory=pin)
-    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, pin_memory=pin)
+    # Data-pipeline parallelism (RESULT-PRESERVING): the sampler still decides batch composition, so
+    # workers only fetch/collate faster -- identical batches, identical training. Critical here because
+    # the per-bp NT embedding input is 2560-dim (vs 4 for one-hot), so single-threaded loading starves
+    # the GPU. Workers share the RAM-loaded fp16 cache via fork COW (reads don't copy) -> no RAM blowup.
+    nw = max(0, args.num_workers)
+    lk = dict(pin_memory=pin, num_workers=nw)
+    if nw > 0:
+        lk.update(persistent_workers=True, prefetch_factor=4)
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, **lk)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, **lk)
+    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, **lk)
 
     # ---- output / wandb ----
     out_dir = args.output_dir or os.path.join(cache_base, "output", "r13_nt_embedding")
