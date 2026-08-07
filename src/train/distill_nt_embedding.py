@@ -352,15 +352,24 @@ def main():
     # one-hot run wrote lives at .../OmegaGenome/data/cache/<teacher>/<task>, and _get_cache_dir appends
     # 'data/cache/...', so cache_base must be .../OmegaGenome (3 levels up) to HIT that existing cache.
     cache_base = args.cache_base or os.path.dirname(os.path.dirname(os.path.dirname(args.nt_parent)))
+    needs_logits = hp["weight_kl"] > 0
     needs_features = hp["weight_mse"] > 0
 
     # ---- KD TARGETS: reuse the SAME pooled teacher logits/features cache the one-hot run used ----
-    train_tlogits, train_tfeatures = precompute_teacher_logits(
-        teacher_tokenizer, teacher_model, X_train, args.teacher_batch_size, device, args.max_len,
-        needs_logits=True, needs_features=needs_features,
-        project_path=cache_base, teacher_parent_dir=args.nt_parent,
-        task_name=task_name, teacher_ckpt=teacher_ckpt, use_cache=True,
-    )
+    # From-scratch (weight_kl=weight_mse=0) uses NEITHER target, so skip the ~2.5 h teacher forward over
+    # the train set entirely -- the loss multiplies them by 0 anyway, the dataset accepts None logits
+    # (returns (x, y)), and prepare_batch sets tlog=None when weight_kl<=0. Result is identical. The
+    # per-bp embedding INPUT is separate (cached below) and unaffected. With-KD arms keep the precompute.
+    if needs_logits or needs_features:
+        train_tlogits, train_tfeatures = precompute_teacher_logits(
+            teacher_tokenizer, teacher_model, X_train, args.teacher_batch_size, device, args.max_len,
+            needs_logits=needs_logits, needs_features=needs_features,
+            project_path=cache_base, teacher_parent_dir=args.nt_parent,
+            task_name=task_name, teacher_ckpt=teacher_ckpt, use_cache=True,
+        )
+    else:
+        train_tlogits, train_tfeatures = None, None
+        print("[from-scratch] weight_kl=weight_mse=0 -> skipping teacher-logit precompute (saves the teacher forward)")
 
     # ---- STUDENT INPUT ----
     # nt_embedding (default, the experiment): per-bp NT embeddings (cached).
