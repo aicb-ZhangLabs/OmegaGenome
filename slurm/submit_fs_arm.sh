@@ -50,7 +50,7 @@ DEP=()
 [ -n "${DEPENDENCY:-}" ] && DEP=( --dependency="$DEPENDENCY" )
 
 jid=$($SB/sbatch --parsable --nodelist="$NODE" --job-name="$JOBNAME" "${DEP[@]}" \
-      --export=ALL,TASK="$TASK",ARMS="$ARMS_TOK",RESULTS_CSV="$CSV",CACHE_BASE="$CACHE_BASE",BEST_HP="$BEST_HP",PATIENCE="${PATIENCE:-50}",$SIZE_ENV \
+      --export=ALL,TASK="$TASK",ARMS="$ARMS_TOK",RESULTS_CSV="$CSV",CACHE_BASE="$CACHE_BASE",BEST_HP="$BEST_HP",PATIENCE="${PATIENCE:-50}",NUM_WORKERS="${NUM_WORKERS:-4}",$SIZE_ENV \
       "$SCRIPT")
 rc=$?
 if [ "$rc" -ne 0 ] || [ -z "$jid" ]; then echo "[ERR] sbatch failed rc=$rc for $JOBNAME on $NODE" >&2; exit 1; fi

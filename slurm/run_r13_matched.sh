@@ -21,7 +21,7 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
-#SBATCH --mem=64G
+#SBATCH --mem=128G
 #SBATCH --partition=zhanglab.p
 #SBATCH --time=30-00:00:00
 #SBATCH --output=slurm/slurm-r13-match-%j.out
