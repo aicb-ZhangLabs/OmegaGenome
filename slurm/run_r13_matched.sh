@@ -114,6 +114,9 @@ for arm in $ARMS; do
     replace4_nt)               run_arm replace4_nt --input-mode nt_embedding --embedding-source nt       --fusion replace4 ;;
     replaceK_nt)               run_arm replaceK_nt --input-mode nt_embedding --embedding-source nt       --fusion replaceK ;;
     latefuse_onehot_nt)        run_arm latefuse_onehot_nt --input-mode nt_embedding --embedding-source nt       --fusion latefuse_onehot ;;
+    replace4_ntbase)           run_arm replace4_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion replace4 ;;
+    replaceK_ntbase)           run_arm replaceK_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion replaceK ;;
+    latefuse_onehot_ntbase)    run_arm latefuse_onehot_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion latefuse_onehot ;;
     replaceK_dnabert2)         run_arm replaceK_dnabert2 --input-mode nt_embedding --embedding-source dnabert2 --fusion replaceK ;;
     latefuse_onehot_dnabert2)  run_arm latefuse_onehot_dnabert2 --input-mode nt_embedding --embedding-source dnabert2 --fusion latefuse_onehot ;;
     *) echo "[WARN] unknown arm '$arm' skipped" ;;

@@ -244,11 +244,13 @@ def main():
                    help="student input front-end. 'nt_embedding' (DEFAULT, the R1.3 experiment) feeds per-bp "
                         "NT embeddings; 'onehot' is a MATCHED CONTROL that runs the SAME teacher/KD-targets/"
                         "trainer/data-splits but with the one-hot BPNet student, for apples-to-apples diagnosis.")
-    p.add_argument("--embedding-source", choices=["nt", "dnabert2"], default="nt",
+    p.add_argument("--embedding-source", choices=["nt", "nt_base", "dnabert2"], default="nt",
                    help="WHICH pretrained model provides the student's per-bp INPUT embeddings. 'nt' "
-                        "(default) reuses the NT-2.5B teacher; 'dnabert2' uses base DNABERT-2-117M (much "
-                        "faster, hidden 768). The KD TARGETS (logits/features) ALWAYS come from the NT-2.5B "
-                        "teacher either way, so this isolates the input-representation effect.")
+                        "(default) reuses the NT-2.5B FINE-TUNED teacher; 'nt_base' uses the RAW base "
+                        "NT-2.5B foundation model (NO LoRA, un-fine-tuned, hidden 2560); 'dnabert2' uses "
+                        "base DNABERT-2-117M (much faster, hidden 768). The KD TARGETS (logits/features) "
+                        "ALWAYS come from the NT-2.5B fine-tuned teacher either way, so this isolates the "
+                        "input-representation effect.")
     p.add_argument("--embedding-layer", type=int, default=-999,
                    help="teacher hidden-state layer for the input embeddings. -999 (default) = MIDDLE "
                         "layer (n//2; more transferable than the task-specialized last layer); -1 = last "
@@ -386,6 +388,22 @@ def main():
             emb_teacher_parent = os.path.join(os.path.dirname(args.nt_parent), "dnabert2_emb")
             emb_ckpt = f"dnabert2-117m-base/{DNABERT2_MODEL}"
             emb_hsfn = make_dnabert2_hidden_state_fn()
+        elif args.embedding_source == "nt_base":
+            # Embedding source = the RAW base NT-2.5B foundation model (NO LoRA, un-fine-tuned). The KD
+            # TARGETS (P2) and the reference teacher MCC (P1) still come from the FINE-TUNED NT-2.5B
+            # teacher (loaded above); ONLY the student INPUT embedding changes. The per-bp cache lands
+            # under a DISTINCT "nt_base_emb" teacher_parent_dir so it never collides with the fine-tuned
+            # "nt_adapters" cache. hidden_states are the standard HF tuple (same class as the teacher),
+            # so the SAME mid-layer extraction (emb_hsfn=None) applies; the random classification head is
+            # unused (only hidden_states[mid] is read).
+            from transformers import AutoTokenizer, AutoModelForSequenceClassification
+            emb_tokenizer = AutoTokenizer.from_pretrained(NT_BASE, trust_remote_code=True)
+            _base = AutoModelForSequenceClassification.from_pretrained(
+                NT_BASE, num_labels=num_labels, output_hidden_states=True, trust_remote_code=True)
+            emb_model = _base.to(device).eval()
+            emb_teacher_parent = os.path.join(os.path.dirname(args.nt_parent), "nt_base_emb")  # DISTINCT cache
+            emb_ckpt = "nt-2.5b-base"
+            emb_hsfn = None  # base NT has standard hidden_states -> same mid-layer extraction as the fine-tuned NT
         else:  # 'nt': reuse the NT-2.5B teacher as the embedding source
             emb_tokenizer, emb_model = teacher_tokenizer, teacher_model
             emb_teacher_parent, emb_ckpt, emb_hsfn = args.nt_parent, teacher_ckpt, None
