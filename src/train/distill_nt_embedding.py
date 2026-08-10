@@ -51,7 +51,7 @@ from src.data.dataset import (
     SeqDataset,
 )
 from src.trainer.utils import precompute_teacher_logits
-from src.trainer.embedding_cache import precompute_perbp_embeddings
+from src.trainer.embedding_cache import precompute_perbp_embeddings, embedding_cache_hit
 from src.trainer.distill_trainer import (
     evaluate,
     save_checkpoint,
@@ -305,6 +305,19 @@ def main():
     if args.smoke:
         epochs = min(epochs, 3)
 
+    # From-scratch (no KD) uses NEITHER teacher logits/features NOR the teacher for anything the student
+    # consumes -- the fine-tuned NT-2.5B teacher would be loaded ONLY to log the reference teacher MCC.
+    from_scratch = hp["weight_kl"] == 0 and hp["weight_mse"] == 0
+    # SKIP_TEACHER_EVAL=1 (env): on from-scratch arms, skip the fine-tuned NT-2.5B teacher load + eval
+    # entirely (removes one huge sshfs model load from the stall path; teacher_test_mcc CSV col stays
+    # empty -- we have it from Exp-1b). NEVER skip when the 'nt' embedding source REUSES the teacher as
+    # the per-bp embedder (that path genuinely needs it); nt_base/dnabert2/onehot arms do not.
+    skip_teacher = (
+        os.environ.get("SKIP_TEACHER_EVAL") == "1"
+        and from_scratch
+        and not (args.input_mode == "nt_embedding" and args.embedding_source == "nt")
+    )
+
     print(f"\n{'='*64}\nR1.3 NT-EMBEDDING DISTILL: {task_name}\n"
           f"best-HP: {hp}\nepochs={epochs} max_steps={args.max_steps} smoke={args.smoke}\n{'='*64}\n")
 
@@ -325,20 +338,28 @@ def main():
     _Cfg.teacher_config = teacher_config
     _Cfg.trainer_config.device = device
 
-    teacher_ckpt, score = find_teacher_checkpoint(_Cfg, task_name)
-    if teacher_ckpt is None:
-        print(f"No teacher checkpoint for {task_name}; aborting")
-        return 1
-    print(f"Teacher ckpt: {teacher_ckpt} (val mcc {score})")
+    if skip_teacher:
+        # SKIP_TEACHER_EVAL from-scratch: no fine-tuned teacher is needed (no KD targets, no reference
+        # MCC). Leave teacher handles None; nothing downstream dereferences them on this path.
+        print("[SKIP_TEACHER_EVAL] from-scratch + non-'nt' embedding -> skipping fine-tuned NT-2.5B "
+              "teacher load & eval (teacher_test_mcc CSV col stays empty)")
+        teacher_ckpt, score = None, None
+        teacher_tokenizer, teacher_model, teacher_hidden = None, None, None
+    else:
+        teacher_ckpt, score = find_teacher_checkpoint(_Cfg, task_name)
+        if teacher_ckpt is None:
+            print(f"No teacher checkpoint for {task_name}; aborting")
+            return 1
+        print(f"Teacher ckpt: {teacher_ckpt} (val mcc {score})")
 
-    teacher_tokenizer, teacher_model, teacher_hidden = get_teacher_model(_Cfg, task_name, teacher_ckpt)
-    # build_glm (LoRA-merge path) returns the teacher on CPU; the one-hot baseline moves it to device
-    # inside train_distill_task (distill_trainer.py:255). This driver calls precompute_teacher_logits /
-    # precompute_perbp_embeddings DIRECTLY, which tokenize inputs onto `device`, so the teacher MUST be
-    # on the same device or the first forward dies with a cpu/cuda index_select mismatch. Move it here.
-    teacher_model = teacher_model.to(device)
-    teacher_model.eval()
-    assert teacher_hidden == NT_EMBEDDING_DIM, f"expected NT hidden {NT_EMBEDDING_DIM}, got {teacher_hidden}"
+        teacher_tokenizer, teacher_model, teacher_hidden = get_teacher_model(_Cfg, task_name, teacher_ckpt)
+        # build_glm (LoRA-merge path) returns the teacher on CPU; the one-hot baseline moves it to device
+        # inside train_distill_task (distill_trainer.py:255). This driver calls precompute_teacher_logits /
+        # precompute_perbp_embeddings DIRECTLY, which tokenize inputs onto `device`, so the teacher MUST be
+        # on the same device or the first forward dies with a cpu/cuda index_select mismatch. Move it here.
+        teacher_model = teacher_model.to(device)
+        teacher_model.eval()
+        assert teacher_hidden == NT_EMBEDDING_DIM, f"expected NT hidden {NT_EMBEDDING_DIM}, got {teacher_hidden}"
 
     # ---- data ----
     ds_cfg = DatasetConfig(task_name=task_name, data_path="", random_state=args.seed)
@@ -379,6 +400,9 @@ def main():
     emb_train = emb_val = emb_test = None
     dnabert2_model = None
     if args.input_mode == "nt_embedding":
+        # Whether the per-bp embedding cache is consulted (off in smoke unless --emb-cache forces it).
+        # Computed once here so the nt_base cache-hit skip and the precompute call stay consistent.
+        use_emb_cache = args.emb_cache if args.emb_cache is not None else not args.smoke
         if args.embedding_source == "dnabert2":
             # Embedding source = base DNABERT-2-117M (fast). KD targets stay NT-2.5B (above). The cache
             # lands under a DNABERT-2-tagged teacher_parent_dir so it never collides with the NT cache.
@@ -396,21 +420,34 @@ def main():
             # "nt_adapters" cache. hidden_states are the standard HF tuple (same class as the teacher),
             # so the SAME mid-layer extraction (emb_hsfn=None) applies; the random classification head is
             # unused (only hidden_states[mid] is read).
-            from transformers import AutoTokenizer, AutoModelForSequenceClassification
-            emb_tokenizer = AutoTokenizer.from_pretrained(NT_BASE, trust_remote_code=True)
-            _base = AutoModelForSequenceClassification.from_pretrained(
-                NT_BASE, num_labels=num_labels, output_hidden_states=True, trust_remote_code=True)
-            emb_model = _base.to(device).eval()
             emb_teacher_parent = os.path.join(os.path.dirname(args.nt_parent), "nt_base_emb")  # DISTINCT cache
             emb_ckpt = "nt-2.5b-base"
             emb_hsfn = None  # base NT has standard hidden_states -> same mid-layer extraction as the fine-tuned NT
+            # LOAD-ONCE: the base NT-2.5B is a ~10GB sshfs load whose read intermittently STALLS. When the
+            # per-bp cache for ALL three splits is already present+valid, precompute_perbp_embeddings reads
+            # purely from disk and NEVER dereferences emb_model/emb_tokenizer, so skip the load entirely.
+            # Only the FIRST embedding arm of a task (cache MISS -> replace4) actually loads base-NT to
+            # BUILD the cache; replaceK/latefuse hit the cache and load nothing.
+            cache_ready = use_emb_cache and all(
+                embedding_cache_hit(cache_base, emb_teacher_parent, task_name, seqs, emb_ckpt,
+                                    args.max_len, split=sp, embedding_layer=embedding_layer)
+                for sp, seqs in (("train", X_train), ("val", X_val), ("test", X_test)))
+            if cache_ready:
+                print("[load-once] nt_base per-bp cache HIT for train/val/test -> skipping base NT-2.5B load")
+                emb_tokenizer, emb_model = None, None
+            else:
+                from transformers import AutoTokenizer, AutoModelForSequenceClassification
+                emb_tokenizer = AutoTokenizer.from_pretrained(NT_BASE, trust_remote_code=True)
+                _base = AutoModelForSequenceClassification.from_pretrained(
+                    NT_BASE, num_labels=num_labels, output_hidden_states=True, trust_remote_code=True)
+                emb_model = _base.to(device).eval()
         else:  # 'nt': reuse the NT-2.5B teacher as the embedding source
             emb_tokenizer, emb_model = teacher_tokenizer, teacher_model
             emb_teacher_parent, emb_ckpt, emb_hsfn = args.nt_parent, teacher_ckpt, None
         emb_kw = dict(
             batch_size=args.teacher_batch_size, device=device, max_length=args.max_len,
             cache_base=cache_base, teacher_parent_dir=emb_teacher_parent, task_name=task_name,
-            teacher_ckpt=emb_ckpt, use_cache=(args.emb_cache if args.emb_cache is not None else not args.smoke),
+            teacher_ckpt=emb_ckpt, use_cache=use_emb_cache,
             embedding_layer=embedding_layer, hidden_state_fn=emb_hsfn,
         )
         emb_train = precompute_perbp_embeddings(emb_tokenizer, emb_model, X_train, split="train", **emb_kw)
@@ -419,7 +456,7 @@ def main():
 
     # ---- teacher test MCC (cached eval; for the results table) ----
     teacher_mcc = None
-    if not args.smoke:
+    if not args.smoke and teacher_model is not None:
         run_dir_for_teacher = create_run_directory(
             args.output_dir or os.path.join(cache_base, "output", "r13_nt_embedding"),
             task_name, DistillationModelConfig(**{k: hp[k] for k in ("weight_ce", "weight_kl", "weight_mse", "temperature")}),
@@ -432,7 +469,9 @@ def main():
             print(f"teacher eval skipped: {e}")
 
     # Free the 2.5B teacher (+ DNABERT-2 embedder if loaded); the student trains from cached arrays only.
-    del teacher_model
+    # teacher_model is None when SKIP_TEACHER_EVAL skipped the load (from-scratch); nothing to free then.
+    if teacher_model is not None:
+        del teacher_model
     if dnabert2_model is not None:
         del dnabert2_model
     if device == "cuda":
