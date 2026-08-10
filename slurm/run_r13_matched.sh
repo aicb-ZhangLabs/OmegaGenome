@@ -94,8 +94,32 @@ echo "[$(date)] R1.3 MATCHED TASK=$TASK on $(hostname) GPU=$CUDA_VISIBLE_DEVICES
 echo "SSD=$SSD NT_PARENT=$NT_PARENT CACHE_BASE=$CACHE_BASE"
 echo "RESULTS_CSV=$RESULTS_CSV  ARMS='$ARMS'  SMOKE=${SMOKE:-0} EPOCHS=${EPOCHS:-bestHP}"
 
+# CSV signature of an arm's already-written result row (result-preserving skip on resubmit).
+arm_csv_sig() {
+  case "$1" in
+    onehot)                   echo ',onehot,' ;;
+    replace4_ntbase)          echo ',nt_base,mid,replace4,' ;;
+    replaceK_ntbase)          echo ',nt_base,mid,replaceK,' ;;
+    latefuse_onehot_ntbase)   echo ',nt_base,mid,latefuse_onehot,' ;;
+    replace4_nt)              echo ',nt,mid,replace4,' ;;
+    replaceK_nt)              echo ',nt,mid,replaceK,' ;;
+    latefuse_onehot_nt)       echo ',nt,mid,latefuse_onehot,' ;;
+    *)                        echo '' ;;
+  esac
+}
+
 run_arm() {
   local mode="$1"; shift
+  # SKIP_DONE_ARMS=1 (default): if this arm's result row already exists in RESULTS_CSV, skip re-training
+  # it (result-preserving -- the completed arm's numbers are unchanged). Makes resubmits do only the
+  # MISSING arms instead of re-running onehot/replace4 every time.
+  if [ "${SKIP_DONE_ARMS:-1}" = "1" ]; then
+    local sig; sig=$(arm_csv_sig "$mode")
+    if [ -n "$sig" ] && [ -f "$RESULTS_CSV" ] && grep -qF "$sig" "$RESULTS_CSV" 2>/dev/null; then
+      echo; echo "################## ARM: $mode -> already in CSV, SKIP (result-preserving) ##################"
+      return 0
+    fi
+  fi
   local extra=()
   if [ "${PARAM_MATCHED:-0}" = "1" ]; then
     local sz; sz=$(arm_matched_size "$mode")
