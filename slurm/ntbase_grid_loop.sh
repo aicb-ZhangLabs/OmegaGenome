@@ -26,8 +26,8 @@ FS_YAML="$BEST_HP_DIR/best_hp_nt_fromscratch.yaml"
 KD_YAML="$BEST_HP_DIR/best_hp_nt.yaml"
 SSD=/srv/disk00/sshfs/pengchx3            # login node = galaxy mount (row/CSV checks)
 RNT="$SSD/rebuttal_nt"
-FS_DIR="$RNT/run_fromscratch_ntbase"
-KD_DIR="$RNT/run_distilled_ntbase"
+FS_SUB="run_fromscratch_ntbase"; KD_SUB="run_distilled_ntbase"
+FS_DIR="$RNT/$FS_SUB"; KD_DIR="$RNT/$KD_SUB"   # login (galaxy) paths for classify / task_done reads
 LOG="$REPO/slurm/ntbase_grid_loop.log"
 
 # Tasks ordered small/fast -> large/slow so complete rows land early.
@@ -59,9 +59,15 @@ task_done(){ # folder task -> all 4 arm rows present (onehot + 3 nt_base fusions
   local oh nb; oh=$(grep -c ',onehot,' "$f" 2>/dev/null || echo 0); nb=$(grep -c ',nt_base,mid,' "$f" 2>/dev/null || echo 0)
   [ "${oh:-0}" -ge 1 ] && [ "${nb:-0}" -ge 3 ]; }
 
-submit_task(){ # node task folder yaml -> echoes jid
-  local node="$1" task="$2" folder="$3" yaml="$4" csv
-  csv=$(csv_for "$folder" "$task")
+# SSD mount prefix per node (SAME shared disk, different mount point): galaxy vs laniakea/voyager.
+node_ssd_prefix(){ case "$1" in galaxy) echo /srv/disk00/sshfs/pengchx3 ;; *) echo /tmp/galaxy_srv_disk00/pengchx3 ;; esac; }
+submit_task(){ # node task subdir yaml -> echoes jid.
+  # Builds CACHE_BASE/RESULTS_CSV on the TARGET NODE's SSD mount (galaxy=/srv/disk00/sshfs,
+  # laniakea/voyager=/tmp/galaxy_srv_disk00) -- the login-node prefix is NOT writable on the other
+  # nodes. Same shared disk, so the login loop still READS these CSVs via its galaxy prefix (task_done
+  # uses csv_for with the login folder).
+  local node="$1" task="$2" subdir="$3" yaml="$4" pfx folder csv
+  pfx=$(node_ssd_prefix "$node"); folder="$pfx/rebuttal_nt/$subdir"; csv="$folder/results/r13_ntbase_$task.csv"
   $SB/sbatch --parsable --nodelist="$node" --job-name="r13nb_${node}_${task}" \
     --output="$REPO/slurm/slurm-r13nb-${task}-%j.out" \
     --export="ALL,TASK=$task,ARMS=$ARMS,BEST_HP=$yaml,CACHE_BASE=$folder,RESULTS_CSV=$csv,PARAM_MATCHED=1" \
@@ -79,10 +85,11 @@ classify(){ # folder -> print per-task status
   log "classify($(basename "$folder")): DONE=$done REMAINING=$rem of 18"
 }
 
-run_phase(){ # phase_name folder yaml
-  local pname="$1" folder="$2" yaml="$3" stuck=0
+run_phase(){ # phase_name subdir yaml
+  local pname="$1" subdir="$2" yaml="$3" stuck=0
+  local folder="$RNT/$subdir"   # folder = LOGIN (galaxy) path for task_done reads (same shared disk)
   mkdir -p "$folder/results"
-  log "=== PHASE $pname START: folder=$(basename "$folder") yaml=$(basename "$yaml") NODES='$NODES' caps galaxy=${CAP[galaxy]} laniakea=${CAP[laniakea]} ==="
+  log "=== PHASE $pname START: subdir=$subdir yaml=$(basename "$yaml") NODES='$NODES' caps galaxy=${CAP[galaxy]} laniakea=${CAP[laniakea]} voyager=${CAP[voyager]} ==="
   while :; do
     pass_snapshot || { sleep "$POLL"; continue; }
     local remaining=0 subs=0 t node jid key
@@ -93,7 +100,7 @@ run_phase(){ # phase_name folder yaml
       key="$pname:$t"; [ "${ATTEMPTS[$key]:-0}" -ge "$MAX_ATTEMPTS" ] && continue
       node=$(pick_node); [ -z "$node" ] && continue
       ATTEMPTS[$key]=$(( ${ATTEMPTS[$key]:-0} + 1 ))
-      jid=$(submit_task "$node" "$t" "$folder" "$yaml")
+      jid=$(submit_task "$node" "$t" "$subdir" "$yaml")
       if [ -n "$jid" ]; then log "PHASE $pname SUBMIT $t -> node=$node jid=$jid (attempt ${ATTEMPTS[$key]}) csv=$(csv_for "$folder" "$t")"; subs=$((subs+1)); sleep 5;
       else log "PHASE $pname SUBMIT FAILED $t -> node=$node (see log)"; fi
       pass_snapshot || break
@@ -115,9 +122,9 @@ if [ "$DRYRUN" = "1" ]; then
 fi
 
 log "########## ntbase grid loop START (pid $$) ##########"
-if run_phase FROMSCRATCH "$FS_DIR" "$FS_YAML"; then
+if run_phase FROMSCRATCH "$FS_SUB" "$FS_YAML"; then
   log ">>> Phase 1 (from-scratch) 100% complete -> queuing Phase 2 (distilled) <<<"
-  run_phase DISTILLED "$KD_DIR" "$KD_YAML" && log "########## ALL PHASES COMPLETE ##########"
+  run_phase DISTILLED "$KD_SUB" "$KD_YAML" && log "########## ALL PHASES COMPLETE ##########"
 else
   log "########## STOPPED after Phase 1 abort; Phase 2 NOT started ##########"
 fi
