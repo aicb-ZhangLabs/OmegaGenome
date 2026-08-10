@@ -41,6 +41,11 @@ if [ -z "$SSD" ]; then
   fi
 fi
 RNT="$SSD/rebuttal_nt"
+# BULLETPROOF offline: this cluster's network to wandb.ai / huggingface.co hangs the loads, so force
+# everything offline HERE in the launcher (env in --export was being overridden). W&B curves still
+# save locally (syncable later); HF uses the local arrow/model cache only (datasets 4.2.0 fix).
+export WANDB_MODE=offline WANDB_DISABLED=false
+export HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 HF_DATASETS_TRUST_REMOTE_CODE=1
 export HF_HOME="$RNT/hf_cache"
 export HF_HUB_CACHE="$HF_HOME/hub"
 export HUGGINGFACE_HUB_CACHE="$HF_HUB_CACHE"
