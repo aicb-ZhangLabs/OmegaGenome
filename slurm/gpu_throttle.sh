@@ -30,9 +30,13 @@ free_gpu(){ local n="$1"; echo $(( ${TOTGPU[$n]:-0} - $(run_on "$n") - $(mypend_
 # - all-user running - my pending), so after the job lands >=1 GPU stays free for others. This also
 # naturally pre-queues one job when 2 free open up (grabbed within the poll), then holds at 1 free.
 pick_node(){ local n f; for n in $NODES; do node_up "$n" || continue; f=$(free_gpu "$n"); [ "${f:-0}" -ge 2 ] && { echo "$n"; return 0; }; done; echo ""; }
-csv_done(){ local f="$1" oh nb; [ -f "$f" ] || return 1
-  oh=$(grep -c ',onehot,' "$f" 2>/dev/null | head -1 | tr -d '[:space:]'); nb=$(grep -c ',nt_base,mid,' "$f" 2>/dev/null | head -1 | tr -d '[:space:]')
-  [ "${nb:-0}" -ge 1 ]; }   # done = >=1 nt_base (replaceK) row; onehot baseline comes from from-scratch results
+csv_done(){ local f="$1" nb; [ -f "$f" ] || return 1
+  # done = >=1 base-NT REPLACEK row specifically. Must match the ARM we run (replaceK_ntbase); an older
+  # replace4 nt_base row does NOT count -- several tasks have a stale replace4 row and were being wrongly
+  # skipped, leaving the rebuttal table missing their replaceK point. onehot baseline is reused from the
+  # from-scratch results, so it is not required here.
+  nb=$(grep -c ',nt_base,mid,replaceK,' "$f" 2>/dev/null | head -1 | tr -d '[:space:]')
+  [ "${nb:-0}" -ge 1 ]; }
 in_queue(){ printf '%s\n' "$SNAP" | grep -qE "^${1}_[a-z0-9]+_${2}$"; }   # prefix _<node>_ task
 
 # Wedge-reaper: cancel MY <pfx>_* jobs whose log is stale >60min with 0 epochs logged (the DataLoader
