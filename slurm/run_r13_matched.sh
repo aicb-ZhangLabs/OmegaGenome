@@ -77,6 +77,15 @@ export HF_ASSETS_CACHE="$HF_HOME/assets"
 
 NT_PARENT="${NT_PARENT:-$RNT/nt_adapters}"
 CACHE_BASE="${CACHE_BASE:-$RNT/run}"
+# The per-bp embedding cache (~7.7G/task) + checkpoints are the HOT-PATH large I/O that stalls on the
+# sshfs mount. Redirect CACHE_BASE (embedding cache + output) to node-local /dev/shm; RESULTS_CSV stays
+# on the shared SSD (small appends) so the throttle still sees completions. /dev/shm has ~440G free.
+if [ "${STAGE_LOCAL:-1}" = "1" ]; then
+  _cbsub=$(basename "$CACHE_BASE")
+  CACHE_BASE="/dev/shm/$(whoami)/r13cache/$_cbsub"
+  mkdir -p "$CACHE_BASE/results"
+  echo "[stage] CACHE_BASE (embedding cache + output) -> $CACHE_BASE (node-local RAM)"
+fi
 mkdir -p "$CACHE_BASE/results"
 
 TASK="${TASK:?set TASK=<task_name> via --export}"
