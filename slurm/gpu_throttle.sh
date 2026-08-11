@@ -65,7 +65,7 @@ run_phase(){ # pname jobprefix subdir yaml  (write path = node-local /tmp mount)
       node=$(pick_node); [ -z "$node" ] && continue
       jid=$($SB/sbatch --parsable --nodelist="$node" --gres=gpu:1 --mem=98304 \
         --job-name="${pfx}_${node}_${t}" --output="$REPO/code_carbon/slurm/slurm-${pfx}-${t}-%j.out" \
-        --export="ALL,TASK=$t,ARMS=$ARMS,BEST_HP=$yaml,CACHE_BASE=$write,RESULTS_CSV=$write/results/r13_ntbase_$t.csv,PARAM_MATCHED=1,TEACHER_BS=32,NUM_WORKERS=0,WANDB_MODE=offline,SKIP_TEACHER_EVAL=1" \
+        --export="ALL,TASK=$t,ARMS=$ARMS,BEST_HP=$yaml,CACHE_BASE=$write,RESULTS_CSV=$write/results/r13_ntbase_$t.csv,PARAM_MATCHED=1,TEACHER_BS=32,NUM_WORKERS=4,WANDB_MODE=offline,SKIP_TEACHER_EVAL=1" \
         "$RUN" 2>>"$LOG")
       [ -n "$jid" ] && { log "PHASE $pname SUBMIT $t -> $node jid=$jid (free left >=1)"; SNAP="$SNAP"$'\n'"${pfx}_${node}_${t}"; sleep 8; }
     done
