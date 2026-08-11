@@ -38,6 +38,12 @@ import wandb
 import yaml
 from datetime import datetime
 
+# DEADLOCK DIAGNOSTIC: dump ALL thread stacks to stderr (slurm log) every 150s. Runs in-process (no
+# ptrace/sudo needed), so a hang between "Student params" and epoch 1 prints the exact frozen line.
+import faulthandler as _fh, sys as _sys
+_fh.enable()
+_fh.dump_traceback_later(150, repeat=True, file=_sys.stderr)
+
 from torch.utils.data import DataLoader
 
 from src.model.bpnet_classifier import BPNetClassifier, BPNetClassifierConfig
