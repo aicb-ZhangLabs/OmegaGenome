@@ -48,44 +48,13 @@ export WANDB_MODE=offline WANDB_DISABLED=false
 export HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 HF_DATASETS_TRUST_REMOTE_CODE=1
 export HF_HOME="$RNT/hf_cache"
 export HF_HUB_CACHE="$HF_HOME/hub"
-# NODE-LOCAL STAGING (per the lab SSD announcement: the /tmp/galaxy_srv_disk00 sshfs mount is slow
-# under concurrent load). Bulk-copy the HF cache (dataset arrow + base NT-2.5B shards) to node-local
-# /dev/shm ONCE per node, then read from RAM -- sequential cp is sshfs-robust where the driver's lazy
-# random arrow/shard reads stall. mkdir-lock avoids concurrent-job races. Writes still go to the SSD.
-STAGE_SHM="/dev/shm/$(whoami)/hf_cache"
-if [ "${STAGE_LOCAL:-1}" = "1" ] && [ -d "$HF_HOME" ]; then
-  if [ ! -e "$STAGE_SHM/.staged_ok" ]; then
-    mkdir -p "$STAGE_SHM"
-    if mkdir "$STAGE_SHM/.staging_lock" 2>/dev/null; then
-      echo "[stage] copying HF cache ($(du -sh "$HF_HOME" 2>/dev/null|cut -f1)) -> $STAGE_SHM ..."
-      if cp -rn "$HF_HOME"/. "$STAGE_SHM"/ 2>/dev/null; then touch "$STAGE_SHM/.staged_ok"; echo "[stage] done"; fi
-      rmdir "$STAGE_SHM/.staging_lock" 2>/dev/null
-    else
-      echo "[stage] another job staging; waiting for cache..."
-      for _i in $(seq 1 120); do [ -e "$STAGE_SHM/.staged_ok" ] && break; sleep 5; done
-    fi
-  fi
-  if [ -e "$STAGE_SHM/.staged_ok" ]; then
-    export HF_HOME="$STAGE_SHM"; export HF_HUB_CACHE="$STAGE_SHM/hub"
-    echo "[stage] HF_HOME -> $STAGE_SHM (node-local RAM; no sshfs reads for dataset/model)"
-  fi
-fi
 export HUGGINGFACE_HUB_CACHE="$HF_HUB_CACHE"
 export HF_DATASETS_CACHE="$HF_HOME/datasets"
 export TRANSFORMERS_CACHE="$HF_HOME/hub"
 export HF_ASSETS_CACHE="$HF_HOME/assets"
 
 NT_PARENT="${NT_PARENT:-$RNT/nt_adapters}"
-CACHE_BASE="${CACHE_BASE:-$RNT/run}"
-# The per-bp embedding cache (~7.7G/task) + checkpoints are the HOT-PATH large I/O that stalls on the
-# sshfs mount. Redirect CACHE_BASE (embedding cache + output) to node-local /dev/shm; RESULTS_CSV stays
-# on the shared SSD (small appends) so the throttle still sees completions. /dev/shm has ~440G free.
-if [ "${STAGE_LOCAL:-1}" = "1" ]; then
-  _cbsub=$(basename "$CACHE_BASE")
-  CACHE_BASE="/dev/shm/$(whoami)/r13cache/$_cbsub"
-  mkdir -p "$CACHE_BASE/results"
-  echo "[stage] CACHE_BASE (embedding cache + output) -> $CACHE_BASE (node-local RAM)"
-fi
+CACHE_BASE="${CACHE_BASE:-$RNT/run}"   # embedding cache + output on the shared SSD (as in the working Exp-1b)
 mkdir -p "$CACHE_BASE/results"
 
 TASK="${TASK:?set TASK=<task_name> via --export}"

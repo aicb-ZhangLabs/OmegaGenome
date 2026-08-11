@@ -453,7 +453,7 @@ def main():
             cache_base=cache_base, teacher_parent_dir=emb_teacher_parent, task_name=task_name,
             teacher_ckpt=emb_ckpt, use_cache=use_emb_cache,
             embedding_layer=embedding_layer, hidden_state_fn=emb_hsfn,
-            load_in_ram=(os.environ.get("EMB_LOAD_IN_RAM", "0") == "1"),
+            load_in_ram=(os.environ.get("EMB_LOAD_IN_RAM", "1") == "1"),  # default True = working Exp-1b behavior
         )
         emb_train = precompute_perbp_embeddings(emb_tokenizer, emb_model, X_train, split="train", **emb_kw)
         emb_val = precompute_perbp_embeddings(emb_tokenizer, emb_model, X_val, split="val", **emb_kw)
