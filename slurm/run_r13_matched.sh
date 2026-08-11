@@ -44,6 +44,12 @@ RNT="$SSD/rebuttal_nt"
 # BULLETPROOF offline: this cluster's network to wandb.ai / huggingface.co hangs the loads, so force
 # everything offline HERE in the launcher (env in --export was being overridden). W&B curves still
 # save locally (syncable later); HF uses the local arrow/model cache only (datasets 4.2.0 fix).
+# UNBUFFERED stdout: the driver's per-epoch prints are line-bufferable but Python fully-buffers stdout
+# when it's a file (SLURM redirect). Buffered epoch prints made healthy training jobs look "0 epochs"
+# in the log -> the wedge-reaper false-killed them after 75min. -u flushes each print immediately so the
+# reaper's `grep 'epoch N/'` sees real progress. (faulthandler on unbuffered stderr already proved the
+# jobs were training; this just makes stdout tell the same truth.)
+export PYTHONUNBUFFERED=1
 export WANDB_MODE=${WANDB_MODE:-offline} WANDB_DISABLED=${WANDB_DISABLED:-false}
 export HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 HF_DATASETS_TRUST_REMOTE_CODE=1
 export HF_HOME="$RNT/hf_cache"
