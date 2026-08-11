@@ -40,8 +40,10 @@ reap_wedged(){ local pfx="$1" jid task lg age ep
   for jid in $($SB/squeue -h -u pengchx3 -t RUNNING -o '%i %j' 2>/dev/null | grep -E "^[0-9]+ ${pfx}_" | awk '{print $1}'); do
     lg=$(ls -t "$REPO/code_carbon/slurm/slurm-${pfx}-"*"-${jid}.out" 2>/dev/null | head -1); [ -z "$lg" ] && continue
     age=$(( ($(date +%s) - $(stat -c %Y "$lg")) / 60 ))
-    ep=$(tr '\r' '\n' < "$lg" 2>/dev/null | grep -cE 'Epoch [0-9]+/')
-    if [ "$age" -gt 30 ] && [ "${ep:-0}" -eq 0 ]; then
+    ep=$(tr '\r' '\n' < "$lg" 2>/dev/null | grep -ciE 'epoch [0-9]+/')
+    # 75min threshold: the base-NT embedding PRECOMPUTE (embed ~27k seqs through the 2.5B model) is a
+    # legit ~30-45min GPU step on 3090 with NO log output -- a 30min reaper false-killed it in a loop.
+    if [ "$age" -gt 75 ] && [ "${ep:-0}" -eq 0 ]; then
       $SB/scancel "$jid" 2>/dev/null; log "REAP wedged $pfx jid=$jid (log stale ${age}min, 0 epochs) -> will resubmit fresh"
     fi
   done; }
@@ -63,7 +65,7 @@ run_phase(){ # pname jobprefix subdir yaml  (write path = node-local /tmp mount)
       node=$(pick_node); [ -z "$node" ] && continue
       jid=$($SB/sbatch --parsable --nodelist="$node" --gres=gpu:1 --mem=98304 \
         --job-name="${pfx}_${node}_${t}" --output="$REPO/code_carbon/slurm/slurm-${pfx}-${t}-%j.out" \
-        --export="ALL,TASK=$t,ARMS=$ARMS,BEST_HP=$yaml,CACHE_BASE=$write,RESULTS_CSV=$write/results/r13_ntbase_$t.csv,PARAM_MATCHED=1,TEACHER_BS=32,NUM_WORKERS=0,WANDB_MODE=disabled,WANDB_DISABLED=true,SKIP_TEACHER_EVAL=1" \
+        --export="ALL,TASK=$t,ARMS=$ARMS,BEST_HP=$yaml,CACHE_BASE=$write,RESULTS_CSV=$write/results/r13_ntbase_$t.csv,PARAM_MATCHED=1,TEACHER_BS=32,NUM_WORKERS=0,WANDB_MODE=offline,SKIP_TEACHER_EVAL=1" \
         "$RUN" 2>>"$LOG")
       [ -n "$jid" ] && { log "PHASE $pname SUBMIT $t -> $node jid=$jid (free left >=1)"; SNAP="$SNAP"$'\n'"${pfx}_${node}_${t}"; sleep 8; }
     done
