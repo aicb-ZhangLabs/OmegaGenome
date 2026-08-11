@@ -537,9 +537,15 @@ def main():
     # ---- output / wandb ----
     out_dir = args.output_dir or os.path.join(cache_base, "output", "r13_nt_embedding")
     run_dir = create_run_directory(out_dir, task_name, distill_cfg)
+    # FUNDAMENTAL DEADLOCK FIX (faulthandler-confirmed): the training step blocked forever on wandb's
+    # mailbox IPC to its internal service process (wandb/sdk/mailbox), which hangs under this cluster's
+    # runtime. mode="disabled" makes wandb.init a no-op (RunDisabled) -- no service, no mailbox, no
+    # deadlock. Honour WANDB_MODE if it is offline/online; otherwise force disabled. Val curves are
+    # still written to the results CSV, so nothing needed is lost.
+    _wm = args.wandb_mode if args.wandb_mode in ("offline", "online") and os.environ.get("WANDB_FORCE_DISABLE") != "1" else "disabled"
     wandb.init(project=args.wandb_project, name=f"{task_name}/{args.input_mode}/{hp['model_size']}",
                dir=cache_base, config={**hp, **params, "input_mode": args.input_mode},
-               tags=[task_name, "nt", args.input_mode, "r1.3"], mode=args.wandb_mode)
+               tags=[task_name, "nt", args.input_mode, "r1.3"], mode=_wm)
 
     # ---- train (reuses DistillationModel + trainer helpers; best-ckpt by val MCC) ----
     optimizer = torch.optim.AdamW(model.parameters(), lr=hp["lr"])
