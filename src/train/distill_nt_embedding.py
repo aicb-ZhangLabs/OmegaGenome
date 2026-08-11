@@ -444,11 +444,16 @@ def main():
         else:  # 'nt': reuse the NT-2.5B teacher as the embedding source
             emb_tokenizer, emb_model = teacher_tokenizer, teacher_model
             emb_teacher_parent, emb_ckpt, emb_hsfn = args.nt_parent, teacher_ckpt, None
+        # EMB_LOAD_IN_RAM=0 (default here): read the per-bp cache via mmap_mode='r' instead of loading
+        # the full ~27GB fp16 array into RAM. The cache now lives in node-local /dev/shm (RAM), so mmap
+        # reads are fast, and this avoids both the 27GB in-RAM copy AND the num_workers fork-COW blowup
+        # that was deadlocking the DataLoader on the large embedding cache.
         emb_kw = dict(
             batch_size=args.teacher_batch_size, device=device, max_length=args.max_len,
             cache_base=cache_base, teacher_parent_dir=emb_teacher_parent, task_name=task_name,
             teacher_ckpt=emb_ckpt, use_cache=use_emb_cache,
             embedding_layer=embedding_layer, hidden_state_fn=emb_hsfn,
+            load_in_ram=(os.environ.get("EMB_LOAD_IN_RAM", "0") == "1"),
         )
         emb_train = precompute_perbp_embeddings(emb_tokenizer, emb_model, X_train, split="train", **emb_kw)
         emb_val = precompute_perbp_embeddings(emb_tokenizer, emb_model, X_val, split="val", **emb_kw)
