@@ -8,10 +8,9 @@ SB=/pkg/slurm/22.05.3/bin
 REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606
 RUN=$REPO/code_carbon/slurm/run_r13_matched.sh
 LOG=$REPO/code_carbon/slurm/gpu_throttle.log
-# PER-TASK: just the core comparison -- onehot baseline vs the primary base-NT embedding variant
-# (replaceK). Drops the secondary replace4/latefuse variants -> 2 arms/task instead of 4 (the user's
-# "each task mainly test one embedding way" simplification; also shrinks the per-task /dev/shm cache).
-ARMS="onehot replaceK_ntbase"
+# PER-TASK: ONLY the base-NT embedding arm (replaceK). onehot is embedding-independent -> its baseline
+# already exists in the from-scratch results, so skip it here. 1 arm/task = the essential base-NT point.
+ARMS="replaceK_ntbase"
 TASKS="promoter_tata H3K4me3 H3K4me2 splice_sites_donors splice_sites_acceptors promoter_all promoter_no_tata enhancers enhancers_types H3K9ac H3K27ac H3K4me1 H2AFZ H3K27me3 H3K36me3 H3K9me3 H4K20me1 splice_sites_all"
 declare -A TOTGPU=( [galaxy]=6 [laniakea]=8 [voyager]=4 )
 NODES="laniakea voyager galaxy"          # preference order; laniakea (49G) & voyager (H100) first
@@ -33,7 +32,7 @@ free_gpu(){ local n="$1"; echo $(( ${TOTGPU[$n]:-0} - $(run_on "$n") - $(mypend_
 pick_node(){ local n f; for n in $NODES; do node_up "$n" || continue; f=$(free_gpu "$n"); [ "${f:-0}" -ge 2 ] && { echo "$n"; return 0; }; done; echo ""; }
 csv_done(){ local f="$1" oh nb; [ -f "$f" ] || return 1
   oh=$(grep -c ',onehot,' "$f" 2>/dev/null | head -1 | tr -d '[:space:]'); nb=$(grep -c ',nt_base,mid,' "$f" 2>/dev/null | head -1 | tr -d '[:space:]')
-  [ "${oh:-0}" -ge 1 ] && [ "${nb:-0}" -ge 1 ]; }   # done = onehot + >=1 nt_base arm (single-variant mode)
+  [ "${nb:-0}" -ge 1 ]; }   # done = >=1 nt_base (replaceK) row; onehot baseline comes from from-scratch results
 in_queue(){ printf '%s\n' "$SNAP" | grep -qE "^${1}_[a-z0-9]+_${2}$"; }   # prefix _<node>_ task
 
 # Wedge-reaper: cancel MY <pfx>_* jobs whose log is stale >60min with 0 epochs logged (the DataLoader
@@ -68,7 +67,7 @@ run_phase(){ # pname jobprefix subdir yaml  (write path = node-local /tmp mount)
       node=$(pick_node); [ -z "$node" ] && continue
       jid=$($SB/sbatch --parsable --nodelist="$node" --gres=gpu:1 --mem=98304 \
         --job-name="${pfx}_${node}_${t}" --output="$REPO/code_carbon/slurm/slurm-${pfx}-${t}-%j.out" \
-        --export="ALL,TASK=$t,ARMS=$ARMS,BEST_HP=$yaml,CACHE_BASE=$write,RESULTS_CSV=$write/results/r13_ntbase_$t.csv,PARAM_MATCHED=1,TEACHER_BS=32,NUM_WORKERS=4,WANDB_MODE=offline,SKIP_TEACHER_EVAL=1" \
+        --export="ALL,TASK=$t,ARMS=$ARMS,BEST_HP=$yaml,CACHE_BASE=$write,RESULTS_CSV=$write/results/r13_ntbase_$t.csv,PARAM_MATCHED=1,TEACHER_BS=32,NUM_WORKERS=0,WANDB_MODE=offline,SKIP_TEACHER_EVAL=1" \
         "$RUN" 2>>"$LOG")
       [ -n "$jid" ] && { log "PHASE $pname SUBMIT $t -> $node jid=$jid (free left >=1)"; SNAP="$SNAP"$'\n'"${pfx}_${node}_${t}"; sleep 8; }
     done
