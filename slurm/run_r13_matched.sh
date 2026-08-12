@@ -50,6 +50,11 @@ RNT="$SSD/rebuttal_nt"
 # reaper's `grep 'epoch N/'` sees real progress. (faulthandler on unbuffered stderr already proved the
 # jobs were training; this just makes stdout tell the same truth.)
 export PYTHONUNBUFFERED=1
+# Serialize numpy/BLAS. The per-bp embedding __getitem__ (_expand_to_perbp) does numpy np.repeat/
+# concatenate on the main thread; a multi-threaded BLAS backend racing with torch's data threads
+# segfaulted it intermittently (native crash). Single-threaded numpy removes the race and is
+# result-preserving (identical arithmetic, just not parallelized inside each small op).
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
 export WANDB_MODE=${WANDB_MODE:-offline} WANDB_DISABLED=${WANDB_DISABLED:-false}
 export HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 HF_DATASETS_TRUST_REMOTE_CODE=1
 export HF_HOME="$RNT/hf_cache"

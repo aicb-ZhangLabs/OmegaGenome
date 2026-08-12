@@ -527,7 +527,12 @@ def main():
     # the per-bp NT embedding input is 2560-dim (vs 4 for one-hot), so single-threaded loading starves
     # the GPU. Workers share the RAM-loaded fp16 cache via fork COW (reads don't copy) -> no RAM blowup.
     nw = max(0, args.num_workers)
-    lk = dict(pin_memory=pin, num_workers=nw)
+    # pin_memory only WITH workers. With num_workers=0 the main thread runs __getitem__ (numpy
+    # _expand_to_perbp) while torch's pin-memory thread copies each batch concurrently; against a
+    # multi-threaded numpy/BLAS backend this raced and segfaulted intermittently in _expand_to_perbp
+    # (native crash, garbage frame line#). No workers -> no pin thread -> race gone. (Thread env vars
+    # OMP/OPENBLAS/MKL=1 in the launcher also serialize numpy as a second guard.)
+    lk = dict(pin_memory=(pin and nw > 0), num_workers=nw)
     if nw > 0:
         lk.update(persistent_workers=True, prefetch_factor=4)
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, **lk)
