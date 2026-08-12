@@ -13,7 +13,13 @@ LOG=$REPO/code_carbon/slurm/gpu_throttle.log
 ARMS="replaceK_ntbase"
 TASKS="promoter_tata H3K4me3 H3K4me2 splice_sites_donors splice_sites_acceptors promoter_all promoter_no_tata enhancers enhancers_types H3K9ac H3K27ac H3K4me1 H2AFZ H3K27me3 H3K36me3 H3K9me3 H4K20me1 splice_sites_all"
 declare -A TOTGPU=( [galaxy]=6 [laniakea]=8 [voyager]=4 )
-NODES="laniakea voyager galaxy"          # preference order; laniakea (49G) & voyager (H100) first
+# QUEUE mode (per user "can queue"): submit jobs so they sit PENDING and start the instant a GPU frees,
+# holding our place in SLURM's queue instead of only submitting when >=2 are free (which lost races to
+# other users). CAP = max concurrent r13nb jobs PINNED per node = fair-share headroom over the arc3 jobs
+# (arc3 uses ~laniakea 4, voyager 2; caps galaxy 4 / laniakea 6 / voyager 3). Jobs beyond a node's free
+# GPUs simply pend on that node and run as GPUs free.
+declare -A CAP=( [galaxy]=4 [laniakea]=2 [voyager]=1 )
+NODES="galaxy laniakea voyager"          # preference order; galaxy has the most r13nb headroom now
 POLL="${POLL:-120}"
 log(){ echo "[$(date '+%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
@@ -26,10 +32,10 @@ node_up(){ local s; s=$($SB/sinfo -h -n "$1" -o '%t' 2>/dev/null | head -1 | tr 
 run_on(){ $SB/squeue -h -t RUNNING -w "$1" -O 'tres-per-node:40' 2>/dev/null | grep -oE 'gpu:[0-9]+' | awk -F: '{s+=$2} END{print s+0}'; }
 mypend_on(){ printf '%s\n' "$SNAP" | grep -c "_${1}_" | head -1 | tr -d '[:space:]'; }
 free_gpu(){ local n="$1"; echo $(( ${TOTGPU[$n]:-0} - $(run_on "$n") - $(mypend_on "$n") )); }
-# LEAVE-1 mode (from now on, per user): submit to a node only when it has >=2 free GPUs (free = total
-# - all-user running - my pending), so after the job lands >=1 GPU stays free for others. This also
-# naturally pre-queues one job when 2 free open up (grabbed within the poll), then holds at 1 free.
-pick_node(){ local n f; for n in $NODES; do node_up "$n" || continue; f=$(free_gpu "$n"); [ "${f:-0}" -ge 2 ] && { echo "$n"; return 0; }; done; echo ""; }
+# QUEUE mode: pick the first node whose PINNED r13nb count (running+pending, from SNAP job names) is
+# below its fair-share CAP. The job is submitted --nodelist=<node>; if that node is full it PENDS there
+# and SLURM starts it the moment a GPU frees -- so we hold queue position instead of losing the race.
+pick_node(){ local n; for n in $NODES; do node_up "$n" || continue; [ "$(mypend_on "$n")" -lt "${CAP[$n]:-0}" ] && { echo "$n"; return 0; }; done; echo ""; }
 csv_done(){ local f="$1" nb; [ -f "$f" ] || return 1
   # done = >=1 base-NT REPLACEK row specifically. Must match the ARM we run (replaceK_ntbase); an older
   # replace4 nt_base row does NOT count -- several tasks have a stale replace4 row and were being wrongly
