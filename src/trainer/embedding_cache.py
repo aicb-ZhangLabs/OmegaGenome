@@ -142,24 +142,24 @@ def _expand_to_perbp(hidden, char_lens, max_len) -> np.ndarray:
     Each token's vector is repeated ``char_lens[t]`` times along the position axis; the
     concatenation is cropped/zero-padded to ``max_len``.
     """
-    H = hidden.shape[-1]
-    pieces = []
+    # Preallocate the [max_len, H] output and fill each token's span IN PLACE. This is arithmetically
+    # identical to the old "np.repeat per token + np.concatenate(pieces)" (each token's vector repeated
+    # char_lens[t] times, cropped/zero-padded to max_len) but does ZERO intermediate allocations. The
+    # old path allocated hundreds of tiny arrays per sample and concatenated them every __getitem__; that
+    # allocation churn intermittently segfaulted numpy natively (crash at the np.concatenate). Filling a
+    # single preallocated buffer removes the churn -> no crash, and it is also faster.
+    H = int(hidden.shape[-1])
+    out = np.zeros((max_len, H), dtype=np.float32)
     total = 0
     for t, n in enumerate(char_lens):
         if n <= 0:
             continue
         if total >= max_len:
             break
-        take = min(n, max_len - total)
-        pieces.append(np.repeat(hidden[t : t + 1], take, axis=0))
+        take = n if n < max_len - total else max_len - total
+        out[total : total + take] = hidden[t]  # broadcasts (H,) -> (take, H): same as np.repeat
         total += take
-    if total == 0:
-        return np.zeros((max_len, H), dtype=np.float32)
-    out = np.concatenate(pieces, axis=0)
-    if out.shape[0] < max_len:
-        pad = np.zeros((max_len - out.shape[0], H), dtype=out.dtype)
-        out = np.concatenate([out, pad], axis=0)
-    return out[:max_len].astype(np.float32)
+    return out
 
 
 class PerTokenEmbeddingStore(Dataset):
