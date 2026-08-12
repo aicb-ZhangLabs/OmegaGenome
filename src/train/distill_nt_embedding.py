@@ -41,8 +41,11 @@ from datetime import datetime
 # DEADLOCK DIAGNOSTIC: dump ALL thread stacks to stderr (slurm log) every 150s. Runs in-process (no
 # ptrace/sudo needed), so a hang between "Student params" and epoch 1 prints the exact frozen line.
 import faulthandler as _fh, sys as _sys
-_fh.enable()
-_fh.dump_traceback_later(150, repeat=True, file=_sys.stderr)
+_fh.enable()  # dump a traceback on a *fatal* signal (segfault etc.) -- cheap, no background thread
+# REMOVED dump_traceback_later(150, repeat=True): that periodic background stack-walker was a diagnostic
+# for the (now-fixed) wandb deadlock. It walks every thread's frames every 150s while the main thread is
+# deep in native CUDA/numpy, a plausible trigger for the remaining intermittent segfaults that hopped
+# between _expand_to_perbp (numpy) and torch conv forward across different nodes. Not needed anymore.
 
 from torch.utils.data import DataLoader
 
