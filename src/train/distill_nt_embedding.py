@@ -493,6 +493,7 @@ def main():
             from transformers import AutoTokenizer as _AT
             assert args.wordemb, "--embedding-source nt_tokenemb requires --wordemb <table.pt>"
             _W = torch.load(args.wordemb, map_location="cpu").float()
+            assert _W.shape[1] == emb_input_dim, f"wordemb dim {_W.shape[1]} != expected {emb_input_dim}"
             emb_tokenizer = _AT.from_pretrained(NT_BASE, trust_remote_code=True)
             emb_model = _nn.Embedding.from_pretrained(_W, freeze=True).to(device).eval()
             emb_teacher_parent = os.path.join(os.path.dirname(args.nt_parent), "nt_tokenemb_emb")
