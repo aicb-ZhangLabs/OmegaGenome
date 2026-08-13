@@ -92,12 +92,20 @@ class CompactTransformerClassifier(nn.Module):
         -> masked mean-pool over valid tokens -> Linear(d_model -> n_classes).
     At d_model=32, nhead=4, ff=128, layers=4 this is ~132.8k params (proj 81,952 + 4x12,704 + head),
     matching the (c) BPNet student (131,338) within ~1%.
+
+    Arm (f) "1-layer NT" reuses this class at FULL NT width (d_model=in_dim=2560, nhead=20, ff=10240,
+    layers=1, ~78.7M): when d_model==in_dim the token embedding feeds the transformer DIRECTLY (no
+    projection, like a real NT layer) with an input LayerNorm for training stability, and no sqrt scaling.
     """
 
     def __init__(self, in_dim, n_classes, d_model=32, nhead=4, ff=128, layers=4, dropout=0.1, max_len=1024):
         super().__init__()
-        self.proj = nn.Linear(in_dim, d_model)
-        self.scale = math.sqrt(d_model)
+        if d_model == in_dim:
+            # full-NT-width (f): feed the token embedding straight into the layer (no proj), LN for stability
+            self.proj, self.in_ln, self.scale = nn.Identity(), nn.LayerNorm(d_model), 1.0
+        else:
+            # compact (d): project in_dim -> d_model and scale by sqrt(d_model)
+            self.proj, self.in_ln, self.scale = nn.Linear(in_dim, d_model), nn.Identity(), math.sqrt(d_model)
         pe = torch.zeros(max_len, d_model)
         pos = torch.arange(0, max_len, dtype=torch.float32).unsqueeze(1)
         div = torch.exp(torch.arange(0, d_model, 2, dtype=torch.float32) * (-math.log(10000.0) / d_model))
@@ -112,7 +120,7 @@ class CompactTransformerClassifier(nn.Module):
     def forward(self, emb, mask):
         """emb [B,T,in_dim] (frozen token embedding), mask [B,T] float (1=valid) -> logits [B,n_classes]."""
         T = emb.shape[1]
-        x = self.proj(emb) * self.scale + self.posenc[:T].unsqueeze(0)
+        x = self.in_ln(self.proj(emb)) * self.scale + self.posenc[:T].unsqueeze(0)
         key_pad = mask == 0                                     # [B,T] True where pad -> ignored by attn
         x = self.encoder(x, src_key_padding_mask=key_pad)
         return self.head(masked_mean(x, mask))
