@@ -78,6 +78,7 @@ class BPNetClassifierConfig:
         "extra_large",
         "extra_large_fix",  # NEW: Fixed extra_large with proper dilation
         "xxlarge",
+        "bpnet_10m",  # R1.3 minimal-NT comparison: ~10.5M full-RF BPNet (C=621), matched to NT token-emb+cls
     ] = "original"
     hidden_dim: Optional[int] = None
 
@@ -165,6 +166,11 @@ class BPNetClassifier(nn.Module):
             if config.model_size == "original":
                 # Use original BPNet() for backward compatibility
                 self.backbone = BPNet()
+            elif config.model_size == "bpnet_10m":
+                # R1.3 minimal-NT comparison: a ~10.5M full-RF BPNet (C=621), matched to the NT
+                # token-embedding + classifier size (10,508,800 + 5,122 = 10,513,922). Uses BPNetWidth
+                # (good architecture: uncapped dilation 2**i, i=1..9), distilled from the NT-2.5B teacher.
+                self.backbone = BPNetWidth(channels=621)
             elif config.model_size in ("original_emb_matched", "emb_matched_replaceK", "emb_matched_latefuse"):
                 # R1.3 PER-ARM param-match: shrink the BPNet width so that backbone + THAT arm's embedding
                 # front-end + classifier = TOTAL ~= the one-hot baseline 121,094. Each arm's front-end has a

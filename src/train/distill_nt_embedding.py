@@ -280,6 +280,10 @@ def main():
                         "conv (per-position LINEAR D->out). >0 = 2-layer MLP Conv1d(D->h)->ReLU->Conv1d(h->out) "
                         "(nonlinear per-position projection; first layer ~D*h params, D=2560).")
     p.add_argument("--fuse-width", type=int, default=32, help="embedding projection width for --fusion latefuse")
+    p.add_argument("--teacher-target-dir", type=str, default="",
+                   help="If set, load PRECOMPUTED teacher KD targets (train_logits.npy + train_features.npy) "
+                        "directly from <dir>/<task>/ and SKIP loading the 2.5B teacher entirely. Used to "
+                        "distill from cached NT-2.5B targets without the (uncached) base weights.")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--model-size", default="",
                    help="OVERRIDE the best-HP student model_size (e.g. 'original' to force the 0.12M "
@@ -330,6 +334,9 @@ def main():
         and from_scratch
         and not (args.input_mode == "nt_embedding" and args.embedding_source == "nt")
     )
+    # --teacher-target-dir: distill from PRECOMPUTED cached KD targets -> never load the 2.5B teacher.
+    if args.teacher_target_dir:
+        skip_teacher = True
 
     print(f"\n{'='*64}\nR1.3 NT-EMBEDDING DISTILL: {task_name}\n"
           f"best-HP: {hp}\nepochs={epochs} max_steps={args.max_steps} smoke={args.smoke}\n{'='*64}\n")
@@ -396,7 +403,24 @@ def main():
     # the train set entirely -- the loss multiplies them by 0 anyway, the dataset accepts None logits
     # (returns (x, y)), and prepare_batch sets tlog=None when weight_kl<=0. Result is identical. The
     # per-bp embedding INPUT is separate (cached below) and unaffected. With-KD arms keep the precompute.
-    if needs_logits or needs_features:
+    if (needs_logits or needs_features) and args.teacher_target_dir:
+        # Distill from PRECOMPUTED cached targets (no teacher). train_logits [N,num_labels] +
+        # train_features [N,hidden]. Order MUST match build_data_splits(X_train) -- verified by the
+        # teacher-logit-vs-label MCC recovering the teacher MCC (see rebuttal_infra audit).
+        tdir = os.path.join(args.teacher_target_dir, task_name)
+        train_tlogits = np.load(os.path.join(tdir, "train_logits.npy")) if needs_logits else None
+        train_tfeatures = np.load(os.path.join(tdir, "train_features.npy")) if needs_features else None
+        n_expect = len(X_train)
+        if args.smoke:  # smoke truncates X_train to a few batches; match the cached targets to it
+            train_tlogits = train_tlogits[:n_expect] if train_tlogits is not None else None
+            train_tfeatures = train_tfeatures[:n_expect] if train_tfeatures is not None else None
+        for nm, arr in (("logits", train_tlogits), ("features", train_tfeatures)):
+            if arr is not None:
+                assert arr.shape[0] == n_expect, f"cached teacher {nm} N={arr.shape[0]} != train N={n_expect}"
+        print(f"[teacher-target-dir] loaded cached KD targets from {tdir} "
+              f"(logits={None if train_tlogits is None else train_tlogits.shape}, "
+              f"features={None if train_tfeatures is None else train_tfeatures.shape}) -- teacher NOT loaded")
+    elif needs_logits or needs_features:
         train_tlogits, train_tfeatures = precompute_teacher_logits(
             teacher_tokenizer, teacher_model, X_train, args.teacher_batch_size, device, args.max_len,
             needs_logits=needs_logits, needs_features=needs_features,
