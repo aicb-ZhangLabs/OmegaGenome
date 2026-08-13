@@ -85,6 +85,8 @@ COMMON=( --task-name "$TASK" --best-hp "$BEST_HP" --results-csv "$RESULTS_CSV"
 [ -n "${PATIENCE:-}" ] && COMMON+=( --early-stop-patience "$PATIENCE" )
 [ -n "${NUM_WORKERS:-}" ] && COMMON+=( --num-workers "$NUM_WORKERS" )
 [ -n "${WORDEMB:-}" ] && COMMON+=( --wordemb "$WORDEMB" )   # for --embedding-source nt_tokenemb (token-emb input)
+[ -n "${LR_OVERRIDE:-}" ] && COMMON+=( --lr "$LR_OVERRIDE" )       # regularize: override best-HP lr
+[ -n "${WEIGHT_DECAY:-}" ] && COMMON+=( --weight-decay "$WEIGHT_DECAY" )   # regularize: AdamW weight_decay
 # Optional student-size override (e.g. MODEL_SIZE=original to force the 0.12M deployable student even
 # when best_hp lists medium). Best-HP loss weights/T/lr/epochs are unchanged; only student width changes.
 # In PARAM_MATCHED=1 mode this single MODEL_SIZE is IGNORED in favor of a PER-ARM matched size (below),

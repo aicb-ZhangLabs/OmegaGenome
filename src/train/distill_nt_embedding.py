@@ -280,6 +280,8 @@ def main():
                         "conv (per-position LINEAR D->out). >0 = 2-layer MLP Conv1d(D->h)->ReLU->Conv1d(h->out) "
                         "(nonlinear per-position projection; first layer ~D*h params, D=2560).")
     p.add_argument("--fuse-width", type=int, default=32, help="embedding projection width for --fusion latefuse")
+    p.add_argument("--lr", type=float, default=0.0, help="override best-HP lr (0 = use hp['lr']).")
+    p.add_argument("--weight-decay", type=float, default=0.01, help="AdamW weight_decay (default 0.01; raise to regularize overfitting on rich embedding inputs).")
     p.add_argument("--wordemb", type=str, default="",
                    help="path to the NT-2.5B word-embedding table [vocab,2560] (.pt); required for "
                         "--embedding-source nt_tokenemb (per-position input = frozen token embedding lookup).")
@@ -603,7 +605,12 @@ def main():
                tags=[task_name, "nt", args.input_mode, "r1.3"], mode=_wm)
 
     # ---- train (reuses DistillationModel + trainer helpers; best-ckpt by val MCC) ----
-    optimizer = torch.optim.AdamW(model.parameters(), lr=hp["lr"])
+    # --lr / --weight-decay override the best-HP lr and the AdamW default weight_decay (0.01). Used to
+    # REGULARIZE arms whose rich frozen-embedding input makes a small net memorize the train set fast
+    # (val peaks in a few epochs). Defaults keep the original behavior (lr=hp["lr"], wd=0.01).
+    _lr = args.lr if args.lr > 0 else hp["lr"]
+    optimizer = torch.optim.AdamW(model.parameters(), lr=_lr, weight_decay=args.weight_decay)
+    print(f"[optim] AdamW lr={_lr} weight_decay={args.weight_decay}")
     best_val_mcc, best_epoch, epochs_no_improve = -1.0, 0, 0
     global_step = 0
     t0 = time.time()
