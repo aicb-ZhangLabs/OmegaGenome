@@ -100,6 +100,9 @@ fi
 # SECONDARY). The onehot arm stays at the full C=64 baseline (121,094) -- it is THE budget reference.
 arm_matched_size() {
   case "$1" in
+    replace4c64*) echo "" ;;   # replace4 on the FULL C=64 BPNet ("same as one-hot's net" + D->4 adapter);
+                               # deliberately NOT param-matched -- downstream is byte-identical to one-hot,
+                               # only the 4 input channels differ (learned NT-emb projection vs F.one_hot).
     *replaceK*)  echo emb_matched_replaceK ;;
     *latefuse*)  echo emb_matched_latefuse ;;
     *replace4*)  echo original_emb_matched ;;
@@ -116,6 +119,7 @@ arm_csv_sig() {
   case "$1" in
     onehot)                   echo ',onehot,' ;;
     replace4_ntbase)          echo ',nt_base,mid,replace4,' ;;
+    replace4c64_ntbase)       echo ',nt_base,mid,replace4,' ;;   # same front_end string; isolated in its own RESULTS_CSV
     replaceK_ntbase)          echo ',nt_base,mid,replaceK,' ;;
     latefuse_onehot_ntbase)   echo ',nt_base,mid,latefuse_onehot,' ;;
     replace4_nt)              echo ',nt,mid,replace4,' ;;
@@ -156,6 +160,7 @@ for arm in $ARMS; do
     replaceK_nt)               run_arm replaceK_nt --input-mode nt_embedding --embedding-source nt       --fusion replaceK ;;
     latefuse_onehot_nt)        run_arm latefuse_onehot_nt --input-mode nt_embedding --embedding-source nt       --fusion latefuse_onehot ;;
     replace4_ntbase)           run_arm replace4_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion replace4 ;;
+    replace4c64_ntbase)        run_arm replace4c64_ntbase --input-mode nt_embedding --embedding-source nt_base --fusion replace4 --model-size original ;;
     replaceK_ntbase)           run_arm replaceK_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion replaceK ;;
     latefuse_onehot_ntbase)    run_arm latefuse_onehot_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion latefuse_onehot ;;
     replaceK_dnabert2)         run_arm replaceK_dnabert2 --input-mode nt_embedding --embedding-source dnabert2 --fusion replaceK ;;
