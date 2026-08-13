@@ -124,6 +124,7 @@ arm_csv_sig() {
     replaceK_ntbase)          echo ',nt_base,mid,replaceK,' ;;
     replaceK_tokenemb)        echo ',nt_tokenemb,mid,replaceK,' ;;   # token-emb input + 0.12M BPNet
     replace4_tokenemb)        echo ',nt_tokenemb,mid,replace4,' ;;
+    replace4c64_tokenemb)     echo ',nt_tokenemb,mid,replace4,' ;;   # frozen token-emb -> proj D->4 -> FULL C=64 BPNet
     latefuse_onehot_ntbase)   echo ',nt_base,mid,latefuse_onehot,' ;;
     replace4_nt)              echo ',nt,mid,replace4,' ;;
     replaceK_nt)              echo ',nt,mid,replaceK,' ;;
@@ -167,6 +168,7 @@ for arm in $ARMS; do
     replaceK_ntbase)           run_arm replaceK_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion replaceK ;;
     replaceK_tokenemb)         run_arm replaceK_tokenemb --input-mode nt_embedding --embedding-source nt_tokenemb --fusion replaceK ;;
     replace4_tokenemb)         run_arm replace4_tokenemb --input-mode nt_embedding --embedding-source nt_tokenemb --fusion replace4 ;;
+    replace4c64_tokenemb)      run_arm replace4c64_tokenemb --input-mode nt_embedding --embedding-source nt_tokenemb --fusion replace4 --model-size original ;;
     latefuse_onehot_ntbase)    run_arm latefuse_onehot_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion latefuse_onehot ;;
     replaceK_dnabert2)         run_arm replaceK_dnabert2 --input-mode nt_embedding --embedding-source dnabert2 --fusion replaceK ;;
     latefuse_onehot_dnabert2)  run_arm latefuse_onehot_dnabert2 --input-mode nt_embedding --embedding-source dnabert2 --fusion latefuse_onehot ;;
