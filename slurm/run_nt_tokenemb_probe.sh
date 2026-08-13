@@ -36,5 +36,5 @@ echo "WORDEMB=$WORDEMB RESULTS_CSV=$RESULTS_CSV"
 $PY -m src.train.nt_tokenemb_linear_probe \
     --task-name "$TASK" --results-csv "$RESULTS_CSV" --wordemb "$WORDEMB" \
     ${EPOCHS:+--epochs $EPOCHS} ${PATIENCE:+--patience $PATIENCE} ${LR:+--lr $LR} \
-    ${SEED:+--seed $SEED} ${SMOKE:+--smoke}
+    ${SEED:+--seed $SEED} ${SMOKE:+--smoke} ${EXTRA:-}
 echo "[$(date)] done TASK=$TASK rc=$?"
