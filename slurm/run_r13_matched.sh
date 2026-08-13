@@ -84,6 +84,7 @@ COMMON=( --task-name "$TASK" --best-hp "$BEST_HP" --results-csv "$RESULTS_CSV"
 [ -n "${EPOCHS:-}" ] && COMMON+=( --epochs "$EPOCHS" )
 [ -n "${PATIENCE:-}" ] && COMMON+=( --early-stop-patience "$PATIENCE" )
 [ -n "${NUM_WORKERS:-}" ] && COMMON+=( --num-workers "$NUM_WORKERS" )
+[ -n "${WORDEMB:-}" ] && COMMON+=( --wordemb "$WORDEMB" )   # for --embedding-source nt_tokenemb (token-emb input)
 # Optional student-size override (e.g. MODEL_SIZE=original to force the 0.12M deployable student even
 # when best_hp lists medium). Best-HP loss weights/T/lr/epochs are unchanged; only student width changes.
 # In PARAM_MATCHED=1 mode this single MODEL_SIZE is IGNORED in favor of a PER-ARM matched size (below),
@@ -121,6 +122,8 @@ arm_csv_sig() {
     replace4_ntbase)          echo ',nt_base,mid,replace4,' ;;
     replace4c64_ntbase)       echo ',nt_base,mid,replace4,' ;;   # same front_end string; isolated in its own RESULTS_CSV
     replaceK_ntbase)          echo ',nt_base,mid,replaceK,' ;;
+    replaceK_tokenemb)        echo ',nt_tokenemb,mid,replaceK,' ;;   # token-emb input + 0.12M BPNet
+    replace4_tokenemb)        echo ',nt_tokenemb,mid,replace4,' ;;
     latefuse_onehot_ntbase)   echo ',nt_base,mid,latefuse_onehot,' ;;
     replace4_nt)              echo ',nt,mid,replace4,' ;;
     replaceK_nt)              echo ',nt,mid,replaceK,' ;;
@@ -162,6 +165,8 @@ for arm in $ARMS; do
     replace4_ntbase)           run_arm replace4_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion replace4 ;;
     replace4c64_ntbase)        run_arm replace4c64_ntbase --input-mode nt_embedding --embedding-source nt_base --fusion replace4 --model-size original ;;
     replaceK_ntbase)           run_arm replaceK_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion replaceK ;;
+    replaceK_tokenemb)         run_arm replaceK_tokenemb --input-mode nt_embedding --embedding-source nt_tokenemb --fusion replaceK ;;
+    replace4_tokenemb)         run_arm replace4_tokenemb --input-mode nt_embedding --embedding-source nt_tokenemb --fusion replace4 ;;
     latefuse_onehot_ntbase)    run_arm latefuse_onehot_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion latefuse_onehot ;;
     replaceK_dnabert2)         run_arm replaceK_dnabert2 --input-mode nt_embedding --embedding-source dnabert2 --fusion replaceK ;;
     latefuse_onehot_dnabert2)  run_arm latefuse_onehot_dnabert2 --input-mode nt_embedding --embedding-source dnabert2 --fusion latefuse_onehot ;;

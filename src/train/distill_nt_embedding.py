@@ -253,7 +253,7 @@ def main():
                    help="student input front-end. 'nt_embedding' (DEFAULT, the R1.3 experiment) feeds per-bp "
                         "NT embeddings; 'onehot' is a MATCHED CONTROL that runs the SAME teacher/KD-targets/"
                         "trainer/data-splits but with the one-hot BPNet student, for apples-to-apples diagnosis.")
-    p.add_argument("--embedding-source", choices=["nt", "nt_base", "dnabert2"], default="nt",
+    p.add_argument("--embedding-source", choices=["nt", "nt_base", "dnabert2", "nt_tokenemb"], default="nt",
                    help="WHICH pretrained model provides the student's per-bp INPUT embeddings. 'nt' "
                         "(default) reuses the NT-2.5B FINE-TUNED teacher; 'nt_base' uses the RAW base "
                         "NT-2.5B foundation model (NO LoRA, un-fine-tuned, hidden 2560); 'dnabert2' uses "
@@ -280,6 +280,9 @@ def main():
                         "conv (per-position LINEAR D->out). >0 = 2-layer MLP Conv1d(D->h)->ReLU->Conv1d(h->out) "
                         "(nonlinear per-position projection; first layer ~D*h params, D=2560).")
     p.add_argument("--fuse-width", type=int, default=32, help="embedding projection width for --fusion latefuse")
+    p.add_argument("--wordemb", type=str, default="",
+                   help="path to the NT-2.5B word-embedding table [vocab,2560] (.pt); required for "
+                        "--embedding-source nt_tokenemb (per-position input = frozen token embedding lookup).")
     p.add_argument("--teacher-target-dir", type=str, default="",
                    help="If set, load PRECOMPUTED teacher KD targets (train_logits.npy + train_features.npy) "
                         "directly from <dir>/<task>/ and SKIP loading the 2.5B teacher entirely. Used to "
@@ -478,6 +481,21 @@ def main():
                 _base = AutoModelForSequenceClassification.from_pretrained(
                     NT_BASE, num_labels=num_labels, output_hidden_states=True, trust_remote_code=True)
                 emb_model = _base.to(device).eval()
+        elif args.embedding_source == "nt_tokenemb":
+            # Minimal-NT input: per-position = NT-2.5B's FROZEN WORD (token) embedding lookup ONLY -- no
+            # transformer layers, no 2.5B forward. The "embedding model" is a frozen nn.Embedding holding
+            # the [vocab,2560] table; the hidden_state_fn returns W[input_ids] per token. The per-bp cache
+            # is built by lookup (cheap) and lands under a DISTINCT "nt_tokenemb_emb" dir. Feeds the SAME
+            # replaceK/replace4 front-end + 0.12M BPNet as the mid-layer arms (input representation only).
+            import torch.nn as _nn
+            from transformers import AutoTokenizer as _AT
+            assert args.wordemb, "--embedding-source nt_tokenemb requires --wordemb <table.pt>"
+            _W = torch.load(args.wordemb, map_location="cpu").float()
+            emb_tokenizer = _AT.from_pretrained(NT_BASE, trust_remote_code=True)
+            emb_model = _nn.Embedding.from_pretrained(_W, freeze=True).to(device).eval()
+            emb_teacher_parent = os.path.join(os.path.dirname(args.nt_parent), "nt_tokenemb_emb")
+            emb_ckpt = "nt-2.5b-tokenemb"
+            emb_hsfn = lambda m, ids, mask, layer: (m(ids), 0)  # per-token word-embedding lookup
         else:  # 'nt': reuse the NT-2.5B teacher as the embedding source
             emb_tokenizer, emb_model = teacher_tokenizer, teacher_model
             emb_teacher_parent, emb_ckpt, emb_hsfn = args.nt_parent, teacher_ckpt, None
