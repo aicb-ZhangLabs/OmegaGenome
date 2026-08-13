@@ -275,6 +275,10 @@ def main():
                         "concat on top of an embedding-derived 4-ch stem. latefuse_onehot: FAITHFUL -- "
                         "REAL one-hot stem + deep embedding concat (tests value-ADD over a real one-hot BPNet).")
     p.add_argument("--adapter-width", type=int, default=32, help="K for --fusion replaceK")
+    p.add_argument("--adapter-mlp-hidden", type=int, default=0,
+                   help="input_adapter projection depth for replace4/replaceK. 0 (default) = single 1x1 "
+                        "conv (per-position LINEAR D->out). >0 = 2-layer MLP Conv1d(D->h)->ReLU->Conv1d(h->out) "
+                        "(nonlinear per-position projection; first layer ~D*h params, D=2560).")
     p.add_argument("--fuse-width", type=int, default=32, help="embedding projection width for --fusion latefuse")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--model-size", default="",
@@ -500,6 +504,7 @@ def main():
         embedding_dim=(emb_input_dim if args.input_mode == "nt_embedding" else None),
         teacher_hidden_size=(NT_EMBEDDING_DIM if needs_features else None),
         front_end=args.fusion, adapter_width=args.adapter_width, fuse_width=args.fuse_width,
+        adapter_mlp_hidden=args.adapter_mlp_hidden,
     )
     model = BPNetClassifier(student_cfg).to(device)
     params = count_params(model)

@@ -39,6 +39,12 @@ class BPNetClassifierConfig:
     adapter_width: int = 32      # K for replaceK (adapter output / widened stem in-channels)
     fuse_width: int = 32         # embedding projection width concatenated in latefuse
     fuse_after_block: int = 2    # # of early dilated Residual blocks before the latefuse concat
+    # input_adapter projection depth (replace4 / replaceK). 0 (DEFAULT) = a single 1x1 conv = a per-
+    # position LINEAR map D->out. >0 = a per-position 2-layer MLP: Conv1d(D->adapter_mlp_hidden) -> ReLU
+    # -> Conv1d(adapter_mlp_hidden->out). Still point-wise (kernel_size=1): no mixing across positions,
+    # only a nonlinear map of the per-bp embedding vector. NOTE the D->hidden layer is ~D*hidden params
+    # (D=2560), so even a small hidden dim makes the adapter large.
+    adapter_mlp_hidden: int = 0
 
     # Extended for multi-architecture support
     model_type: Literal["bpnet", "bilstm", "cnn"] = "bpnet"
@@ -212,6 +218,24 @@ class BPNetClassifier(nn.Module):
         # Print model parameters
         self._print_model_info()
 
+    def _make_input_adapter(self, D: int, out_ch: int) -> nn.Module:
+        """Per-position embedding->channel projection used by replace4 (out_ch=4) / replaceK (out_ch=K).
+
+        Both variants are point-wise (kernel_size=1): they only transform the per-bp D-vector, never
+        mixing across positions.
+          - adapter_mlp_hidden == 0 (default): a single 1x1 conv = a LINEAR map D->out_ch.
+          - adapter_mlp_hidden  > 0         : a 2-layer MLP  Conv1d(D->h) -> ReLU -> Conv1d(h->out_ch),
+            i.e. a nonlinear per-position projection. (First layer is ~D*h params, D=2560, so large.)
+        """
+        h = getattr(self.config, "adapter_mlp_hidden", 0) or 0
+        if h > 0:
+            return nn.Sequential(
+                nn.Conv1d(D, h, kernel_size=1),
+                nn.ReLU(),
+                nn.Conv1d(h, out_ch, kernel_size=1),
+            )
+        return nn.Conv1d(D, out_ch, kernel_size=1)
+
     def _build_embedding_front_end(self, config, C: int):
         """Construct the chosen embedding front-end (R1.3 PI fix). Reuses the cached [L,D] embeddings.
 
@@ -226,11 +250,11 @@ class BPNetClassifier(nn.Module):
         D = config.embedding_dim
         fe = config.front_end
         if fe == "replace4":
-            self.input_adapter = nn.Conv1d(D, 4, kernel_size=1)
+            self.input_adapter = self._make_input_adapter(D, 4)
             return
         if fe == "replaceK":
             K = config.adapter_width
-            self.input_adapter = nn.Conv1d(D, K, kernel_size=1)
+            self.input_adapter = self._make_input_adapter(D, K)
             # Widen the backbone's FIRST conv to consume K channels (4 -> K). original BPNet: stem[0];
             # VariableBPNet: layers[0]. Preserves out_channels / kernel / padding; only in_channels grows.
             first = self._first_conv()
