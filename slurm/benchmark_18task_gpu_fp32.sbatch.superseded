@@ -1,0 +1,48 @@
+#!/bin/bash
+# 18-task GPU leg for Enformer + DNABERT-2 at fp32 (they hit fp16 input/bias dtype mismatch).
+# Both are small (251M / 117M) so the full test set per task is affordable; merged with the
+# fp16 NT/Caduceus/Carbon3b leg + student by gpu_name into one table.
+# DNABERT-2 Triton flash-attn auto-disabled in-process (PyTorch attention fallback).
+#   sbatch slurm/benchmark_18task_gpu_fp32.sbatch
+#SBATCH --job-name=bench18-gpu-fp32
+#SBATCH --nodes=1
+#SBATCH --partition=zhanglab.p
+#SBATCH --nodelist=laniakea
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=64G
+#SBATCH --requeue
+#SBATCH --time=30-00:00:00
+#SBATCH --output=slurm-%x-%j.out
+
+set -euo pipefail
+REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+cd "$REPO"
+
+HOME_HF="$REPO/.hf_cache"
+export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
+export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
+export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export TOKENIZERS_PARALLELISM=false WANDB_MODE=offline
+export HF_HUB_DISABLE_XET=1
+export HF_XET_CACHE="$REPO/.hf_cache/xet"
+export OUTPUT_PATH=/tmp/galaxy_srv_disk00/pengchx3/latency_18task/gpu_fp32
+
+PY="$REPO/.venv_carbon_portable/bin/python"
+
+echo "=== node + GPU ==="; hostname
+"$PY" -c "import torch; print('device:', torch.cuda.get_device_name(0))"
+
+"$PY" -u -m src.train.benchmark_inference full_benchmark \
+    --task-names H2AFZ H3K27ac H3K27me3 H3K36me3 H3K4me1 H3K4me2 H3K4me3 H3K9ac H3K9me3 H4K20me1 promoter_all promoter_no_tata promoter_tata enhancers enhancers_types splice_sites_all splice_sites_acceptors splice_sites_donors \
+    --teachers enformer dnabert2 \
+    --student-sizes \
+    --precision fp32 \
+    --batch-size 16 \
+    --max-length 1000 \
+    --warmup-batches 5 \
+    --num-batches None \
+    --skip-on-error
+
+echo "=== 18-TASK GPU fp32 (enformer+dnabert2) DONE; CSVs under $OUTPUT_PATH/benchmark/ ==="
+find "$OUTPUT_PATH/benchmark" -name "all_benchmark.csv" 2>/dev/null | head

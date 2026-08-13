@@ -1,0 +1,8 @@
+[Mon Jun 29 05:35:34 PM PDT 2026] TASK=splice_sites_donors best-HP model_size=original
+[Mon Jun 29 05:35:34 PM PDT 2026] launching matched arms for TASK=splice_sites_donors on voyager -> /tmp/galaxy_srv_disk00/pengchx3/rebuttal_nt/run/results/r13_matched_splice_sites_donors.csv
+  onehot                   -> 243798
+  replaceK_nt (NT primer)  -> 243799
+  replaceK_dnabert2 (primer)-> 243800
+  latefuse_onehot_nt       -> 243801
+  latefuse_onehot_dnabert2  -> 243802
+[Mon Jun 29 05:35:35 PM PDT 2026] all matched arms submitted for splice_sites_donors

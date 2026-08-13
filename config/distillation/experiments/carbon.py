@@ -90,7 +90,7 @@ carbon_raw_original_config = DistillationExperimentConfig(
 _GRID = dict(
     weight_ces=[0.5],
     weight_kls=[0.0, 0.25, 0.5, 1.0],
-    weight_mses=[0.0, 1],  # STAGE 1 of 3 (see runbook above)
+    weight_mses=[0.0, 1, 2, 5],  # FULL base grid (all stages) — resume skips finished combos
     temperatures=[0.5, 1.0, 1.5, 2.0, 4.0],
     zscores=[False],
 )

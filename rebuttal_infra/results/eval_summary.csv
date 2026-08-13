@@ -1,0 +1,6 @@
+task,kind,n_test,test_mcc
+H2AFZ,full_ft,3000,0.5142
+H2AFZ,lora,3000,0.0000
+H3K27ac,lora,1616,0.0000
+promoter_tata,full_ft,212,0.8774
+promoter_tata,lora,212,0.0000

@@ -1,0 +1,225 @@
+Collecting causal_conv1d
+  Downloading causal_conv1d-1.6.2.post1.tar.gz (29 kB)
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting mamba_ssm==2.2.2
+  Downloading mamba_ssm-2.2.2.tar.gz (85 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 85.4/85.4 kB 4.1 MB/s eta 0:00:00
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: torch in ./.venv_carbon_portable/lib/python3.11/site-packages (from mamba_ssm==2.2.2) (2.6.0+cu118)
+Requirement already satisfied: packaging in ./.venv_carbon_portable/lib/python3.11/site-packages (from mamba_ssm==2.2.2) (25.0)
+Collecting ninja (from mamba_ssm==2.2.2)
+  Downloading ninja-1.13.0-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (5.1 kB)
+Requirement already satisfied: einops in ./.venv_carbon_portable/lib/python3.11/site-packages (from mamba_ssm==2.2.2) (0.8.1)
+Requirement already satisfied: triton in ./.venv_carbon_portable/lib/python3.11/site-packages (from mamba_ssm==2.2.2) (3.2.0)
+Requirement already satisfied: transformers in ./.venv_carbon_portable/lib/python3.11/site-packages (from mamba_ssm==2.2.2) (4.57.1)
+Requirement already satisfied: filelock in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (3.20.0)
+Requirement already satisfied: typing-extensions>=4.10.0 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (4.15.0)
+Requirement already satisfied: networkx in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (3.5)
+Requirement already satisfied: jinja2 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (3.1.6)
+Requirement already satisfied: fsspec in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (2025.9.0)
+Requirement already satisfied: nvidia-cuda-nvrtc-cu11==11.8.89 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (11.8.89)
+Requirement already satisfied: nvidia-cuda-runtime-cu11==11.8.89 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (11.8.89)
+Requirement already satisfied: nvidia-cuda-cupti-cu11==11.8.87 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (11.8.87)
+Requirement already satisfied: nvidia-cudnn-cu11==9.1.0.70 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (9.1.0.70)
+Requirement already satisfied: nvidia-cublas-cu11==11.11.3.6 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (11.11.3.6)
+Requirement already satisfied: nvidia-cufft-cu11==10.9.0.58 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (10.9.0.58)
+Requirement already satisfied: nvidia-curand-cu11==10.3.0.86 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (10.3.0.86)
+Requirement already satisfied: nvidia-cusolver-cu11==11.4.1.48 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (11.4.1.48)
+Requirement already satisfied: nvidia-cusparse-cu11==11.7.5.86 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (11.7.5.86)
+Requirement already satisfied: nvidia-nccl-cu11==2.21.5 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (2.21.5)
+Requirement already satisfied: nvidia-nvtx-cu11==11.8.86 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (11.8.86)
+Requirement already satisfied: sympy==1.13.1 in ./.venv_carbon_portable/lib/python3.11/site-packages (from torch->mamba_ssm==2.2.2) (1.13.1)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in ./.venv_carbon_portable/lib/python3.11/site-packages (from sympy==1.13.1->torch->mamba_ssm==2.2.2) (1.3.0)
+Requirement already satisfied: huggingface-hub<1.0,>=0.34.0 in ./.venv_carbon_portable/lib/python3.11/site-packages (from transformers->mamba_ssm==2.2.2) (0.35.3)
+Requirement already satisfied: numpy>=1.17 in ./.venv_carbon_portable/lib/python3.11/site-packages (from transformers->mamba_ssm==2.2.2) (1.26.4)
+Requirement already satisfied: pyyaml>=5.1 in ./.venv_carbon_portable/lib/python3.11/site-packages (from transformers->mamba_ssm==2.2.2) (6.0.3)
+Requirement already satisfied: regex!=2019.12.17 in ./.venv_carbon_portable/lib/python3.11/site-packages (from transformers->mamba_ssm==2.2.2) (2025.9.18)
+Requirement already satisfied: requests in ./.venv_carbon_portable/lib/python3.11/site-packages (from transformers->mamba_ssm==2.2.2) (2.32.5)
+Requirement already satisfied: tokenizers<=0.23.0,>=0.22.0 in ./.venv_carbon_portable/lib/python3.11/site-packages (from transformers->mamba_ssm==2.2.2) (0.22.1)
+Requirement already satisfied: safetensors>=0.4.3 in ./.venv_carbon_portable/lib/python3.11/site-packages (from transformers->mamba_ssm==2.2.2) (0.6.2)
+Requirement already satisfied: tqdm>=4.27 in ./.venv_carbon_portable/lib/python3.11/site-packages (from transformers->mamba_ssm==2.2.2) (4.67.1)
+Requirement already satisfied: hf-xet<2.0.0,>=1.1.3 in ./.venv_carbon_portable/lib/python3.11/site-packages (from huggingface-hub<1.0,>=0.34.0->transformers->mamba_ssm==2.2.2) (1.1.10)
+Requirement already satisfied: MarkupSafe>=2.0 in ./.venv_carbon_portable/lib/python3.11/site-packages (from jinja2->torch->mamba_ssm==2.2.2) (3.0.3)
+Requirement already satisfied: charset_normalizer<4,>=2 in ./.venv_carbon_portable/lib/python3.11/site-packages (from requests->transformers->mamba_ssm==2.2.2) (3.4.3)
+Requirement already satisfied: idna<4,>=2.5 in ./.venv_carbon_portable/lib/python3.11/site-packages (from requests->transformers->mamba_ssm==2.2.2) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./.venv_carbon_portable/lib/python3.11/site-packages (from requests->transformers->mamba_ssm==2.2.2) (2.5.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./.venv_carbon_portable/lib/python3.11/site-packages (from requests->transformers->mamba_ssm==2.2.2) (2025.10.5)
+Downloading ninja-1.13.0-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (180 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 180.7/180.7 kB 9.3 MB/s eta 0:00:00
+Building wheels for collected packages: mamba_ssm, causal_conv1d
+  Building wheel for mamba_ssm (pyproject.toml): started
+  Building wheel for mamba_ssm (pyproject.toml): finished with status 'error'
+  error: subprocess-exited-with-error
+  
+  × Building wheel for mamba_ssm (pyproject.toml) did not run successfully.
+  │ exit code: 1
+  ╰─> [153 lines of output]
+      /home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+      !!
+      
+              ********************************************************************************
+              Please consider removing the following classifiers in favor of a SPDX license expression:
+      
+              License :: OSI Approved :: BSD License
+      
+              See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+              ********************************************************************************
+      
+      !!
+        self._finalize_license_expression()
+      
+      
+      torch.__version__  = 2.6.0+cu118
+      
+      
+      running bdist_wheel
+      Guessing wheel URL:  https://github.com/state-spaces/mamba/releases/download/v2.2.2/mamba_ssm-2.2.2+cu118torch2.6cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
+      Precompiled wheel not found. Building from source...
+      running build
+      running build_py
+      creating build/lib.linux-x86_64-cpython-311/mamba_ssm
+      copying mamba_ssm/__init__.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm
+      creating build/lib.linux-x86_64-cpython-311/mamba_ssm/modules
+      copying mamba_ssm/modules/mha.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/modules
+      copying mamba_ssm/modules/ssd_minimal.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/modules
+      copying mamba_ssm/modules/mamba_simple.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/modules
+      copying mamba_ssm/modules/mamba2.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/modules
+      copying mamba_ssm/modules/__init__.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/modules
+      copying mamba_ssm/modules/mlp.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/modules
+      copying mamba_ssm/modules/block.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/modules
+      copying mamba_ssm/modules/mamba2_simple.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/modules
+      creating build/lib.linux-x86_64-cpython-311/mamba_ssm/ops
+      copying mamba_ssm/ops/__init__.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops
+      copying mamba_ssm/ops/selective_scan_interface.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops
+      creating build/lib.linux-x86_64-cpython-311/mamba_ssm/distributed
+      copying mamba_ssm/distributed/distributed_utils.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/distributed
+      copying mamba_ssm/distributed/__init__.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/distributed
+      copying mamba_ssm/distributed/tensor_parallel.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/distributed
+      creating build/lib.linux-x86_64-cpython-311/mamba_ssm/models
+      copying mamba_ssm/models/__init__.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/models
+      copying mamba_ssm/models/mixer_seq_simple.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/models
+      copying mamba_ssm/models/config_mamba.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/models
+      creating build/lib.linux-x86_64-cpython-311/mamba_ssm/utils
+      copying mamba_ssm/utils/hf.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/utils
+      copying mamba_ssm/utils/generation.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/utils
+      copying mamba_ssm/utils/__init__.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/utils
+      creating build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/ssd_chunk_scan.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/layernorm_gated.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/ssd_chunk_state.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/ssd_state_passing.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/ssd_bmm.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/k_activations.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/__init__.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/selective_state_update.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/layer_norm.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/ssd_combined.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      copying mamba_ssm/ops/triton/softplus.py -> build/lib.linux-x86_64-cpython-311/mamba_ssm/ops/triton
+      running build_ext
+      Traceback (most recent call last):
+        File "<string>", line 318, in run
+        File "/home/pengchx3/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py", line 241, in urlretrieve
+          with contextlib.closing(urlopen(url, data)) as fp:
+                                  ^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py", line 216, in urlopen
+          return opener.open(url, data, timeout)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py", line 525, in open
+          response = meth(req, response)
+                     ^^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py", line 634, in http_response
+          response = self.parent.error(
+                     ^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py", line 563, in error
+          return self._call_chain(*args)
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py", line 496, in _call_chain
+          result = func(*args)
+                   ^^^^^^^^^^^
+        File "/home/pengchx3/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py", line 643, in http_error_default
+          raise HTTPError(req.full_url, code, msg, hdrs, fp)
+      urllib.error.HTTPError: HTTP Error 404: Not Found
+      
+      During handling of the above exception, another exception occurred:
+      
+      Traceback (most recent call last):
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 353, in <module>
+          main()
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 335, in main
+          json_out['return_val'] = hook(**hook_input['kwargs'])
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 251, in build_wheel
+          return _build_backend().build_wheel(wheel_directory, config_settings,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/build_meta.py", line 435, in build_wheel
+          return _build(['bdist_wheel', '--dist-info-dir', str(metadata_directory)])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/build_meta.py", line 423, in _build
+          return self._build_with_temp_dir(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/build_meta.py", line 404, in _build_with_temp_dir
+          self.run_setup()
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/build_meta.py", line 512, in run_setup
+          super().run_setup(setup_script=setup_script)
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/build_meta.py", line 317, in run_setup
+          exec(code, locals())
+        File "<string>", line 337, in <module>
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/__init__.py", line 117, in setup
+          return distutils.core.setup(**attrs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/_distutils/core.py", line 186, in setup
+          return run_commands(dist)
+                 ^^^^^^^^^^^^^^^^^^
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/_distutils/core.py", line 202, in run_commands
+          dist.run_commands()
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/_distutils/dist.py", line 1002, in run_commands
+          self.run_command(cmd)
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/dist.py", line 1104, in run_command
+          super().run_command(command)
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/_distutils/dist.py", line 1021, in run_command
+          cmd_obj.run()
+        File "<string>", line 335, in run
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/command/bdist_wheel.py", line 370, in run
+          self.run_command("build")
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/_distutils/cmd.py", line 357, in run_command
+          self.distribution.run_command(command)
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/dist.py", line 1104, in run_command
+          super().run_command(command)
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/_distutils/dist.py", line 1021, in run_command
+          cmd_obj.run()
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/_distutils/command/build.py", line 135, in run
+          self.run_command(cmd_name)
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/_distutils/cmd.py", line 357, in run_command
+          self.distribution.run_command(command)
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/dist.py", line 1104, in run_command
+          super().run_command(command)
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/_distutils/dist.py", line 1021, in run_command
+          cmd_obj.run()
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/command/build_ext.py", line 99, in run
+          _build_ext.run(self)
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/setuptools/_distutils/command/build_ext.py", line 368, in run
+          self.build_extensions()
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/torch/utils/cpp_extension.py", line 552, in build_extensions
+          _check_cuda_version(compiler_name, compiler_version)
+        File "/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/lib/python3.11/site-packages/torch/utils/cpp_extension.py", line 447, in _check_cuda_version
+          raise RuntimeError(CUDA_MISMATCH_MESSAGE.format(cuda_str_version, torch.version.cuda))
+      RuntimeError:
+      The detected CUDA version (12.5) mismatches the version that was used to compile
+      PyTorch (11.8). Please make sure to use the same CUDA versions.
+      
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  ERROR: Failed building wheel for mamba_ssm
+  Building wheel for causal_conv1d (pyproject.toml): started
+  Building wheel for causal_conv1d (pyproject.toml): finished with status 'done'
+  Created wheel for causal_conv1d: filename=causal_conv1d-1.6.2.post1-cp311-cp311-linux_x86_64.whl size=109177367 sha256=e3f62b39afaf54e7dc3e31bf0e2a7e28593c3b44a924492518f8760a274545e5
+  Stored in directory: /home/pengchx3/.cache/pip/wheels/0d/c0/a9/983faae7a7b9275c7670cab35246c984122e12aa7ceedcf9f2
+Successfully built causal_conv1d
+Failed to build mamba_ssm
+ERROR: Could not build wheels for mamba_ssm, which is required to install pyproject.toml-based projects
+
+[notice] A new release of pip is available: 24.0 -> 26.1.2
+[notice] To update, run: /home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python -m pip install --upgrade pip

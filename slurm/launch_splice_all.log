@@ -1,0 +1,7 @@
+[Mon Jun 29 05:35:01 PM PDT 2026] TASK=splice_sites_all best-HP model_size=medium
+[Mon Jun 29 05:35:01 PM PDT 2026] launching matched arms for TASK=splice_sites_all on laniakea -> /tmp/galaxy_srv_disk00/pengchx3/rebuttal_nt/run/results/r13_matched_splice_sites_all.csv
+  onehot                   -> 243793
+  replaceK_nt (NT primer)  -> 243794
+  replaceK_dnabert2 (primer)-> 243795
+  [skip latefuse_onehot arms: model_size=medium (latefuse needs 'original')]
+[Mon Jun 29 05:35:01 PM PDT 2026] all matched arms submitted for splice_sites_all

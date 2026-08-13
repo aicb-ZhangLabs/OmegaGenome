@@ -1,0 +1,2038 @@
+[08-10 13:02:48] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 13:02:48] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 13:02:48] PHASE FROMSCRATCH SUBMIT H3K27me3 -> laniakea jid=266199 (free left >=1)
+[08-10 13:02:56] PHASE FROMSCRATCH SUBMIT H3K36me3 -> laniakea jid=266200 (free left >=1)
+[08-10 13:03:04] PHASE FROMSCRATCH SUBMIT H3K9me3 -> laniakea jid=266201 (free left >=1)
+[08-10 13:03:12] PHASE FROMSCRATCH SUBMIT H4K20me1 -> laniakea jid=266202 (free left >=1)
+[08-10 13:03:20] PHASE FROMSCRATCH SUBMIT splice_sites_all -> laniakea jid=266203 (free left >=1)
+[08-10 13:03:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=0 galaxy=0
+[08-10 13:06:45] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 13:06:45] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 13:06:45] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=266204 (free left >=1)
+[08-10 13:06:55] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=0 galaxy=0
+[08-10 13:08:59] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=0 galaxy=0
+[08-10 13:11:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=0 galaxy=0
+[08-10 13:13:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=0 galaxy=0
+[08-10 13:15:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=0 galaxy=0
+[08-10 13:17:09] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=0
+[08-10 13:19:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=0
+[08-10 13:21:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=0
+[08-10 13:23:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=0 galaxy=0
+[08-10 13:25:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=0 galaxy=0
+[08-10 13:26:00] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 13:26:00] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 13:26:03] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 13:28:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 13:30:09] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 13:31:48] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 13:31:48] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 13:31:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 13:33:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 13:36:05] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 13:38:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 13:40:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 13:42:14] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=0 galaxy=0
+[08-10 13:44:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=0 galaxy=0
+[08-10 13:46:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 13:48:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 13:50:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 13:52:13] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 13:52:13] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 13:52:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 13:52:53] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 13:52:53] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 13:52:53] PHASE FROMSCRATCH SUBMIT H3K4me3 -> voyager jid=266341 (free left >=1)
+[08-10 13:53:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 13:55:07] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 13:57:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 13:59:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 14:01:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 14:02:57] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 14:02:57] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 14:02:57] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=266463 (free left >=1)
+[08-10 14:03:05] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=266465 (free left >=1)
+[08-10 14:03:13] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> laniakea jid=266466 (free left >=1)
+[08-10 14:03:22] PHASE FROMSCRATCH SUBMIT promoter_all -> laniakea jid=266468 (free left >=1)
+[08-10 14:03:30] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=266472 (free left >=1)
+[08-10 14:03:38] PHASE FROMSCRATCH SUBMIT enhancers -> galaxy jid=266474 (free left >=1)
+[08-10 14:03:46] PHASE FROMSCRATCH SUBMIT enhancers_types -> galaxy jid=266475 (free left >=1)
+[08-10 14:03:55] PHASE FROMSCRATCH SUBMIT H3K9ac -> galaxy jid=266479 (free left >=1)
+[08-10 14:04:03] PHASE FROMSCRATCH SUBMIT H3K27ac -> galaxy jid=266481 (free left >=1)
+[08-10 14:04:11] PHASE FROMSCRATCH SUBMIT H3K4me1 -> galaxy jid=266482 (free left >=1)
+[08-10 14:04:20] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-1 galaxy=-6
+[08-10 14:06:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-1 galaxy=-6
+[08-10 14:08:00] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 14:08:00] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 14:08:00] PHASE FROMSCRATCH SUBMIT H2AFZ -> laniakea jid=266532 (free left >=1)
+[08-10 14:08:08] PHASE FROMSCRATCH SUBMIT H3K27me3 -> laniakea jid=266536 (free left >=1)
+[08-10 14:08:16] PHASE FROMSCRATCH SUBMIT H3K36me3 -> laniakea jid=266537 (free left >=1)
+[08-10 14:08:24] PHASE FROMSCRATCH SUBMIT H3K9me3 -> laniakea jid=266542 (free left >=1)
+[08-10 14:08:33] PHASE FROMSCRATCH SUBMIT H4K20me1 -> voyager jid=266545 (free left >=1)
+[08-10 14:08:41] PHASE FROMSCRATCH SUBMIT splice_sites_all -> voyager jid=266546 (free left >=1)
+[08-10 14:08:49] PHASE FROMSCRATCH remaining=17 | free: laniakea=-8 voyager=-3 galaxy=-6
+[08-10 14:10:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=-8 voyager=-3 galaxy=-6
+[08-10 14:12:39] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 14:12:39] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 14:12:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=-8 voyager=-3 galaxy=-6
+[08-10 14:14:41] PHASE FROMSCRATCH remaining=17 | free: laniakea=-8 voyager=-3 galaxy=-6
+[08-10 14:16:41] PHASE FROMSCRATCH remaining=17 | free: laniakea=-8 voyager=-3 galaxy=-6
+[08-10 14:18:41] REAP wedged r13nb jid=266150 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 14:18:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=-8 voyager=-2 galaxy=-6
+[08-10 14:20:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=-8 voyager=-3 galaxy=-6
+[08-10 14:22:16] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 14:22:16] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 14:22:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:24:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:26:20] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:28:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:30:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:32:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:34:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:36:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:38:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:40:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:42:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:44:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-6
+[08-10 14:46:31] REAP wedged r13nb jid=266472 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 14:46:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=-4
+[08-10 14:48:32] REAP wedged r13nb jid=266482 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 14:48:32] REAP wedged r13nb jid=266481 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 14:48:32] REAP wedged r13nb jid=266475 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 14:48:32] REAP wedged r13nb jid=266474 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 14:48:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=4
+[08-10 14:50:34] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=266627 (free left >=1)
+[08-10 14:50:42] PHASE FROMSCRATCH SUBMIT enhancers -> galaxy jid=266628 (free left >=1)
+[08-10 14:50:51] PHASE FROMSCRATCH remaining=17 | free: laniakea=-4 voyager=-2 galaxy=0
+[08-10 14:52:52] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=266630 (free left >=1)
+[08-10 14:53:03] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 14:53:03] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 14:53:03] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=266631 (free left >=1)
+[08-10 14:53:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-2 galaxy=0
+[08-10 14:55:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-2 galaxy=0
+[08-10 14:57:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-2 galaxy=0
+[08-10 14:59:24] REAP wedged r13nb jid=266341 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 14:59:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:01:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:03:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:05:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:07:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:09:41] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:11:43] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:13:57] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:15:57] PHASE FROMSCRATCH SUBMIT H3K4me3 -> galaxy jid=266645 (free left >=1)
+[08-10 15:16:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:17:32] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 15:17:32] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 15:17:37] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:19:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:21:43] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:23:43] REAP wedged r13nb jid=266628 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 15:23:43] REAP wedged r13nb jid=266627 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 15:23:45] PHASE FROMSCRATCH SUBMIT H3K9me3 -> galaxy jid=266647 (free left >=1)
+[08-10 15:23:53] PHASE FROMSCRATCH SUBMIT splice_sites_all -> galaxy jid=266648 (free left >=1)
+[08-10 15:24:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:26:03] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:28:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:30:06] REAP wedged r13nb jid=266631 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 15:30:06] REAP wedged r13nb jid=266630 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 15:30:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=4 voyager=-1 galaxy=0
+[08-10 15:32:08] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=266660 (free left >=1)
+[08-10 15:32:16] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=266661 (free left >=1)
+[08-10 15:32:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 15:34:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:36:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:38:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:40:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:42:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:44:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:46:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=-1
+[08-10 15:48:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:50:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:52:48] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:52:59] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 15:52:59] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 15:53:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:55:01] REAP wedged r13nb jid=266545 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 15:55:03] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=2 galaxy=0
+[08-10 15:56:48] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 15:56:48] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 15:56:48] REAP wedged r13nb jid=266648 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 15:56:48] REAP wedged r13nb jid=266647 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 15:56:48] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> voyager jid=266664 (free left >=1)
+[08-10 15:56:57] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=266665 (free left >=1)
+[08-10 15:57:05] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=266666 (free left >=1)
+[08-10 15:57:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 15:59:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 16:01:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 16:03:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 16:05:37] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 16:07:41] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 16:08:24] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 16:08:24] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 16:08:25] REAP wedged r13nb jid=266661 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 16:08:25] REAP wedged r13nb jid=266660 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 16:08:27] PHASE FROMSCRATCH SUBMIT H3K27ac -> galaxy jid=266670 (free left >=1)
+[08-10 16:08:35] PHASE FROMSCRATCH SUBMIT H3K4me1 -> laniakea jid=266671 (free left >=1)
+[08-10 16:08:43] PHASE FROMSCRATCH SUBMIT H2AFZ -> laniakea jid=266672 (free left >=1)
+[08-10 16:08:52] PHASE FROMSCRATCH SUBMIT H3K27me3 -> galaxy jid=266673 (free left >=1)
+[08-10 16:09:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 16:11:07] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 16:13:09] REAP wedged r13nb jid=266645 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 16:13:11] PHASE FROMSCRATCH SUBMIT H3K4me3 -> galaxy jid=266675 (free left >=1)
+[08-10 16:13:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 16:15:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=0
+[08-10 16:17:43] PHASE FROMSCRATCH SUBMIT H3K4me2 -> voyager jid=266677 (free left >=1)
+[08-10 16:18:07] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=0 galaxy=0
+[08-10 16:20:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=0 galaxy=0
+[08-10 16:22:24] PHASE FROMSCRATCH SUBMIT H3K4me3 -> galaxy jid=266679 (free left >=1)
+[08-10 16:22:33] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=266680 (free left >=1)
+[08-10 16:22:50] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 16:22:50] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 16:22:53] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=266681 (free left >=1)
+[08-10 16:23:01] PHASE FROMSCRATCH SUBMIT promoter_all -> laniakea jid=266682 (free left >=1)
+[08-10 16:23:09] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> laniakea jid=266683 (free left >=1)
+[08-10 16:23:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 16:25:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=0 galaxy=0
+[08-10 16:27:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=0 galaxy=0
+[08-10 16:29:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=0 galaxy=0
+[08-10 16:31:41] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 16:33:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 16:35:47] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=0 galaxy=0
+[08-10 16:37:19] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 16:37:19] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 16:37:21] PHASE FROMSCRATCH SUBMIT H3K36me3 -> laniakea jid=266686 (free left >=1)
+[08-10 16:37:29] PHASE FROMSCRATCH SUBMIT H3K9me3 -> voyager jid=266687 (free left >=1)
+[08-10 16:37:41] PHASE FROMSCRATCH SUBMIT H4K20me1 -> galaxy jid=266688 (free left >=1)
+[08-10 16:37:50] PHASE FROMSCRATCH SUBMIT splice_sites_all -> galaxy jid=266689 (free left >=1)
+[08-10 16:37:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=0 galaxy=2
+[08-10 16:39:59] PHASE FROMSCRATCH SUBMIT H3K4me3 -> galaxy jid=266690 (free left >=1)
+[08-10 16:40:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=0 galaxy=0
+[08-10 16:42:09] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=266691 (free left >=1)
+[08-10 16:42:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 16:43:43] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 16:43:43] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 16:43:43] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=266692 (free left >=1)
+[08-10 16:43:51] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=266693 (free left >=1)
+[08-10 16:44:00] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> voyager jid=266694 (free left >=1)
+[08-10 16:44:08] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=266695 (free left >=1)
+[08-10 16:44:23] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=266696 (free left >=1)
+[08-10 16:44:33] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=266697 (free left >=1)
+[08-10 16:44:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 16:47:41] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 16:50:05] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 16:52:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=0 galaxy=0
+[08-10 16:54:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=0 galaxy=0
+[08-10 16:56:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=0
+[08-10 16:58:02] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 16:58:02] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 16:58:02] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=266700 (free left >=1)
+[08-10 16:58:10] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=266701 (free left >=1)
+[08-10 16:58:19] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=266702 (free left >=1)
+[08-10 16:58:27] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=266703 (free left >=1)
+[08-10 16:58:35] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=266704 (free left >=1)
+[08-10 16:58:45] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:00:49] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:02:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:04:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:06:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:09:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-2
+[08-10 17:11:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-2
+[08-10 17:13:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-2
+[08-10 17:15:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:17:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:19:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:21:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:22:19] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-10 17:22:19] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-10 17:22:19] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=266720 (free left >=1)
+[08-10 17:22:28] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=266721 (free left >=1)
+[08-10 17:22:36] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=266722 (free left >=1)
+[08-10 17:22:44] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=266723 (free left >=1)
+[08-10 17:22:52] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=266724 (free left >=1)
+[08-10 17:23:02] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:25:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:27:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:29:12] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:31:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:33:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:35:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:37:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:39:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:41:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:43:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:45:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:47:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:49:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:51:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:53:43] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:55:45] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:57:47] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 17:59:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:01:53] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:03:53] REAP wedged r13nb jid=266724 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 18:03:55] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=2
+[08-10 18:05:55] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=266726 (free left >=1)
+[08-10 18:06:05] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:08:07] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:10:10] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:12:10] REAP wedged r13nb jid=266720 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 18:12:12] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=0
+[08-10 18:14:12] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=266727 (free left >=1)
+[08-10 18:14:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:16:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:18:24] REAP wedged r13nb jid=266723 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 18:18:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=2
+[08-10 18:20:26] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=266728 (free left >=1)
+[08-10 18:20:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:22:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:24:39] REAP wedged r13nb jid=266722 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 18:24:39] REAP wedged r13nb jid=266721 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 18:24:41] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=2
+[08-10 18:26:42] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=266729 (free left >=1)
+[08-10 18:26:50] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=266730 (free left >=1)
+[08-10 18:27:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:29:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:31:07] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:33:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:35:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:37:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:39:15] REAP wedged r13nb jid=266726 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 18:39:17] PHASE FROMSCRATCH SUBMIT H3K9ac -> galaxy jid=266732 (free left >=1)
+[08-10 18:39:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:41:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 18:43:35] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-10 18:45:37] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-10 18:47:37] REAP wedged r13nb jid=266727 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 18:47:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-10 18:49:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-10 18:51:48] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-10 18:53:48] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=266779 (free left >=1)
+[08-10 18:53:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-1
+[08-10 18:55:58] REAP wedged r13nb jid=266728 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 18:56:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 18:58:01] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=266781 (free left >=1)
+[08-10 18:58:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:00:11] REAP wedged r13nb jid=266729 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 19:00:12] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=0
+[08-10 19:02:14] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-10 19:04:14] REAP wedged r13nb jid=266730 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 19:04:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:06:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:08:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:10:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:12:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:14:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:16:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:18:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:20:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:22:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:24:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-2
+[08-10 19:26:44] REAP wedged r13nb jid=266779 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 19:26:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=-2
+[08-10 19:28:49] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-2
+[08-10 19:30:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-2
+[08-10 19:32:54] REAP wedged r13nb jid=266781 (log stale 33min, 0 epochs) -> will resubmit fresh
+[08-10 19:32:57] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-1
+[08-10 19:34:57] REAP wedged r13nb jid=266732 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 19:35:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:37:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:39:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:41:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:43:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:45:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:47:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:49:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:51:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:53:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:55:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 19:58:09] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:00:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:02:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:04:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:06:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:08:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:10:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:12:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:14:43] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:16:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:18:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:20:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:22:59] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:25:02] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:27:05] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:29:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:31:08] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=267792 (free left >=1)
+[08-10 20:31:16] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=267795 (free left >=1)
+[08-10 20:31:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:33:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:35:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=0
+[08-10 20:37:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=0
+[08-10 20:39:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=0
+[08-10 20:41:51] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:43:55] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:45:59] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:48:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:50:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:52:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:54:06] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=267988 (free left >=1)
+[08-10 20:54:15] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=267989 (free left >=1)
+[08-10 20:54:23] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=267990 (free left >=1)
+[08-10 20:54:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:56:35] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 20:58:37] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:00:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:02:41] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:04:41] REAP wedged r13nb jid=267795 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 21:04:41] REAP wedged r13nb jid=267792 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 21:04:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=4 voyager=1 galaxy=0
+[08-10 21:06:43] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=267992 (free left >=1)
+[08-10 21:06:51] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=267993 (free left >=1)
+[08-10 21:07:00] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:09:02] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:11:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:13:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:15:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:17:10] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:19:12] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:21:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:23:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:25:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:27:17] REAP wedged r13nb jid=267990 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 21:27:17] REAP wedged r13nb jid=267988 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 21:27:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=4
+[08-10 21:29:18] REAP wedged r13nb jid=267989 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 21:29:20] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=6
+[08-10 21:31:20] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=267994 (free left >=1)
+[08-10 21:31:28] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=267995 (free left >=1)
+[08-10 21:31:37] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=267996 (free left >=1)
+[08-10 21:31:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:33:48] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:35:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:37:51] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:39:51] REAP wedged r13nb jid=267993 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 21:39:51] REAP wedged r13nb jid=267992 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 21:39:53] PHASE FROMSCRATCH remaining=17 | free: laniakea=4 voyager=1 galaxy=0
+[08-10 21:41:53] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=267997 (free left >=1)
+[08-10 21:42:01] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=267998 (free left >=1)
+[08-10 21:42:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:44:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 21:46:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 21:48:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 21:50:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 21:52:20] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 21:54:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 21:56:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 21:58:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 22:00:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 22:02:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 22:04:29] REAP wedged r13nb jid=267994 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 22:04:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-1
+[08-10 22:06:30] REAP wedged r13nb jid=267996 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 22:06:30] REAP wedged r13nb jid=267995 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 22:06:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=3
+[08-10 22:08:32] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=268004 (free left >=1)
+[08-10 22:08:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 22:10:43] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=268006 (free left >=1)
+[08-10 22:10:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 22:12:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 22:14:54] REAP wedged r13nb jid=267998 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 22:14:54] REAP wedged r13nb jid=267997 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 22:14:56] PHASE FROMSCRATCH remaining=17 | free: laniakea=4 voyager=1 galaxy=1
+[08-10 22:16:56] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268008 (free left >=1)
+[08-10 22:17:04] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268009 (free left >=1)
+[08-10 22:17:14] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 22:19:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 22:21:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 22:23:18] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=268011 (free left >=1)
+[08-10 22:23:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 22:25:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 22:28:57] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 22:33:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 22:35:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 22:37:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-2
+[08-10 22:39:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-3
+[08-10 22:41:54] REAP wedged r13nb jid=268004 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 22:41:55] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-1
+[08-10 22:44:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-1
+[08-10 22:46:03] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=-1
+[08-10 22:48:03] REAP wedged r13nb jid=268006 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-10 22:48:05] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 22:50:05] REAP wedged r13nb jid=268009 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 22:50:05] REAP wedged r13nb jid=268008 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 22:50:07] PHASE FROMSCRATCH remaining=17 | free: laniakea=4 voyager=1 galaxy=1
+[08-10 22:52:07] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268018 (free left >=1)
+[08-10 22:52:15] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268019 (free left >=1)
+[08-10 22:52:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 22:54:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 22:56:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 22:58:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:00:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:02:33] REAP wedged r13nb jid=268011 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 23:02:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=3
+[08-10 23:04:35] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=268020 (free left >=1)
+[08-10 23:04:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:06:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:08:48] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:11:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:13:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:15:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:17:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:19:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:21:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:23:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:25:36] REAP wedged r13nb jid=268019 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 23:25:36] REAP wedged r13nb jid=268018 (log stale 33min, 0 epochs) -> will resubmit fresh
+[08-10 23:25:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=4 voyager=1 galaxy=0
+[08-10 23:27:38] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268022 (free left >=1)
+[08-10 23:27:46] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268023 (free left >=1)
+[08-10 23:27:56] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:29:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:31:59] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-10 23:34:00] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=268024 (free left >=1)
+[08-10 23:34:09] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:36:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:38:11] REAP wedged r13nb jid=268020 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-10 23:38:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=2
+[08-10 23:40:13] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=268025 (free left >=1)
+[08-10 23:40:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:42:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:44:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:46:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:48:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:50:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:52:35] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:54:37] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:56:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-10 23:58:41] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:00:41] REAP wedged r13nb jid=268023 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 00:00:41] REAP wedged r13nb jid=268022 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 00:00:43] PHASE FROMSCRATCH remaining=17 | free: laniakea=4 voyager=1 galaxy=1
+[08-11 00:02:43] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268027 (free left >=1)
+[08-11 00:02:51] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268028 (free left >=1)
+[08-11 00:03:00] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 00:05:02] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 00:07:02] REAP wedged r13nb jid=268024 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 00:07:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=3
+[08-11 00:09:04] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=268029 (free left >=1)
+[08-11 00:09:14] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 00:11:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 00:13:16] REAP wedged r13nb jid=268025 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 00:13:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=3
+[08-11 00:15:18] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=268030 (free left >=1)
+[08-11 00:15:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 00:17:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 00:19:30] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=268031 (free left >=1)
+[08-11 00:19:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:21:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:23:43] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:25:45] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:27:47] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:29:49] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:31:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:33:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:35:52] REAP wedged r13nb jid=268028 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 00:35:52] REAP wedged r13nb jid=268027 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 00:35:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=4 voyager=1 galaxy=0
+[08-11 00:37:54] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268032 (free left >=1)
+[08-11 00:38:02] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268033 (free left >=1)
+[08-11 00:38:12] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:40:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:42:13] REAP wedged r13nb jid=268029 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 00:42:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=2
+[08-11 00:44:15] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=268034 (free left >=1)
+[08-11 00:44:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:46:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:48:26] REAP wedged r13nb jid=268030 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 00:48:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=2
+[08-11 00:50:28] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=268036 (free left >=1)
+[08-11 00:50:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:52:38] REAP wedged r13nb jid=268031 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 00:52:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=2
+[08-11 00:54:40] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=268037 (free left >=1)
+[08-11 00:54:49] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:56:51] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 00:58:53] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 01:00:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 01:02:56] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 01:04:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 01:06:59] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 01:09:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 01:11:01] REAP wedged r13nb jid=268033 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 01:11:01] REAP wedged r13nb jid=268032 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 01:11:03] PHASE FROMSCRATCH remaining=17 | free: laniakea=4 voyager=1 galaxy=0
+[08-11 01:13:03] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268038 (free left >=1)
+[08-11 01:13:11] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268039 (free left >=1)
+[08-11 01:13:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 01:15:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 01:17:23] REAP wedged r13nb jid=268034 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 01:17:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-1
+[08-11 01:19:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-1
+[08-11 01:21:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=-1
+[08-11 01:23:28] REAP wedged r13nb jid=268036 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 01:23:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=1
+[08-11 01:25:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=1
+[08-11 01:27:32] REAP wedged r13nb jid=268037 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 01:27:34] PHASE FROMSCRATCH SUBMIT splice_sites_all -> galaxy jid=268048 (free left >=1)
+[08-11 01:27:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=-1 voyager=1 galaxy=1
+[08-11 01:29:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 01:31:45] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 01:33:47] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-1
+[08-11 01:35:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-1
+[08-11 01:37:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-1
+[08-11 01:39:55] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-1
+[08-11 01:41:57] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-1
+[08-11 01:44:00] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-1
+[08-11 01:46:00] REAP wedged r13nb jid=268039 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 01:46:00] REAP wedged r13nb jid=268038 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 01:46:00] PHASE FROMSCRATCH SUBMIT H3K4me3 -> galaxy jid=268118 (free left >=1)
+[08-11 01:46:08] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268119 (free left >=1)
+[08-11 01:46:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 01:48:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 01:50:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 01:52:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 01:54:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 01:56:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 01:58:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:00:31] REAP wedged r13nb jid=268048 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 02:00:32] PHASE FROMSCRATCH SUBMIT H3K9ac -> galaxy jid=268121 (free left >=1)
+[08-11 02:00:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:02:43] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:04:45] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:06:47] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:08:49] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:10:51] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:12:53] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:14:55] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:16:57] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:18:57] REAP wedged r13nb jid=268119 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 02:18:58] PHASE FROMSCRATCH SUBMIT H4K20me1 -> laniakea jid=268126 (free left >=1)
+[08-11 02:19:07] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 02:21:09] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 02:23:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 02:25:12] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 02:27:14] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 02:29:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 02:31:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 02:33:18] REAP wedged r13nb jid=268121 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 02:33:20] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:35:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:37:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:39:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:41:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:43:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:45:30] REAP wedged r13nb jid=268118 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 02:45:32] PHASE FROMSCRATCH SUBMIT splice_sites_all -> galaxy jid=268127 (free left >=1)
+[08-11 02:45:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:47:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:49:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:51:44] REAP wedged r13nb jid=268126 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 02:51:45] PHASE FROMSCRATCH remaining=17 | free: laniakea=3 voyager=1 galaxy=1
+[08-11 02:53:46] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268128 (free left >=1)
+[08-11 02:53:56] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:55:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 02:58:00] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:00:02] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:02:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:04:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:06:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:08:10] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:10:12] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:12:14] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:14:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:16:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:18:18] REAP wedged r13nb jid=268127 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 03:18:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=3
+[08-11 03:20:20] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268129 (free left >=1)
+[08-11 03:20:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:22:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:24:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:26:34] REAP wedged r13nb jid=268128 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 03:26:35] PHASE FROMSCRATCH remaining=17 | free: laniakea=3 voyager=1 galaxy=1
+[08-11 03:28:35] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268130 (free left >=1)
+[08-11 03:28:45] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:30:47] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:32:49] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:34:51] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:36:53] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:38:55] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:40:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:43:00] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:45:02] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:47:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:49:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:51:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:53:08] REAP wedged r13nb jid=268129 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 03:53:10] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=3
+[08-11 03:55:10] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268131 (free left >=1)
+[08-11 03:55:20] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:57:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 03:59:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:01:24] REAP wedged r13nb jid=268130 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 04:01:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=3 voyager=1 galaxy=1
+[08-11 04:03:26] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268133 (free left >=1)
+[08-11 04:03:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:05:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:07:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:09:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:11:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:13:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:15:48] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:17:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:19:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:21:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:23:56] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:25:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:27:59] REAP wedged r13nb jid=268131 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 04:28:00] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=3
+[08-11 04:30:00] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268134 (free left >=1)
+[08-11 04:30:10] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:32:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:34:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 04:36:15] REAP wedged r13nb jid=268133 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 04:36:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=3 voyager=1 galaxy=1
+[08-11 04:38:17] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268135 (free left >=1)
+[08-11 04:38:25] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268136 (free left >=1)
+[08-11 04:38:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 04:40:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 04:42:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 04:44:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 04:46:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 04:48:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 04:50:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 04:52:48] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 04:54:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 04:56:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 04:58:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:00:56] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:02:56] REAP wedged r13nb jid=268134 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 05:02:57] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=3
+[08-11 05:04:58] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268138 (free left >=1)
+[08-11 05:05:07] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:07:09] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:09:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:11:11] REAP wedged r13nb jid=268135 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 05:11:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 05:13:13] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268139 (free left >=1)
+[08-11 05:13:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:15:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:17:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:19:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:21:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:23:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:25:35] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:27:37] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:29:37] REAP wedged r13nb jid=268136 (log stale 31min, 0 epochs) -> will resubmit fresh
+[08-11 05:29:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 05:31:38] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268140 (free left >=1)
+[08-11 05:31:48] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:33:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:35:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:37:52] REAP wedged r13nb jid=268138 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 05:37:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=3
+[08-11 05:39:54] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268141 (free left >=1)
+[08-11 05:40:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:42:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:44:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:46:08] REAP wedged r13nb jid=268139 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 05:46:09] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 05:48:09] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268142 (free left >=1)
+[08-11 05:48:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:50:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:52:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:54:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:56:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 05:58:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:00:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:02:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:04:33] REAP wedged r13nb jid=268140 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 06:04:35] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 06:06:35] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268146 (free left >=1)
+[08-11 06:06:45] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:08:47] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:10:49] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:12:49] REAP wedged r13nb jid=268141 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 06:12:51] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=3
+[08-11 06:14:51] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268147 (free left >=1)
+[08-11 06:15:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:17:03] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:19:05] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:21:05] REAP wedged r13nb jid=268142 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 06:21:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 06:23:06] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268148 (free left >=1)
+[08-11 06:23:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:25:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:27:20] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:29:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:31:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:33:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:35:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:37:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:39:30] REAP wedged r13nb jid=268146 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 06:39:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 06:41:32] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268149 (free left >=1)
+[08-11 06:41:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:43:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:45:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:47:46] REAP wedged r13nb jid=268147 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 06:47:48] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=3
+[08-11 06:49:48] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268150 (free left >=1)
+[08-11 06:49:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:52:00] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:54:01] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 06:56:02] REAP wedged r13nb jid=268148 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 06:56:03] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 06:58:03] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268152 (free left >=1)
+[08-11 06:58:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:00:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:02:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:04:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:06:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:08:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:10:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:12:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:14:27] REAP wedged r13nb jid=268149 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 07:14:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 07:16:28] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268153 (free left >=1)
+[08-11 07:16:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:18:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:20:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:22:42] REAP wedged r13nb jid=268150 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 07:22:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=3
+[08-11 07:24:44] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268154 (free left >=1)
+[08-11 07:24:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:26:56] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:28:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:30:58] REAP wedged r13nb jid=268152 (log stale 32min, 0 epochs) -> will resubmit fresh
+[08-11 07:30:59] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 07:33:00] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=268155 (free left >=1)
+[08-11 07:33:09] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:35:11] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:37:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:39:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:41:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:43:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:45:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:47:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:48:36] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 07:48:36] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 07:48:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:50:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:52:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:54:44] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:56:46] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 07:58:49] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:00:51] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:02:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:04:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:06:56] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:08:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:11:00] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:13:02] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:15:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:17:06] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:19:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:21:10] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:23:12] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:25:14] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:27:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:29:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:31:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:33:20] REAP wedged r13nb jid=268153 (log stale 76min, 0 epochs) -> will resubmit fresh
+[08-11 08:33:21] PHASE FROMSCRATCH remaining=17 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 08:35:21] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268162 (free left >=1)
+[08-11 08:35:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:37:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:38:41] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 08:38:41] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 08:38:43] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:40:43] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268163 (free left >=1)
+[08-11 08:40:53] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:42:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:44:56] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:46:58] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:47:58] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 08:47:58] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 08:47:59] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:49:59] REAP wedged r13nb jid=268155 (log stale 76min, 0 epochs) -> will resubmit fresh
+[08-11 08:50:01] PHASE FROMSCRATCH remaining=13 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 08:52:01] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> laniakea jid=268164 (free left >=1)
+[08-11 08:52:10] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:54:12] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:56:13] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 08:58:15] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:00:16] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:02:17] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:04:19] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:06:20] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:08:22] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:10:23] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:12:25] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:14:26] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:16:28] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:18:29] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:20:30] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:22:32] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:24:33] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:26:35] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:28:36] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:30:38] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=-1
+[08-11 09:32:40] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=-1
+[08-11 09:34:42] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=-1
+[08-11 09:36:43] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 09:38:45] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=1
+[08-11 09:40:46] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=-1
+[08-11 09:42:48] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=-1
+[08-11 09:44:50] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=-1
+[08-11 09:46:51] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:48:53] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:50:54] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:52:54] REAP wedged r13nb jid=268162 (log stale 77min, 0 epochs) -> will resubmit fresh
+[08-11 09:52:56] PHASE FROMSCRATCH remaining=13 | free: laniakea=2 voyager=1 galaxy=1
+[08-11 09:54:56] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268255 (free left >=1)
+[08-11 09:55:06] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:57:07] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 09:59:07] REAP wedged r13nb jid=268163 (log stale 77min, 0 epochs) -> will resubmit fresh
+[08-11 09:59:09] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=3
+[08-11 10:01:09] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268257 (free left >=1)
+[08-11 10:01:18] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:03:20] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:05:21] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:07:23] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:09:24] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:11:26] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:13:27] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:15:29] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:17:30] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:19:32] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:21:33] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:23:34] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:25:36] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:27:37] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:29:39] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:31:41] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:33:42] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:35:44] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 10:37:44] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=268261 (free left >=1)
+[08-11 10:37:54] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 10:39:55] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 10:41:56] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 10:43:56] REAP wedged r13nb jid=268164 (log stale 76min, 0 epochs) -> will resubmit fresh
+[08-11 10:43:57] PHASE FROMSCRATCH remaining=13 | free: laniakea=2 voyager=0 galaxy=0
+[08-11 10:45:58] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> laniakea jid=268266 (free left >=1)
+[08-11 10:46:07] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 10:48:08] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 10:50:09] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 10:52:11] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 10:54:11] PHASE FROMSCRATCH SUBMIT enhancers -> galaxy jid=268267 (free left >=1)
+[08-11 10:54:20] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 10:56:21] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 10:58:37] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 11:00:38] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 11:02:39] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:04:41] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:06:42] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 11:08:43] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 11:10:45] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 11:12:45] REAP wedged r13nb jid=268255 (log stale 77min, 0 epochs) -> will resubmit fresh
+[08-11 11:12:46] PHASE FROMSCRATCH remaining=13 | free: laniakea=2 voyager=0 galaxy=0
+[08-11 11:14:46] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268272 (free left >=1)
+[08-11 11:14:55] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 11:16:57] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=0
+[08-11 11:18:57] REAP wedged r13nb jid=268257 (log stale 77min, 0 epochs) -> will resubmit fresh
+[08-11 11:18:58] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=2
+[08-11 11:20:59] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=-2
+[08-11 11:23:01] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=-2
+[08-11 11:25:02] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268303 (free left >=1)
+[08-11 11:25:11] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:27:12] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:29:13] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:31:15] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:33:16] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:35:17] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:37:19] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:39:20] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:41:21] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:43:22] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:45:24] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:47:25] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:49:26] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:51:27] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:53:29] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 11:55:30] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-11 11:57:31] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-11 11:59:32] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-11 12:01:34] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-11 12:03:34] REAP wedged r13nb jid=268266 (log stale 77min, 0 epochs) -> will resubmit fresh
+[08-11 12:03:34] REAP wedged r13nb jid=268261 (log stale 76min, 0 epochs) -> will resubmit fresh
+[08-11 12:03:35] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:05:36] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:07:38] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:09:39] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:11:40] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:13:42] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:15:43] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:17:45] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:19:46] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:21:48] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:23:49] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=-1
+[08-11 12:25:49] REAP wedged r13nb jid=268267 (log stale 76min, 0 epochs) -> will resubmit fresh
+[08-11 12:25:50] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 12:27:52] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 12:29:54] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 12:31:54] REAP wedged r13nb jid=268272 (log stale 76min, 0 epochs) -> will resubmit fresh
+[08-11 12:31:55] PHASE FROMSCRATCH remaining=13 | free: laniakea=3 voyager=1 galaxy=0
+[08-11 12:33:55] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268313 (free left >=1)
+[08-11 12:34:05] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 12:36:06] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=-1
+[08-11 12:38:11] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=-1
+[08-11 12:40:13] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=-1
+[08-11 12:42:13] REAP wedged r13nb jid=268303 (log stale 76min, 0 epochs) -> will resubmit fresh
+[08-11 12:42:14] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=3
+[08-11 12:44:17] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 12:46:19] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 12:48:22] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 12:50:24] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 12:52:26] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 12:54:28] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 12:56:30] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 12:58:32] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:00:34] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:02:36] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:04:37] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:06:39] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:08:41] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:10:43] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:12:45] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:14:48] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:16:50] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:18:51] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:20:54] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:22:58] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=0
+[08-11 13:25:00] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=1 galaxy=1
+[08-11 13:27:00] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268589 (free left >=1)
+[08-11 13:27:11] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:29:13] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:31:14] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:33:16] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:35:17] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:37:19] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:39:20] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:41:22] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:43:24] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:45:25] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:47:27] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:49:28] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:51:28] REAP wedged r13nb jid=268313 (log stale 77min, 0 epochs) -> will resubmit fresh
+[08-11 13:51:30] PHASE FROMSCRATCH remaining=13 | free: laniakea=3 voyager=1 galaxy=1
+[08-11 13:53:30] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268591 (free left >=1)
+[08-11 13:53:39] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:55:41] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:57:42] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 13:59:44] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:01:46] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:03:47] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:05:49] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:07:50] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:09:52] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:11:53] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:13:55] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:15:57] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:17:58] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:20:00] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:22:01] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=1 galaxy=1
+[08-11 14:24:01] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> laniakea jid=268597 (free left >=1)
+[08-11 14:24:11] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:26:12] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:28:14] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:30:15] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:32:17] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:34:18] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:36:20] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:38:21] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:40:23] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:42:24] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:44:24] REAP wedged r13nb jid=268589 (log stale 76min, 0 epochs) -> will resubmit fresh
+[08-11 14:44:25] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=2
+[08-11 14:46:26] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268602 (free left >=1)
+[08-11 14:46:35] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:48:36] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:50:38] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:52:39] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:53:11] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 14:53:11] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 14:53:11] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268605 (free left >=1)
+[08-11 14:53:20] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268606 (free left >=1)
+[08-11 14:53:28] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> laniakea jid=268607 (free left >=1)
+[08-11 14:53:37] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:55:38] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:57:39] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=268608 (free left >=1)
+[08-11 14:57:48] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 14:59:00] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 14:59:00] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 14:59:02] PHASE FROMSCRATCH remaining=13 | free: laniakea=4 voyager=1 galaxy=4
+[08-11 15:01:02] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268610 (free left >=1)
+[08-11 15:01:10] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268611 (free left >=1)
+[08-11 15:01:18] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=268612 (free left >=1)
+[08-11 15:01:26] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=268613 (free left >=1)
+[08-11 15:01:35] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:03:37] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:05:38] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:07:40] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:09:41] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:11:42] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:12:27] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 15:12:27] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 15:12:27] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=268616 (free left >=1)
+[08-11 15:12:35] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268617 (free left >=1)
+[08-11 15:12:44] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> laniakea jid=268618 (free left >=1)
+[08-11 15:12:52] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=268619 (free left >=1)
+[08-11 15:13:02] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:15:04] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:17:06] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:19:08] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:21:09] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:22:38] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 15:22:38] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 15:22:40] PHASE FROMSCRATCH remaining=13 | free: laniakea=4 voyager=1 galaxy=5
+[08-11 15:24:40] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268626 (free left >=1)
+[08-11 15:24:48] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268627 (free left >=1)
+[08-11 15:24:56] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=268629 (free left >=1)
+[08-11 15:25:04] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=268630 (free left >=1)
+[08-11 15:25:15] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:27:10] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 15:27:10] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 15:27:10] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268631 (free left >=1)
+[08-11 15:27:18] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268632 (free left >=1)
+[08-11 15:27:26] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=268633 (free left >=1)
+[08-11 15:27:34] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=268634 (free left >=1)
+[08-11 15:27:44] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:29:46] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:31:48] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:33:50] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:35:51] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:37:53] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 15:39:18] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 15:39:18] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 15:39:18] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268637 (free left >=1)
+[08-11 15:39:26] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268638 (free left >=1)
+[08-11 15:39:34] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=268639 (free left >=1)
+[08-11 15:39:43] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=268640 (free left >=1)
+[08-11 15:39:51] PHASE FROMSCRATCH SUBMIT enhancers -> galaxy jid=268641 (free left >=1)
+[08-11 15:40:00] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:42:02] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:44:04] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:46:07] PHASE FROMSCRATCH remaining=13 | free: laniakea=-2 voyager=1 galaxy=-2
+[08-11 15:47:05] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 15:47:05] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 15:47:07] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=0 galaxy=1
+[08-11 15:49:11] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:51:13] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 15:53:16] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=0
+[08-11 15:55:20] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=0
+[08-11 15:57:20] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268778 (free left >=1)
+[08-11 15:57:31] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=-1 galaxy=0
+[08-11 15:59:31] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> laniakea jid=268781 (free left >=1)
+[08-11 15:59:39] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=268782 (free left >=1)
+[08-11 15:59:47] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=268783 (free left >=1)
+[08-11 15:59:56] PHASE FROMSCRATCH SUBMIT enhancers -> galaxy jid=268784 (free left >=1)
+[08-11 16:00:05] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=0
+[08-11 16:02:07] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=0
+[08-11 16:04:09] PHASE FROMSCRATCH remaining=13 | free: laniakea=-2 voyager=-1 galaxy=-3
+[08-11 16:06:10] PHASE FROMSCRATCH remaining=13 | free: laniakea=-1 voyager=-1 galaxy=-3
+[08-11 16:08:12] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=0
+[08-11 16:10:13] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=0
+[08-11 16:12:15] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=0
+[08-11 16:14:16] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=0
+[08-11 16:15:46] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 16:15:46] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 16:15:47] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=0
+[08-11 16:17:48] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=0
+[08-11 16:19:31] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 16:19:31] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 16:19:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:21:32] PHASE FROMSCRATCH SUBMIT H3K4me3 -> galaxy jid=268805 (free left >=1)
+[08-11 16:21:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:23:42] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=268807 (free left >=1)
+[08-11 16:23:52] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:25:54] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:27:55] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:29:57] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:31:59] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:34:00] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:36:02] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:38:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:40:05] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:42:07] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:44:09] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:46:10] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:48:12] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:50:14] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 16:52:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-11 16:54:17] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-11 16:56:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-11 16:58:20] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-11 17:00:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-11 17:02:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-11 17:04:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-11 17:06:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-11 17:08:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-11 17:10:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-2
+[08-11 17:12:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-2
+[08-11 17:14:37] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=1 galaxy=-2
+[08-11 17:16:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=1
+[08-11 17:18:39] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=268930 (free left >=1)
+[08-11 17:18:48] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:20:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:22:50] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=268931 (free left >=1)
+[08-11 17:23:00] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:25:02] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:27:04] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:29:05] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:31:07] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:33:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:35:10] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:37:13] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:39:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:41:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:43:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:45:20] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:47:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:49:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:51:25] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:53:25] PHASE FROMSCRATCH SUBMIT H3K4me3 -> galaxy jid=268940 (free left >=1)
+[08-11 17:53:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:55:17] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 17:55:17] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 17:55:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=4 voyager=1 galaxy=5
+[08-11 17:57:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 17:58:05] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 17:58:05] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 17:58:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 18:00:14] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 18:02:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 18:04:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 18:06:23] PHASE FROMSCRATCH SUBMIT H3K4me3 -> laniakea jid=269066 (free left >=1)
+[08-11 18:06:31] PHASE FROMSCRATCH SUBMIT H3K4me2 -> laniakea jid=269067 (free left >=1)
+[08-11 18:06:39] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=269068 (free left >=1)
+[08-11 18:06:47] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> galaxy jid=269069 (free left >=1)
+[08-11 18:06:55] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=269070 (free left >=1)
+[08-11 18:07:05] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 18:09:08] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 18:11:10] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=1 galaxy=0
+[08-11 18:12:06] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 18:12:06] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 18:12:06] PHASE FROMSCRATCH SUBMIT promoter_all -> galaxy jid=269071 (free left >=1)
+[08-11 18:12:14] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=269072 (free left >=1)
+[08-11 18:12:22] PHASE FROMSCRATCH SUBMIT enhancers -> voyager jid=269073 (free left >=1)
+[08-11 18:12:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 18:14:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 18:16:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 18:18:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 18:20:35] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 18:22:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 18:24:37] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 18:26:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 18:28:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 18:30:39] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> galaxy jid=269099 (free left >=1)
+[08-11 18:30:48] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 18:32:49] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 18:34:50] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 18:36:51] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 20:44:14] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 20:44:14] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 20:44:15] PHASE FROMSCRATCH SUBMIT H3K4me3 -> galaxy jid=269711 (free left >=1)
+[08-11 20:44:23] PHASE FROMSCRATCH SUBMIT H3K4me2 -> galaxy jid=269712 (free left >=1)
+[08-11 20:44:31] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=269714 (free left >=1)
+[08-11 20:44:39] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> laniakea jid=269715 (free left >=1)
+[08-11 20:44:47] PHASE FROMSCRATCH SUBMIT promoter_all -> laniakea jid=269718 (free left >=1)
+[08-11 20:44:55] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> voyager jid=269721 (free left >=1)
+[08-11 20:45:05] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=0 galaxy=-4
+[08-11 20:47:05] PHASE FROMSCRATCH SUBMIT H3K4me3 -> galaxy jid=269733 (free left >=1)
+[08-11 20:47:15] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 20:49:16] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 20:51:18] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 20:53:19] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 20:55:20] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 20:57:22] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 20:59:23] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:01:24] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 21:03:26] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 21:05:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 21:07:27] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 21:09:28] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 21:11:29] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 21:13:30] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 21:15:31] PHASE FROMSCRATCH remaining=17 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 21:17:32] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:19:33] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:21:34] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:23:35] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:25:36] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:27:37] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:29:38] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:31:39] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:33:40] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:35:41] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:37:42] PHASE FROMSCRATCH remaining=17 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:39:42] PHASE FROMSCRATCH SUBMIT enhancers -> galaxy jid=269903 (free left >=1)
+[08-11 21:39:51] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:41:51] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:43:52] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:45:53] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:47:54] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:49:54] PHASE FROMSCRATCH SUBMIT promoter_all -> laniakea jid=269949 (free left >=1)
+[08-11 21:50:03] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:51:05] === gpu_throttle start (leave >=1 GPU free per node) ===
+[08-11 21:51:05] PHASE FROMSCRATCH START subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml
+[08-11 21:51:06] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:53:07] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:55:08] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:57:09] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 21:59:10] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:01:11] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:03:12] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:05:13] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:07:14] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:09:16] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:11:17] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:13:19] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:15:20] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:17:21] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:19:22] PHASE FROMSCRATCH remaining=16 | free: laniakea=-2 voyager=-1 galaxy=-4
+[08-11 22:21:22] PHASE FROMSCRATCH SUBMIT enhancers_types -> galaxy jid=270143 (free left >=1)
+[08-11 22:21:31] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 22:23:32] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 22:25:33] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 22:27:33] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 22:29:34] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-11 22:31:35] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-11 22:33:36] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-11 22:35:37] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-11 22:37:38] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:39:38] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:41:39] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:43:40] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:45:41] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:47:42] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:49:43] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:51:43] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:53:44] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:55:45] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:57:46] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 22:59:47] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:01:48] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:03:48] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:05:49] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:07:50] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:09:51] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:11:52] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:13:53] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:15:53] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:17:54] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:19:55] PHASE FROMSCRATCH remaining=16 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:21:55] PHASE FROMSCRATCH SUBMIT H3K9ac -> voyager jid=270172 (free left >=1)
+[08-11 23:22:04] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:24:05] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:26:06] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:28:07] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:30:07] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:32:08] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:34:09] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:36:10] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:38:10] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:40:11] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:42:12] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:44:13] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:46:13] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:48:14] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:50:15] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:52:16] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:54:17] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:56:17] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-11 23:58:18] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:00:19] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:02:20] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:04:21] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:06:21] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:08:22] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:10:23] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:12:24] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:14:25] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:16:25] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:18:26] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 00:20:27] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:22:28] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:24:29] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:26:30] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:28:30] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:30:31] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:32:32] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:34:33] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:36:34] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:38:34] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:40:35] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:42:36] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:44:37] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:46:38] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:48:38] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:50:39] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:52:40] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:54:41] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:56:42] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 00:58:43] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:00:44] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 01:02:45] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:04:46] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:06:46] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 01:08:47] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:10:48] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:12:49] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:14:50] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:16:51] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:18:51] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:20:52] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:22:53] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:24:54] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 01:26:55] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 01:28:55] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 01:30:56] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:32:57] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 01:34:58] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 01:36:58] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:38:59] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:41:00] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:43:01] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:45:02] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:47:02] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:49:03] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:51:04] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:53:05] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:55:05] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:57:06] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 01:59:07] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:01:08] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:03:09] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:05:09] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:07:10] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:09:11] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:11:12] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:13:12] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:15:13] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:17:14] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:19:15] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:21:15] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:23:16] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:25:17] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:27:18] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:29:18] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=270227 (free left >=1)
+[08-12 02:29:26] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:31:27] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:33:28] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:35:29] PHASE FROMSCRATCH remaining=15 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:37:29] PHASE FROMSCRATCH SUBMIT H3K27ac -> voyager jid=270229 (free left >=1)
+[08-12 02:37:38] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:39:39] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:41:39] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:43:40] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:45:41] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:47:42] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:49:42] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:51:43] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:53:44] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:55:45] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:57:45] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 02:59:46] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:01:47] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:03:48] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:05:48] PHASE FROMSCRATCH remaining=14 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:07:49] PHASE FROMSCRATCH SUBMIT H3K4me1 -> laniakea jid=270234 (free left >=1)
+[08-12 03:07:57] PHASE FROMSCRATCH remaining=13 | free: laniakea=1 voyager=-1 galaxy=-2
+[08-12 03:09:58] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:11:58] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:13:59] PHASE FROMSCRATCH remaining=13 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:15:59] PHASE FROMSCRATCH SUBMIT H2AFZ -> galaxy jid=270236 (free left >=1)
+[08-12 03:16:08] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:18:08] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:20:09] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:22:10] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:24:10] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:26:11] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:28:11] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:30:12] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:32:13] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:34:13] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:36:14] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:38:14] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:40:15] PHASE FROMSCRATCH remaining=12 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:42:15] PHASE FROMSCRATCH SUBMIT H3K27me3 -> galaxy jid=270244 (free left >=1)
+[08-12 03:42:24] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:44:24] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:46:25] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:48:25] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:50:26] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:52:26] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:54:27] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:56:27] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 03:58:28] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 04:00:28] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 04:02:29] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 04:04:29] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 04:06:30] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 04:08:31] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 04:10:31] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 04:12:32] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-2
+[08-12 04:14:32] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 04:16:34] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 04:18:34] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 04:20:35] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 04:22:35] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:24:36] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:26:37] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:28:37] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:30:38] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:32:39] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:34:39] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:36:40] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:38:40] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:40:42] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:42:43] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:44:44] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:46:45] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:48:46] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:50:46] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:52:47] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:54:47] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:56:48] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 04:58:48] PHASE FROMSCRATCH remaining=11 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:00:49] PHASE FROMSCRATCH SUBMIT H3K36me3 -> galaxy jid=270267 (free left >=1)
+[08-12 05:00:57] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:02:58] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:04:58] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:06:58] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:08:59] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:10:59] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:13:00] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:15:00] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:17:01] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:19:01] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:21:02] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:23:02] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:25:03] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:27:03] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:29:04] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:31:04] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:33:05] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:35:05] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:37:06] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:39:06] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:41:07] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:43:07] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-3
+[08-12 05:45:08] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:47:08] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:49:09] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:51:09] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:53:10] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:55:10] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:57:11] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 05:59:11] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:01:12] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:03:12] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:05:12] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:07:13] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:09:13] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:11:14] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:13:14] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:15:15] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:17:15] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:19:16] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:21:16] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:23:17] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:25:17] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:27:18] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:29:18] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:31:19] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:33:19] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:35:20] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:37:20] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:39:21] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:41:21] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:43:22] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:45:22] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:47:23] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:49:23] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:51:24] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:53:24] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:55:25] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:57:25] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 06:59:26] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:01:26] PHASE FROMSCRATCH remaining=10 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:03:26] PHASE FROMSCRATCH SUBMIT H3K9me3 -> voyager jid=270282 (free left >=1)
+[08-12 07:03:35] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:05:35] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:07:36] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:09:36] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:11:36] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:13:37] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:15:37] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:17:38] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:19:38] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:21:39] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:23:39] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:25:40] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:27:40] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:29:40] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:31:41] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:33:41] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:35:42] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:37:42] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:39:42] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:41:43] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:43:43] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:45:44] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:47:44] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:49:44] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:51:45] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:53:45] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:55:46] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:57:46] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 07:59:46] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:01:47] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:03:47] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:05:48] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:07:48] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:09:48] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:11:49] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:13:49] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:15:50] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:17:50] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:19:51] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:21:51] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:23:51] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:25:52] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:27:52] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:29:53] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:31:53] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:33:53] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:35:54] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:37:54] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:39:55] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:41:55] PHASE FROMSCRATCH remaining=9 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:43:55] PHASE FROMSCRATCH SUBMIT H4K20me1 -> laniakea jid=270292 (free left >=1)
+[08-12 08:44:03] PHASE FROMSCRATCH remaining=8 | free: laniakea=1 voyager=-1 galaxy=-4
+[08-12 08:46:04] PHASE FROMSCRATCH remaining=8 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:48:04] PHASE FROMSCRATCH SUBMIT H3K36me3 -> galaxy jid=270294 (free left >=1)
+[08-12 08:48:12] PHASE FROMSCRATCH remaining=8 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:50:13] PHASE FROMSCRATCH remaining=8 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:52:13] PHASE FROMSCRATCH remaining=8 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:54:13] PHASE FROMSCRATCH remaining=8 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:56:14] PHASE FROMSCRATCH remaining=8 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 08:58:14] PHASE FROMSCRATCH SUBMIT splice_sites_all -> galaxy jid=270296 (free left >=1)
+[08-12 08:58:22] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:00:22] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:02:23] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:04:23] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:06:23] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:08:23] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:10:24] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:12:24] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:14:24] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:16:25] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:18:25] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:20:25] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:22:25] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:24:26] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:26:26] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:28:26] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:30:26] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:32:27] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:34:27] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:36:27] PHASE FROMSCRATCH remaining=7 | free: laniakea=0 voyager=-1 galaxy=-4
+[08-12 09:38:28] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 09:40:28] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 09:42:28] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 09:44:28] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 09:46:29] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 09:48:29] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 09:50:29] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 09:52:30] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 09:54:30] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 09:56:30] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 09:58:30] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 10:00:31] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 10:02:31] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 10:04:31] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 10:06:32] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 10:08:32] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-4
+[08-12 10:10:32] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-3
+[08-12 10:12:32] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-3
+[08-12 10:14:33] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-3
+[08-12 10:16:33] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-3
+[08-12 10:18:33] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:20:34] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:22:34] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:24:34] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:26:34] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:28:35] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:30:35] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:32:35] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:34:36] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:36:36] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:38:36] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:40:36] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:42:37] PHASE FROMSCRATCH remaining=6 | free: laniakea=2 voyager=-1 galaxy=-2
+[08-12 10:44:37] PHASE FROMSCRATCH SUBMIT H3K9me3 -> laniakea jid=270304 (free left >=1)
+[08-12 10:44:45] PHASE FROMSCRATCH remaining=6 | free: laniakea=1 voyager=1 galaxy=-2
+[08-12 10:46:45] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 10:48:46] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 10:50:46] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 10:52:46] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 10:54:47] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 10:56:47] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 10:58:47] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 11:00:47] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 11:02:48] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 11:04:48] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 11:06:48] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 11:08:49] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 11:10:49] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:12:49] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:14:49] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:16:50] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:18:50] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:20:50] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:22:51] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:24:51] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:26:51] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:28:51] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:30:52] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:32:52] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:34:52] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:36:53] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:38:53] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:40:53] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:42:53] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:44:54] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:46:54] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:48:54] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:50:55] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-4
+[08-12 11:52:57] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 11:54:57] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 11:56:57] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 11:58:58] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 12:00:58] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 12:02:59] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 12:04:59] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 12:06:59] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 12:09:00] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 12:11:00] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:13:00] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:15:01] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:17:01] PHASE FROMSCRATCH SUBMIT H3K36me3 -> galaxy jid=270350 (free left >=1)
+[08-12 12:17:09] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:19:10] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:21:11] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:23:11] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:25:12] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:27:12] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:29:12] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:31:13] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:33:13] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:35:13] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:37:14] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:39:14] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:41:14] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:43:15] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:45:15] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:47:15] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:49:16] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:51:16] PHASE FROMSCRATCH remaining=6 | free: laniakea=0 voyager=1 galaxy=-4
+[08-12 12:53:16] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 12:55:16] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 12:57:17] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 12:59:17] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:01:17] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:03:18] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:05:18] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:07:18] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:09:19] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:11:19] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:13:19] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:15:19] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:17:20] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:19:20] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:21:20] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:23:21] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:25:21] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:27:21] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:29:21] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:31:22] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:33:22] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:35:22] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:37:23] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:39:23] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:41:23] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:43:23] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:45:24] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:47:24] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:49:24] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:51:25] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:53:25] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:55:25] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:57:25] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 13:59:26] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:01:26] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:03:26] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:05:26] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:07:27] PHASE FROMSCRATCH SUBMIT splice_sites_all -> galaxy jid=270364 (free left >=1)
+[08-12 14:07:35] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:09:35] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:11:35] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:13:36] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:15:36] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:17:36] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:19:36] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:21:37] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:23:37] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:25:37] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:27:37] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:29:38] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:31:38] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:33:38] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:35:38] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:37:39] PHASE FROMSCRATCH remaining=5 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-12 14:39:39] PHASE FROMSCRATCH remaining=5 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-12 14:41:39] PHASE FROMSCRATCH remaining=5 | free: laniakea=-2 voyager=1 galaxy=-3
+[08-12 14:43:40] PHASE FROMSCRATCH remaining=5 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-12 14:45:40] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:47:40] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:49:40] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:51:41] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:53:41] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:55:41] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:57:41] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 14:59:42] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 15:01:42] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 15:03:42] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 15:05:42] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 15:07:43] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 15:09:43] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 15:11:43] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 15:13:43] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 15:15:44] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 15:17:44] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 15:19:44] PHASE FROMSCRATCH remaining=5 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 15:21:44] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=0 galaxy=-3
+[08-12 15:23:45] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:25:45] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:27:45] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:29:45] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:31:45] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:33:46] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:35:46] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=0 galaxy=-3
+[08-12 15:37:46] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:39:46] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:41:47] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:43:47] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=0 galaxy=-3
+[08-12 15:45:47] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=0 galaxy=-3
+[08-12 15:47:47] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=0 galaxy=-3
+[08-12 15:49:48] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=0 galaxy=-3
+[08-12 15:51:48] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:53:48] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:55:49] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:57:49] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 15:59:49] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:01:49] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:03:50] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:05:50] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:07:50] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:09:50] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:11:51] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:13:51] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:15:51] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:17:51] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:19:51] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:21:52] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=0 galaxy=-3
+[08-12 16:23:52] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:25:52] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:27:52] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:29:53] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:31:53] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:33:53] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:35:53] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:37:54] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:39:54] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:41:54] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:43:54] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> galaxy jid=270403 (free left >=1)
+[08-12 16:44:03] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:46:03] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:48:03] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:50:03] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:52:03] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:54:04] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:56:04] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 16:58:04] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:00:04] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:02:05] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:04:05] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:06:05] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:08:05] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:10:06] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:12:06] PHASE FROMSCRATCH remaining=4 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 17:14:06] PHASE FROMSCRATCH remaining=4 | free: laniakea=1 voyager=1 galaxy=-3
+[08-12 17:16:06] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:18:07] PHASE FROMSCRATCH remaining=4 | free: laniakea=-1 voyager=1 galaxy=-3
+[08-12 17:20:08] PHASE FROMSCRATCH remaining=4 | free: laniakea=1 voyager=1 galaxy=-3
+[08-12 17:22:08] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:24:08] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:26:09] PHASE FROMSCRATCH remaining=4 | free: laniakea=2 voyager=1 galaxy=-3
+[08-12 17:28:09] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 17:30:09] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 17:32:09] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 17:34:10] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 17:36:10] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 17:38:10] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-2
+[08-12 17:40:10] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-1
+[08-12 17:42:11] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-1
+[08-12 17:44:11] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=0
+[08-12 17:46:11] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=0
+[08-12 17:48:11] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=0
+[08-12 17:50:12] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=0
+[08-12 17:52:12] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=0
+[08-12 17:54:12] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=0
+[08-12 17:56:12] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 17:58:14] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 18:00:14] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 18:02:15] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 18:04:15] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 18:06:15] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 18:08:15] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 18:10:16] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 18:12:16] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 18:14:16] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 18:16:16] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 18:18:17] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 18:20:17] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 18:22:17] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 18:24:17] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 18:26:18] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 18:28:18] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 18:30:18] PHASE FROMSCRATCH SUBMIT H3K36me3 -> galaxy jid=270596 (free left >=1)
+[08-12 18:30:26] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 18:32:26] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 18:34:27] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-2
+[08-12 18:36:27] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:38:27] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:40:28] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:42:28] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:44:28] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:46:28] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:48:29] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:50:29] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:52:29] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:54:29] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:56:30] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 18:58:30] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:00:30] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:02:30] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:04:31] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:06:31] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:08:31] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:10:31] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:12:32] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:14:32] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:16:32] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:18:32] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:20:33] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:22:33] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:24:33] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:26:33] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:28:33] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:30:34] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=0
+[08-12 19:32:34] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:34:34] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:36:34] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:38:35] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:40:35] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:42:35] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:44:35] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:46:36] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:48:36] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:50:36] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:52:36] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:54:37] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:56:37] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 19:58:37] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:00:37] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:02:38] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:04:38] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:06:38] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:08:38] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:10:38] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:12:39] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:14:39] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:16:39] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:18:39] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:20:40] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:22:40] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:24:40] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:26:40] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:28:41] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:30:41] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=2 galaxy=-3
+[08-12 20:32:41] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:34:41] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:36:42] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:38:42] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:40:42] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:42:42] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:44:43] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:46:43] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:48:43] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:50:43] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:52:43] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:54:44] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:56:44] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 20:58:44] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:00:44] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:02:45] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:04:45] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:06:45] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:08:46] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:10:46] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:12:46] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:14:47] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:16:47] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:18:47] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:20:48] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:22:48] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 21:24:48] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:26:48] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:28:49] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:30:49] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:32:49] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:34:49] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 21:36:50] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 21:38:50] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:40:50] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=1 galaxy=-3
+[08-12 21:42:51] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 21:44:51] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:46:51] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:48:51] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 21:50:52] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 21:52:52] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 21:54:52] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 21:56:53] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=0 galaxy=-3
+[08-12 21:58:53] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:00:53] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:02:53] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:04:54] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:06:54] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:08:54] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:10:54] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:12:55] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:14:55] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:16:55] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:18:55] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:20:56] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:22:56] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:24:56] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3
+[08-12 22:26:56] PHASE FROMSCRATCH remaining=3 | free: laniakea=0 voyager=3 galaxy=-3

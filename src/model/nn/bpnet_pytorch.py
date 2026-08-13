@@ -48,6 +48,46 @@ class BPNet(nn.Module):
         }
 
 
+class BPNetWidth(BPNet):
+    """Width-parametrized BPNet (R1.3 param-match): IDENTICAL architecture to BPNet but with a
+    configurable channel width ``C`` (BPNet hard-codes C=64).
+
+    Why a *subclass*: the embedding front-ends in BPNetClassifier (latefuse_onehot / replaceK) gate on
+    ``isinstance(self.backbone, BPNet)`` and reach into ``self.stem`` / ``self.profile_head`` etc. A
+    subclass passes that isinstance check, so the matched-size student supports the SAME arms as the
+    original-size student (no special-casing needed downstream). Structure is byte-for-byte the original:
+    a Conv1d(4,C,25) + ReLU stem, 9 dilated (uncapped 2**i, i=1..9) Residual blocks, plus the profile /
+    total_count heads (kept so the deployable-backbone param accounting matches `original`).
+
+    C=61 makes backbone+classifier = 110,477; with the replace4 (D->4) embedding adapter (10,244) the
+    deployable total = 120,721 ~= the one-hot baseline 121,094 (diff -373), removing the embedding
+    student's capacity advantage so any accuracy delta is purely the input representation.
+    """
+
+    def __init__(self, channels: int = 61):
+        nn.Module.__init__(self)  # bypass BPNet.__init__ (which hard-codes C=64); rebuild at width C
+        C = channels
+        self.channels = C
+        self.stem = nn.Sequential(
+            nn.Conv1d(4, C, 25, padding="same"),
+            nn.ReLU(),
+            *[
+                Residual(
+                    nn.Sequential(nn.Conv1d(C, C, 3, padding="same", dilation=2**i), nn.ReLU())
+                )
+                for i in range(1, 10)
+            ],
+        )
+        self.profile_head = nn.Sequential(
+            nn.ConvTranspose1d(C, 2, 25, padding=12),
+            Rearrange("b c l -> b l c"),
+        )
+        self.total_count_head = nn.Sequential(
+            Reduce("b c l -> b c", "mean"),
+            nn.Linear(C, 2),
+        )
+
+
 if __name__ == "__main__":
     model = BPNet()
 

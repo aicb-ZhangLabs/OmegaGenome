@@ -1,0 +1,600 @@
+[08-07 03:44:11] === fs_grid_loop v2 start (DRYRUN=0): 54 arms; cache-file gate + per-arm CSVs ===
+  splice_sites_donors        replace4  INFLIGHT(264048)
+  splice_sites_all           replace4  INFLIGHT(264049)
+  promoter_all               replace4  INFLIGHT(264248)
+  promoter_tata              replace4  DONE
+  promoter_no_tata           replace4  INFLIGHT(264249)
+  H3K4me3                    replace4  READY
+  H2AFZ                      replaceK  DONE
+  H2AFZ                      onehot    READY
+  H2AFZ                      replace4  READY
+  H2AFZ                      latefuse  READY
+  H3K27ac                    replaceK  DONE
+  H3K27ac                    onehot    READY
+  H3K27ac                    replace4  READY
+  H3K27ac                    latefuse  READY
+  H3K27me3                   replaceK  INFLIGHT(264039)
+  H3K27me3                   onehot    READY
+  H3K27me3                   replace4  READY
+  H3K27me3                   latefuse  READY
+  H3K36me3                   replaceK  INFLIGHT(264040)
+  H3K36me3                   onehot    READY
+  H3K36me3                   replace4  READY
+  H3K36me3                   latefuse  READY
+  H3K4me1                    replaceK  INFLIGHT(264041)
+  H3K4me1                    onehot    READY
+  H3K4me1                    replace4  READY
+  H3K4me1                    latefuse  READY
+  H3K4me2                    replaceK  INFLIGHT(264042)
+  H3K4me2                    onehot    READY
+  H3K4me2                    replace4  READY
+  H3K4me2                    latefuse  READY
+  H3K9ac                     replaceK  INFLIGHT(264043)
+  H3K9ac                     onehot    READY
+  H3K9ac                     replace4  READY
+  H3K9ac                     latefuse  READY
+  H3K9me3                    replaceK  INFLIGHT(264044)
+  H3K9me3                    onehot    READY
+  H3K9me3                    replace4  READY
+  H3K9me3                    latefuse  READY
+  H4K20me1                   replaceK  INFLIGHT(264045)
+  H4K20me1                   onehot    READY
+  H4K20me1                   replace4  READY
+  H4K20me1                   latefuse  READY
+  enhancers                  replaceK  DONE
+  enhancers                  onehot    READY
+  enhancers                  replace4  READY
+  enhancers                  latefuse  READY
+  enhancers_types            replaceK  INFLIGHT(264046)
+  enhancers_types            onehot    READY
+  enhancers_types            replace4  READY
+  enhancers_types            latefuse  READY
+  splice_sites_acceptors     replaceK  INFLIGHT(264047)
+  splice_sites_acceptors     onehot    READY
+  splice_sites_acceptors     replace4  READY
+  splice_sites_acceptors     latefuse  READY
+[08-07 03:44:13] CLASSIFY totals: DONE=4 INFLIGHT=13 READY=37 WAIT=0  (of 54)
+[08-07 03:44:17] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 03:48:08] submitted enhancers:latefuse -> node=voyager jid=264250 (attempt 1)
+[08-07 03:50:42] remaining=50 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 03:54:49] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 03:56:23] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 03:57:57] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 03:59:33] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:01:07] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:02:42] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:04:16] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:05:51] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:07:25] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:08:59] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:10:33] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:12:07] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:13:41] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:15:15] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:16:49] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:18:23] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 04:19:57] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:21:32] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:23:06] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:24:41] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:26:16] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:27:49] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:29:23] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:30:58] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:32:33] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:34:07] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:35:40] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:37:14] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:38:49] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:40:25] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:42:00] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:43:36] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:45:10] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:46:44] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:48:19] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:49:55] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:51:28] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:53:02] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:54:35] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:56:09] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:57:43] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 04:59:16] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:00:49] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:02:23] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:03:57] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:05:31] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:07:04] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:08:37] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:10:11] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:11:44] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:13:18] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:14:52] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:16:25] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:17:58] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:19:32] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:21:06] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:22:39] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:24:13] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:25:47] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:27:21] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:28:55] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:30:29] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:32:02] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:33:36] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:35:10] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:36:44] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:38:17] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:39:51] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:41:26] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:43:00] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:44:35] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:46:09] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:47:42] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:49:16] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:50:50] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:52:24] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:53:58] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:55:33] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:57:07] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 05:58:40] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 06:00:14] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 06:01:48] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:03:22] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:04:56] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:06:30] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:08:04] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:09:37] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:11:11] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:12:45] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:14:18] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:15:52] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:17:26] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:18:59] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:20:33] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 06:22:06] remaining=50 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 06:23:40] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:25:13] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:26:47] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:28:20] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:29:53] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:31:27] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:33:00] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:34:34] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:36:07] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:37:40] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:39:14] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:40:47] remaining=50 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:42:18] submitted H3K4me3:replace4 -> node=laniakea jid=264256 (attempt 1)
+[08-07 06:42:24] remaining=49 submitted_this_pass=1 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:43:57] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:45:31] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:47:05] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:48:38] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:50:12] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:51:46] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=8/7 voyager=4/3
+[08-07 06:53:20] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=8/7 voyager=4/3
+[08-07 06:54:53] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:56:27] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:58:00] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 06:59:34] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:01:07] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:02:41] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:04:14] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:05:47] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:07:21] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:08:54] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:10:28] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:12:01] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:13:34] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:15:07] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:16:41] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:18:14] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:19:47] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:21:21] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:22:54] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:24:27] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:26:00] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:27:34] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:29:07] remaining=49 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 07:30:40] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:32:13] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:33:47] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:35:20] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:36:53] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:38:26] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:40:00] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:41:33] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:43:06] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:44:39] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:46:13] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:47:46] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:49:19] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:50:53] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:52:26] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:53:59] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:55:33] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:57:06] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 07:58:40] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 08:00:13] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 08:01:46] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:03:20] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:04:53] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:06:26] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:08:00] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:09:34] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:11:07] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:12:41] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:14:15] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:15:48] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:17:22] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:18:55] remaining=48 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 08:20:28] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 08:22:12] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 08:24:02] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 08:25:35] remaining=48 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 08:27:06] submitted H2AFZ:onehot -> node=galaxy jid=264261 (attempt 1)
+[08-07 08:27:12] remaining=47 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 08:28:46] remaining=47 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 08:30:20] remaining=47 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 08:31:53] remaining=46 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:33:26] remaining=46 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:34:56] submitted H2AFZ:latefuse -> node=galaxy jid=264262 (attempt 1)
+[08-07 08:35:02] remaining=45 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:36:35] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:38:09] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:39:42] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:41:15] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:42:48] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:44:21] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:45:54] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:47:27] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:49:01] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:50:35] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:52:07] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:53:41] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:55:14] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:56:47] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:58:20] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 08:59:53] remaining=45 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:01:24] submitted H3K27ac:onehot -> node=galaxy jid=264263 (attempt 1)
+[08-07 09:01:30] remaining=44 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:03:03] remaining=44 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:04:36] remaining=44 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:06:06] submitted H3K27ac:replace4 -> node=laniakea jid=264264 (attempt 1)
+[08-07 09:06:12] remaining=43 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:07:45] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:09:19] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:10:53] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:12:26] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:13:59] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:15:33] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:17:06] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:18:39] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:20:12] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:21:45] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:23:18] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:24:50] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:26:23] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:27:56] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:29:29] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:31:02] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:32:36] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:34:09] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:35:41] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:37:14] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:38:47] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:40:20] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:41:53] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:43:26] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:44:59] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:46:32] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:48:04] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:49:37] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:51:10] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:52:43] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:54:17] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:55:49] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:57:22] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 09:58:55] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:00:28] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:02:01] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:03:34] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:05:07] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:06:40] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:08:13] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:09:46] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:11:19] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:12:52] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:14:25] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:15:58] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:17:31] remaining=43 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 10:19:04] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:20:37] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:22:10] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:23:43] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:25:16] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:26:49] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:28:22] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:29:55] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:31:28] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:33:01] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:34:34] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:36:07] remaining=43 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:37:37] submitted H3K27ac:latefuse -> node=laniakea jid=264266 (attempt 1)
+[08-07 10:37:43] remaining=42 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:39:16] remaining=42 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:40:47] submitted H3K27me3:onehot -> node=laniakea jid=264267 (attempt 1)
+[08-07 10:40:52] remaining=41 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:42:26] remaining=41 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:44:01] remaining=41 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:45:35] remaining=41 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:47:08] remaining=40 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:48:39] submitted H3K27me3:replace4 -> node=laniakea jid=264268 (attempt 1)
+[08-07 10:48:42] submitted H3K27me3:latefuse -> node=laniakea jid=264269 (attempt 1)
+[08-07 10:48:47] remaining=39 submitted_this_pass=2 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:50:20] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:51:53] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:53:27] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:55:01] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:56:34] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:58:07] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 10:59:39] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:01:12] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:02:45] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:04:17] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:05:50] remaining=39 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:07:20] submitted H3K36me3:onehot -> node=laniakea jid=264270 (attempt 1)
+[08-07 11:07:26] remaining=38 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:08:59] remaining=38 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:10:29] submitted H3K36me3:replace4 -> node=galaxy jid=264271 (attempt 1)
+[08-07 11:10:35] remaining=37 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:12:07] remaining=37 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:13:40] remaining=37 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:15:10] submitted H3K36me3:latefuse -> node=laniakea jid=264272 (attempt 1)
+[08-07 11:15:15] remaining=36 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:16:48] remaining=36 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:18:20] remaining=36 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:19:53] remaining=36 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:21:26] remaining=36 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:22:59] remaining=36 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:24:31] remaining=36 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:26:04] remaining=36 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:27:36] remaining=36 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:29:07] submitted H3K4me1:onehot -> node=laniakea jid=264273 (attempt 1)
+[08-07 11:29:12] remaining=35 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:30:45] remaining=35 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:32:19] remaining=35 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:33:49] submitted H3K4me1:onehot -> node=laniakea jid=264274 (attempt 2)
+[08-07 11:33:54] remaining=35 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:35:27] remaining=35 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:37:00] remaining=35 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:38:30] submitted H3K4me1:onehot -> node=laniakea jid=264275 (attempt 3)
+[08-07 11:38:36] remaining=35 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:40:08] remaining=35 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:41:41] remaining=35 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:43:11] submitted H3K4me1:replace4 -> node=laniakea jid=264276 (attempt 1)
+[08-07 11:43:16] remaining=35 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:44:47] submitted H3K4me1:latefuse -> node=laniakea jid=264277 (attempt 1)
+[08-07 11:44:52] remaining=34 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:46:26] remaining=34 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:47:57] submitted H3K4me2:onehot -> node=galaxy jid=264278 (attempt 1)
+[08-07 11:48:02] remaining=33 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:49:34] remaining=33 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:51:06] remaining=33 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:52:39] remaining=33 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:54:11] remaining=33 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:55:43] remaining=33 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:57:15] remaining=33 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 11:58:47] remaining=33 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:00:19] remaining=33 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:01:51] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:03:24] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:04:56] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:06:28] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:08:00] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:09:32] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:11:04] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:12:36] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:14:09] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:15:41] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:17:13] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:18:46] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:20:18] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:21:51] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:23:24] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:24:57] remaining=33 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 12:26:29] remaining=32 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:28:01] remaining=32 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:29:35] remaining=32 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:31:05] submitted H3K4me2:replace4 -> node=voyager jid=264284 (attempt 1)
+[08-07 12:31:11] remaining=31 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:32:43] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:34:16] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:35:46] submitted H3K4me2:latefuse -> node=galaxy jid=264286 (attempt 1)
+[08-07 12:35:52] remaining=31 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:37:24] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:38:56] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:40:29] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:42:01] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:43:33] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:45:05] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:46:37] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:48:10] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:49:42] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:51:14] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:52:46] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:54:18] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:55:50] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:57:22] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 12:58:54] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 13:00:27] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 13:01:59] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 13:03:33] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 13:05:05] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 13:06:37] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 13:08:10] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 13:09:44] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 13:11:16] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 13:12:48] remaining=31 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 13:14:20] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:15:53] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:17:25] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:18:57] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:20:30] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:22:01] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:23:34] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:25:07] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:26:39] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:28:11] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:29:43] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:31:15] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:32:47] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:34:19] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:35:50] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:37:24] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:38:55] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:40:27] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:41:59] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:43:32] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:45:03] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:46:35] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:48:10] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:49:43] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:51:16] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:52:48] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:54:21] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:55:52] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:57:25] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 13:58:57] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 14:00:29] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 14:02:01] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:03:33] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:05:05] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:06:37] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:08:09] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:09:41] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:11:13] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:12:45] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:14:17] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:15:49] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:17:21] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:18:53] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:20:25] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:21:57] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:23:29] remaining=31 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:24:59] submitted H3K9ac:onehot -> node=laniakea jid=264301 (attempt 1)
+[08-07 14:25:04] remaining=30 submitted_this_pass=1 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:26:36] remaining=30 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 14:28:07] submitted H3K9ac:replace4 -> node=voyager jid=264302 (attempt 1)
+[08-07 14:28:11] remaining=29 submitted_this_pass=1 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 14:29:44] remaining=29 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 14:31:16] remaining=29 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 14:32:48] remaining=28 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:34:21] remaining=28 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:35:53] remaining=28 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:37:24] remaining=28 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:38:56] remaining=28 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:40:28] remaining=28 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:42:00] remaining=28 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:43:32] remaining=28 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:45:04] remaining=28 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:46:34] submitted H3K9ac:latefuse -> node=laniakea jid=264303 (attempt 1)
+[08-07 14:46:39] remaining=27 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:48:12] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:49:43] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:51:15] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:52:47] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:54:19] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:55:51] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:57:23] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 14:58:55] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:00:26] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:01:58] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:03:30] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:05:02] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:06:33] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:08:05] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:09:37] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:11:09] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:12:39] submitted H2AFZ:latefuse -> node=galaxy jid=264305 (attempt 2)
+[08-07 15:12:42] submitted H3K27ac:latefuse -> node=galaxy jid=264306 (attempt 2)
+[08-07 15:12:45] submitted H3K27me3:replace4 -> node=galaxy jid=264307 (attempt 2)
+[08-07 15:12:48] submitted H3K27me3:latefuse -> node=laniakea jid=264308 (attempt 2)
+[08-07 15:12:51] submitted H3K36me3:replace4 -> node=laniakea jid=264309 (attempt 2)
+[08-07 15:12:54] submitted H3K36me3:latefuse -> node=laniakea jid=264310 (attempt 2)
+[08-07 15:12:57] submitted H3K4me1:replace4 -> node=laniakea jid=264311 (attempt 2)
+[08-07 15:13:00] submitted H3K4me1:latefuse -> node=laniakea jid=264312 (attempt 2)
+[08-07 15:13:03] submitted H3K4me2:latefuse -> node=laniakea jid=264313 (attempt 2)
+[08-07 15:13:07] submitted H3K9ac:replace4 -> node=laniakea jid=264314 (attempt 2)
+[08-07 15:13:10] submitted H3K9ac:latefuse -> node=voyager jid=264315 (attempt 2)
+[08-07 15:13:14] remaining=27 submitted_this_pass=11 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:14:47] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:16:20] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:17:50] submitted H2AFZ:latefuse -> node=galaxy jid=264316 (attempt 3)
+[08-07 15:17:53] submitted H3K27ac:latefuse -> node=galaxy jid=264317 (attempt 3)
+[08-07 15:17:56] submitted H3K27me3:replace4 -> node=galaxy jid=264318 (attempt 3)
+[08-07 15:17:59] submitted H3K27me3:latefuse -> node=laniakea jid=264319 (attempt 3)
+[08-07 15:18:03] submitted H3K36me3:replace4 -> node=laniakea jid=264320 (attempt 3)
+[08-07 15:18:06] submitted H3K36me3:latefuse -> node=laniakea jid=264321 (attempt 3)
+[08-07 15:18:09] submitted H3K4me1:replace4 -> node=laniakea jid=264322 (attempt 3)
+[08-07 15:18:12] submitted H3K4me1:latefuse -> node=laniakea jid=264323 (attempt 3)
+[08-07 15:18:15] submitted H3K4me2:latefuse -> node=laniakea jid=264324 (attempt 3)
+[08-07 15:18:18] submitted H3K9ac:replace4 -> node=laniakea jid=264325 (attempt 3)
+[08-07 15:18:21] submitted H3K9ac:latefuse -> node=voyager jid=264326 (attempt 3)
+[08-07 15:18:26] remaining=27 submitted_this_pass=11 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:19:59] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:21:32] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:23:04] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:24:39] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:26:13] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:27:45] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:29:18] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:30:50] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:32:23] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:33:55] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:35:27] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:37:00] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:38:32] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:40:04] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:41:37] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:43:09] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:44:41] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:46:13] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:48:13] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:50:07] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:51:39] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:53:09] submitted H3K9me3:onehot -> node=galaxy jid=264330 (attempt 1)
+[08-07 15:53:14] remaining=27 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:54:46] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:56:26] submitted H3K9me3:replace4 -> node=galaxy jid=264332 (attempt 1)
+[08-07 15:56:31] submitted H3K9me3:latefuse -> node=laniakea jid=264333 (attempt 1)
+[08-07 15:56:36] submitted H4K20me1:onehot -> node=laniakea jid=264334 (attempt 1)
+[08-07 15:56:45] submitted H4K20me1:replace4 -> node=laniakea jid=264335 (attempt 1)
+[08-07 15:56:55] submitted H4K20me1:latefuse -> node=laniakea jid=264336 (attempt 1)
+[08-07 15:57:00] submitted enhancers:onehot -> node=voyager jid=264337 (attempt 1)
+[08-07 15:57:09] remaining=27 submitted_this_pass=6 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 15:58:47] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 16:00:19] remaining=27 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 16:01:52] remaining=27 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 16:03:24] remaining=27 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 16:05:03] remaining=27 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=3/3
+[08-07 16:06:35] remaining=27 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 16:08:08] remaining=27 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 16:09:40] remaining=27 submitted_this_pass=0 | galaxy=6/5 laniakea=7/7 voyager=4/3
+[08-07 16:11:13] remaining=26 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 16:12:45] remaining=26 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 16:14:17] remaining=26 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 16:15:50] remaining=26 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 16:17:22] remaining=25 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 16:18:52] submitted enhancers:replace4 -> node=galaxy jid=264345 (attempt 1)
+[08-07 16:18:56] remaining=25 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=3/3
+[08-07 16:20:27] submitted enhancers_types:onehot -> node=galaxy jid=264347 (attempt 1)
+[08-07 16:20:31] remaining=25 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 16:22:02] remaining=25 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 16:23:33] remaining=25 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 16:25:04] remaining=25 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 16:26:35] submitted enhancers_types:replace4 -> node=laniakea jid=264349 (attempt 1)
+[08-07 16:26:38] remaining=24 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 16:28:09] submitted promoter_all:replace4 -> node=galaxy jid=264350 (attempt 1)
+[08-07 16:28:13] remaining=24 submitted_this_pass=1 | galaxy=5/5 laniakea=7/7 voyager=4/3
+[08-07 16:29:44] remaining=24 submitted_this_pass=0 | galaxy=5/5 laniakea=7/7 voyager=4/3

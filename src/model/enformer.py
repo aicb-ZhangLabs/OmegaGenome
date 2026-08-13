@@ -27,8 +27,27 @@ class EnformerFeatureExtractor(nn.Module):
         return_features=False,
         return_multi_features=False,
     ):
-        # Enformer expects input_ids directly
-        output = self.model(input_ids, return_embeddings=True)
+        # Enformer expects input_ids directly. In fp16, enformer_pytorch internally
+        # one-hots integer input_ids to a float32 tensor (data.seq_indices_to_one_hot ->
+        # .float()), which then mismatches the model's half weights at the first
+        # conv/batch-norm (cudnn_batch_norm: FloatTensor input vs HalfTensor weight).
+        # Autocast does NOT rescue this because the model was explicitly .half()'d. Fix:
+        # when the model is half/bf16, pre-one-hot here and cast to the model's parameter
+        # dtype, then pass the float one-hot directly (enformer skips its internal one-hot
+        # for a non-long tensor). fp32 path unchanged (long input_ids passed through).
+        model_input = input_ids
+        if isinstance(input_ids, torch.Tensor) and input_ids.dtype == torch.long:
+            try:
+                param_dtype = next(self.model.parameters()).dtype
+            except StopIteration:
+                param_dtype = None
+            if param_dtype in (torch.float16, torch.bfloat16):
+                from enformer_pytorch.data import seq_indices_to_one_hot
+
+                model_input = seq_indices_to_one_hot(input_ids).to(
+                    device=input_ids.device, dtype=param_dtype
+                )
+        output = self.model(model_input, return_embeddings=True)
         embeddings = output[1]  # Second element is embeddings
 
         # Pool embeddings
@@ -182,6 +201,7 @@ class EnformerTokenizer:
         truncation=True,
         max_length=1024,
         return_tensors="pt",
+        **kwargs,
     ):
         """
         Encode sequences for Enformer.
@@ -192,6 +212,12 @@ class EnformerTokenizer:
             truncation: Whether to truncate
             max_length: Maximum sequence length
             return_tensors: Return format ('pt' for PyTorch)
+            **kwargs: absorbs HF-tokenizer kwargs that don't apply to Enformer's
+                direct char-encoding (e.g. ``add_special_tokens``). Enformer has no
+                special tokens, so these are accepted and ignored for interface
+                compatibility with benchmark_teacher_inference (fixes the
+                "unexpected keyword argument 'add_special_tokens'" TypeError that
+                previously dropped Enformer from the latency table).
 
         Returns:
             Dict with 'input_ids' and 'attention_mask'

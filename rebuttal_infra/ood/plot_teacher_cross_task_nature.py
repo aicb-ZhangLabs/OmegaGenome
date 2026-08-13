@@ -67,30 +67,51 @@ def annotated_heatmap(model, disp):
 
 
 def five_panel():
-    """All five foundation models side by side (shared mako 0..1 scale, one colorbar)."""
-    fig, axes = plt.subplots(1, 5, figsize=(34.0, 8.2))
+    """All five foundation models in a 2-per-row grid (3 rows x 2 cols; shared mako 0..1 scale, one
+    colorbar). Two panels per row with large fonts and tight spacing so every 18x18 heatmap and its
+    task labels stay legible when the figure is scaled to a page; the empty sixth slot holds the
+    shared colorbar."""
+    ncol = 2
+    nrow = (len(MODELS) + ncol - 1) // ncol  # 3
+    fig, axes = plt.subplots(nrow, ncol, figsize=(15.0, 6.9 * nrow))
+    axflat = axes.ravel()
     labels = None
     im = None
-    for ax, (model, disp) in zip(axes, MODELS):
+    for idx, (model, disp) in enumerate(MODELS):
+        ax = axflat[idx]
         tasks, mat = read_matrix(_csv(model))
         n = len(tasks)
         if labels is None:
             labels = short_labels(tasks)
         cmap = MCC_CMAP_OBJ.copy(); cmap.set_bad(color="white")
         im = ax.imshow(np.ma.masked_invalid(mat), cmap=cmap, vmin=0.0, vmax=1.0, aspect="equal")
-        ax.set_title(disp, fontsize=24, fontweight="bold", pad=10)
-        ax.set_xticks(range(n)); ax.set_xticklabels(labels, rotation=90, fontsize=10)
+        ax.set_title(disp, fontsize=30, fontweight="bold", pad=6)
+        ax.set_xticks(range(n))
         ax.set_yticks(range(n))
-        ax.set_yticklabels(labels if ax is axes[0] else [""] * n, fontsize=10)
-        ax.set_xlabel("evaluation task", fontsize=15, labelpad=8)
-        if ax is axes[0]:
-            ax.set_ylabel("teacher fine-tuned on task", fontsize=15, labelpad=8)
-        ax.tick_params(length=3)
-    fig.suptitle("Teacher cross-task transfer across five foundation models (R2.3): "
-                 "strong in-task (bright diagonal), sharp off-task drop",
-                 fontsize=26, fontweight="bold", y=1.02)
-    cb = fig.colorbar(im, ax=axes, fraction=0.012, pad=0.01)
-    cb.set_label("transfer MCC", fontsize=18); cb.ax.tick_params(labelsize=13)
+        # y-tick labels only on the left column; x-tick labels only on the bottom panel of each
+        # column (shared axes -> no title/label collisions between rows, and more compact)
+        if idx % ncol == 0:
+            ax.set_yticklabels(labels, fontsize=18)
+            ax.set_ylabel("teacher fine-tuned on task", fontsize=22, labelpad=5)
+        else:
+            ax.set_yticklabels([""] * n)
+        if (idx + ncol) >= len(MODELS):  # bottom-most panel in this column
+            ax.set_xticklabels(labels, rotation=90, fontsize=18)
+            ax.set_xlabel("evaluation task", fontsize=22, labelpad=5)
+        else:
+            ax.set_xticklabels([""] * n)
+        ax.tick_params(length=3, pad=1.5)
+    # hide unused trailing axes (the odd 6th slot)
+    for k in range(len(MODELS), len(axflat)):
+        axflat[k].axis("off")
+    fig.suptitle("Teacher cross-task transfer — five foundation models (R2.3)",
+                 fontsize=32, fontweight="bold", y=0.997)
+    # large colorbar in the empty bottom-right slot so no panel width is stolen
+    cb = fig.colorbar(im, ax=axflat[len(MODELS):].tolist() or [axflat[-1]],
+                      fraction=0.42, pad=0.02, aspect=18)
+    cb.set_label("transfer MCC", fontsize=24); cb.ax.tick_params(labelsize=19)
+    # tight spacing -> compact (no inter-row x-labels now); bbox_inches='tight' crops the margin
+    fig.subplots_adjust(left=0.07, right=0.99, top=0.955, bottom=0.05, hspace=0.10, wspace=0.05)
     for ext in ("png", "pdf"):
         out = os.path.join(HERE, f"teacher_cross_task_5panel_nature.{ext}")
         fig.savefig(out, dpi=300, bbox_inches="tight")

@@ -1,0 +1,22 @@
+
+========== R2.3 CROSS-TASK TRANSFER SUMMARY ==========
+--- BINARY sub-matrix (16 tasks) ---
+  mean DIAGONAL MCC     = +0.6196
+  mean OFF-DIAGONAL MCC = +0.2832
+  drop (diag - off)     = +0.3364
+--- MULTICLASS (3-label) sub-matrix (2 tasks) ---
+  mean DIAGONAL MCC     = +0.6511
+  mean OFF-DIAGONAL MCC = +0.1180
+  drop (diag - off)     = +0.5331
+
+--- best OFF-DIAGONAL transfer per student (top by MCC) ---
+  promoter_all             -> promoter_tata             MCC=+0.7700  (diag +0.7196)
+  promoter_no_tata         -> promoter_all              MCC=+0.7038  (diag +0.7056)
+  H3K9ac                   -> promoter_no_tata          MCC=+0.6344  (diag +0.5143)
+  H3K4me3                  -> promoter_no_tata          MCC=+0.6163  (diag +0.6283)
+  H3K27me3                 -> H4K20me1                  MCC=+0.5561  (diag +0.5903)
+  H2AFZ                    -> promoter_no_tata          MCC=+0.5559  (diag +0.4987)
+  H3K4me2                  -> H4K20me1                  MCC=+0.5517  (diag +0.5391)
+  H3K36me3                 -> H4K20me1                  MCC=+0.5460  (diag +0.5910)
+  enhancers                -> promoter_no_tata          MCC=+0.5401  (diag +0.5082)
+  H4K20me1                 -> H3K27me3                  MCC=+0.5387  (diag +0.6262)

@@ -1,0 +1,201 @@
+[08-09 23:51:49] === DRYRUN: classify Phase-1 (from-scratch) work; no submits ===
+  promoter_tata            TODO
+  promoter_no_tata         TODO
+  promoter_all             TODO
+  enhancers                TODO
+  enhancers_types          TODO
+  splice_sites_donors      TODO
+  splice_sites_acceptors   TODO
+  H3K4me3                  TODO
+  splice_sites_all         TODO
+  H3K4me2                  TODO
+  H3K4me1                  TODO
+  H3K9ac                   TODO
+  H3K9me3                  TODO
+  H3K27ac                  TODO
+  H3K27me3                 TODO
+  H3K36me3                 TODO
+  H4K20me1                 TODO
+  H2AFZ                    TODO
+[08-09 23:51:49] classify(run_fromscratch_ntbase): DONE=0 REMAINING=18 of 18
+[08-09 23:52:00] ########## ntbase grid loop START (pid 2469911) ##########
+[08-09 23:52:00] ########## ntbase grid loop START (pid 2469911) ##########
+[08-09 23:52:01] === PHASE FROMSCRATCH START: folder=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml NODES='voyager laniakea galaxy' caps galaxy=5 laniakea=4 ===
+[08-09 23:52:01] === PHASE FROMSCRATCH START: folder=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml NODES='voyager laniakea galaxy' caps galaxy=5 laniakea=4 ===
+[08-09 23:52:01] PHASE FROMSCRATCH SUBMIT promoter_tata -> node=voyager jid=265881 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_tata.csv
+[08-09 23:52:01] PHASE FROMSCRATCH SUBMIT promoter_tata -> node=voyager jid=265881 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_tata.csv
+[08-09 23:52:06] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> node=laniakea jid=265882 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_no_tata.csv
+[08-09 23:52:06] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> node=laniakea jid=265882 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_no_tata.csv
+[08-09 23:52:11] PHASE FROMSCRATCH SUBMIT promoter_all -> node=laniakea jid=265883 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_all.csv
+[08-09 23:52:11] PHASE FROMSCRATCH SUBMIT promoter_all -> node=laniakea jid=265883 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_all.csv
+[08-09 23:52:16] PHASE FROMSCRATCH SUBMIT enhancers -> node=laniakea jid=265884 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers.csv
+[08-09 23:52:16] PHASE FROMSCRATCH SUBMIT enhancers -> node=laniakea jid=265884 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers.csv
+[08-09 23:52:21] PHASE FROMSCRATCH SUBMIT enhancers_types -> node=laniakea jid=265885 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers_types.csv
+[08-09 23:52:21] PHASE FROMSCRATCH SUBMIT enhancers_types -> node=laniakea jid=265885 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers_types.csv
+[08-09 23:52:26] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> node=galaxy jid=265886 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_donors.csv
+[08-09 23:52:26] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> node=galaxy jid=265886 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_donors.csv
+[08-09 23:52:33] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> node=galaxy jid=265887 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_acceptors.csv
+[08-09 23:52:33] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> node=galaxy jid=265887 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_acceptors.csv
+[08-09 23:52:38] PHASE FROMSCRATCH SUBMIT H3K4me3 -> node=galaxy jid=265888 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me3.csv
+[08-09 23:52:38] PHASE FROMSCRATCH SUBMIT H3K4me3 -> node=galaxy jid=265888 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me3.csv
+[08-09 23:52:45] PHASE FROMSCRATCH SUBMIT splice_sites_all -> node=galaxy jid=265889 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_all.csv
+[08-09 23:52:45] PHASE FROMSCRATCH SUBMIT splice_sites_all -> node=galaxy jid=265889 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_all.csv
+[08-09 23:52:50] PHASE FROMSCRATCH SUBMIT H3K4me2 -> node=galaxy jid=265890 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me2.csv
+[08-09 23:52:50] PHASE FROMSCRATCH SUBMIT H3K4me2 -> node=galaxy jid=265890 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me2.csv
+[08-09 23:52:56] PHASE FROMSCRATCH remaining=18 submitted=10 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-09 23:52:56] PHASE FROMSCRATCH remaining=18 submitted=10 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-09 23:54:27] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-09 23:54:27] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-09 23:55:58] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-09 23:55:58] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-09 23:57:28] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-09 23:57:28] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-09 23:58:59] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-09 23:58:59] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:00:29] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:00:29] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:40:30] === DRYRUN: classify Phase-1 (from-scratch) work; no submits ===
+  promoter_tata            TODO
+  promoter_no_tata         TODO
+  promoter_all             TODO
+  enhancers                TODO
+  enhancers_types          TODO
+  splice_sites_donors      INFLIGHT
+  splice_sites_acceptors   INFLIGHT
+  H3K4me3                  INFLIGHT
+  splice_sites_all         INFLIGHT
+  H3K4me2                  INFLIGHT
+  H3K4me1                  TODO
+  H3K9ac                   TODO
+  H3K9me3                  TODO
+  H3K27ac                  TODO
+  H3K27me3                 TODO
+  H3K36me3                 TODO
+  H4K20me1                 TODO
+  H2AFZ                    TODO
+[08-10 00:40:30] classify(run_fromscratch_ntbase): DONE=0 REMAINING=18 of 18
+[08-10 00:40:49] ########## ntbase grid loop START (pid 2545521) ##########
+[08-10 00:40:49] ########## ntbase grid loop START (pid 2545521) ##########
+slurm/ntbase_grid_loop.sh: line 89: subdir: unbound variable
+[08-10 00:41:47] ########## ntbase grid loop START (pid 2547106) ##########
+[08-10 00:42:45] ########## ntbase grid loop START (pid 2548499) ##########
+[08-10 00:42:45] ########## ntbase grid loop START (pid 2548499) ##########
+[08-10 00:42:45] === PHASE FROMSCRATCH START: subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml NODES='voyager laniakea galaxy' caps galaxy=5 laniakea=4 voyager=1 ===
+[08-10 00:42:45] === PHASE FROMSCRATCH START: subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml NODES='voyager laniakea galaxy' caps galaxy=5 laniakea=4 voyager=1 ===
+[08-10 00:42:45] PHASE FROMSCRATCH SUBMIT promoter_tata -> node=voyager jid=265892 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_tata.csv
+[08-10 00:42:45] PHASE FROMSCRATCH SUBMIT promoter_tata -> node=voyager jid=265892 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_tata.csv
+[08-10 00:42:50] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> node=laniakea jid=265893 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_no_tata.csv
+[08-10 00:42:50] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> node=laniakea jid=265893 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_no_tata.csv
+[08-10 00:42:55] PHASE FROMSCRATCH SUBMIT promoter_all -> node=laniakea jid=265894 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_all.csv
+[08-10 00:42:55] PHASE FROMSCRATCH SUBMIT promoter_all -> node=laniakea jid=265894 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_all.csv
+[08-10 00:43:00] PHASE FROMSCRATCH SUBMIT enhancers -> node=laniakea jid=265895 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers.csv
+[08-10 00:43:00] PHASE FROMSCRATCH SUBMIT enhancers -> node=laniakea jid=265895 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers.csv
+[08-10 00:43:05] PHASE FROMSCRATCH SUBMIT enhancers_types -> node=laniakea jid=265896 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers_types.csv
+[08-10 00:43:05] PHASE FROMSCRATCH SUBMIT enhancers_types -> node=laniakea jid=265896 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers_types.csv
+[08-10 00:43:10] PHASE FROMSCRATCH remaining=18 submitted=5 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:43:10] PHASE FROMSCRATCH remaining=18 submitted=5 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:44:40] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:44:40] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:46:11] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:46:11] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:47:41] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:47:41] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:49:11] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:49:11] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:50:41] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:50:41] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 00:52:11] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:52:11] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 00:53:42] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:53:42] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 00:55:12] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:55:12] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 00:56:42] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:56:42] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 00:58:12] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:58:12] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 00:59:42] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 00:59:42] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 01:02:46] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 01:02:46] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+squeue: error: slurm_msg_sendto: address:port=128.195.6.118:7002 msg_type=2049: Unexpected missing socket error
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 01:24:18] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 01:24:18] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 01:25:48] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 01:25:48] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 01:27:18] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 01:27:18] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 01:28:49] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 01:28:49] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 01:30:19] PHASE FROMSCRATCH SUBMIT promoter_tata -> node=voyager jid=265918 (attempt 2) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_tata.csv
+[08-10 01:30:19] PHASE FROMSCRATCH SUBMIT promoter_tata -> node=voyager jid=265918 (attempt 2) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_tata.csv
+[08-10 01:30:24] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> node=laniakea jid=265919 (attempt 2) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_no_tata.csv
+[08-10 01:30:24] PHASE FROMSCRATCH SUBMIT promoter_no_tata -> node=laniakea jid=265919 (attempt 2) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_no_tata.csv
+[08-10 01:30:29] PHASE FROMSCRATCH SUBMIT promoter_all -> node=laniakea jid=265920 (attempt 2) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_all.csv
+[08-10 01:30:29] PHASE FROMSCRATCH SUBMIT promoter_all -> node=laniakea jid=265920 (attempt 2) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_promoter_all.csv
+[08-10 01:30:34] PHASE FROMSCRATCH SUBMIT enhancers -> node=laniakea jid=265921 (attempt 2) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers.csv
+[08-10 01:30:34] PHASE FROMSCRATCH SUBMIT enhancers -> node=laniakea jid=265921 (attempt 2) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers.csv
+sbatch: error: slurm_msg_sendto: address:port=128.195.6.118:7002 msg_type=4003: Unexpected missing socket error
+sbatch: error: Batch job submission failed: Unexpected missing socket error
+[08-10 01:34:03] PHASE FROMSCRATCH SUBMIT FAILED enhancers_types -> node=laniakea (see log)
+[08-10 01:34:03] PHASE FROMSCRATCH SUBMIT FAILED enhancers_types -> node=laniakea (see log)
+[08-10 01:35:39] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> node=laniakea jid=265945 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_donors.csv
+[08-10 01:35:39] PHASE FROMSCRATCH SUBMIT splice_sites_donors -> node=laniakea jid=265945 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_donors.csv
+[08-10 01:37:40] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> node=galaxy jid=265954 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_acceptors.csv
+[08-10 01:37:40] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> node=galaxy jid=265954 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_acceptors.csv
+[08-10 01:47:40] PHASE FROMSCRATCH SUBMIT H3K4me3 -> node=galaxy jid=266017 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me3.csv
+[08-10 01:47:40] PHASE FROMSCRATCH SUBMIT H3K4me3 -> node=galaxy jid=266017 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me3.csv
+[08-10 01:47:47] PHASE FROMSCRATCH SUBMIT splice_sites_all -> node=galaxy jid=266018 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_all.csv
+[08-10 01:47:47] PHASE FROMSCRATCH SUBMIT splice_sites_all -> node=galaxy jid=266018 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_all.csv
+[08-10 01:47:54] PHASE FROMSCRATCH SUBMIT H3K4me2 -> node=galaxy jid=266020 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me2.csv
+[08-10 01:47:54] PHASE FROMSCRATCH SUBMIT H3K4me2 -> node=galaxy jid=266020 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me2.csv
+[08-10 01:48:00] PHASE FROMSCRATCH SUBMIT H3K4me1 -> node=galaxy jid=266021 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me1.csv
+[08-10 01:48:00] PHASE FROMSCRATCH SUBMIT H3K4me1 -> node=galaxy jid=266021 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me1.csv
+[08-10 01:48:05] PHASE FROMSCRATCH remaining=18 submitted=10 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 01:48:05] PHASE FROMSCRATCH remaining=18 submitted=10 inflight=10 | galaxy=5/5 laniakea=4/4
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 01:49:36] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 01:49:36] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=10 | galaxy=5/5 laniakea=4/4
+[08-10 01:54:03] ########## ntbase grid loop START (pid 2689325) ##########
+[08-10 01:54:03] ########## ntbase grid loop START (pid 2689325) ##########
+[08-10 01:54:03] === PHASE FROMSCRATCH START: subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml NODES='laniakea voyager' caps galaxy=4 laniakea=6 voyager=2 ===
+[08-10 01:54:03] === PHASE FROMSCRATCH START: subdir=run_fromscratch_ntbase yaml=best_hp_nt_fromscratch.yaml NODES='laniakea voyager' caps galaxy=4 laniakea=6 voyager=2 ===
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 01:54:03] PHASE FROMSCRATCH SUBMIT enhancers_types -> node=laniakea jid=266063 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers_types.csv
+[08-10 01:54:03] PHASE FROMSCRATCH SUBMIT enhancers_types -> node=laniakea jid=266063 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_enhancers_types.csv
+[08-10 01:54:08] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> node=laniakea jid=266064 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_acceptors.csv
+[08-10 01:54:08] PHASE FROMSCRATCH SUBMIT splice_sites_acceptors -> node=laniakea jid=266064 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_splice_sites_acceptors.csv
+[08-10 01:54:14] PHASE FROMSCRATCH SUBMIT H3K4me3 -> node=voyager jid=266065 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me3.csv
+[08-10 01:54:14] PHASE FROMSCRATCH SUBMIT H3K4me3 -> node=voyager jid=266065 (attempt 1) csv=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results/r13_ntbase_H3K4me3.csv
+[08-10 01:54:19] PHASE FROMSCRATCH remaining=18 submitted=3 inflight=8 | galaxy=0/4 laniakea=6/6
+[08-10 01:54:19] PHASE FROMSCRATCH remaining=18 submitted=3 inflight=8 | galaxy=0/4 laniakea=6/6
+slurm/ntbase_grid_loop.sh: line 60: [: 0
+0: integer expression expected
+[08-10 01:55:49] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=8 | galaxy=0/4 laniakea=6/6
+[08-10 01:55:49] PHASE FROMSCRATCH remaining=18 submitted=0 inflight=8 | galaxy=0/4 laniakea=6/6

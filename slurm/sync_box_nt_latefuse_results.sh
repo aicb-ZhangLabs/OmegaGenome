@@ -1,0 +1,25 @@
+#!/bin/bash
+# Durable pull-sync: copy the vast.ai box's R1.3 NT-2.5B latefuse result CSVs to the lab galaxy SSD.
+# Parallel to sync_box_dnabert2_results.sh (which pulls *dnabert2*.csv) -- this one pulls
+# *nt_latefuse_box*.csv only, so it never touches the DNABERT-2 sync's files nor the lab's own
+# _embmatched.csv (NT replaceK). Runs FROM a machine with BOTH the SSD mount and SSH to the box.
+# Loops every INTERVAL seconds; resilient to box SSH blips.
+set -u
+SSH_OPTS="-o ConnectTimeout=25 -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -p 26925"
+BOX=root@115.124.123.240
+BOX_RESULTS=/workspace/rebuttal_nt/run/results
+SSD_RESULTS=/tmp/galaxy_srv_disk00/pengchx3/rebuttal_nt/run/results
+INTERVAL="${INTERVAL:-300}"
+LOG=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/slurm/sync_box_nt_latefuse.log
+
+mkdir -p "$SSD_RESULTS"
+echo "[$(date)] sync loop start: $BOX:$BOX_RESULTS/*nt_latefuse_box*.csv -> $SSD_RESULTS (every ${INTERVAL}s)" >>"$LOG"
+while true; do
+  # --update so we never clobber a newer copy.
+  rsync -a --update -e "ssh $SSH_OPTS" \
+    --include='*nt_latefuse_box*.csv' --exclude='*' \
+    "$BOX:$BOX_RESULTS/" "$SSD_RESULTS/" >>"$LOG" 2>&1
+  rc=$?
+  echo "[$(date)] rsync rc=$rc; files now: $(ls "$SSD_RESULTS"/*nt_latefuse_box*.csv 2>/dev/null | wc -l)" >>"$LOG"
+  sleep "$INTERVAL"
+done

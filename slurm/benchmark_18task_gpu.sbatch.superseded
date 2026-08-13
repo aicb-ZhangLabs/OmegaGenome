@@ -1,0 +1,58 @@
+#!/bin/bash
+# FULL 18-task latency+memory sweep on GPU. ALL 5 teachers (NT-2.5B, Caduceus, Enformer,
+# DNABERT-2, Carbon-3B) + BPNet `original` student, over all 18 NT-benchmark tasks.
+# laniakea (6000-Ada 49G, GLIBC 2.35) so Caduceus + the 2.5-3B teachers all run in one
+# process. Per-task: n_test, native_seq_len, padded seq_len, per-batch latency, whole-
+# dataset total_time (extrapolated for the big teachers from a fixed batch count, flagged),
+# peak memory, params, precision, batch_size, device, gpu_name/cpu_name.
+#
+# Big teachers (NT-2.5B, Carbon-3B): time a fixed 8 batches/task -> extrapolated whole-set
+# time (full 18x188-batch passes for 2.5-3B models would take many hours). Enformer/DNABERT-2
+# fp16 hit dtype mismatches -> a separate fp32 leg handles them (benchmark_18task_gpu_fp32).
+# Student runs the full test set.
+#   sbatch slurm/benchmark_18task_gpu.sbatch
+#SBATCH --job-name=bench18-gpu
+#SBATCH --nodes=1
+#SBATCH --partition=zhanglab.p
+#SBATCH --nodelist=laniakea
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=80G
+#SBATCH --requeue
+#SBATCH --time=30-00:00:00
+#SBATCH --output=slurm-%x-%j.out
+
+set -euo pipefail
+REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+cd "$REPO"
+
+HOME_HF="$REPO/.hf_cache"
+export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
+export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
+export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export TOKENIZERS_PARALLELISM=false WANDB_MODE=offline
+export HF_HUB_DISABLE_XET=1
+export HF_XET_CACHE="$REPO/.hf_cache/xet"
+export CARBON_TEACHER_DIR=/home/pengchx3/carbon_teachers/carbon_3b_lora
+export OUTPUT_PATH=/tmp/galaxy_srv_disk00/pengchx3/latency_18task/gpu
+
+PY="$REPO/.venv_carbon_portable/bin/python"
+
+echo "=== node + GPU ==="; hostname; ldd --version | head -1
+"$PY" -c "import torch; print('device:', torch.cuda.get_device_name(0))"
+
+# Big teachers (NT/Carbon3b) timed on 8 batches/task -> extrapolated whole-dataset time.
+# Caduceus is small (runs fast). Enformer/DNABERT-2 done in the fp32 leg.
+"$PY" -u -m src.train.benchmark_inference full_benchmark \
+    --task-names H2AFZ H3K27ac H3K27me3 H3K36me3 H3K4me1 H3K4me2 H3K4me3 H3K9ac H3K9me3 H4K20me1 promoter_all promoter_no_tata promoter_tata enhancers enhancers_types splice_sites_all splice_sites_acceptors splice_sites_donors \
+    --teachers nt caduceus carbon3b \
+    --student-sizes original \
+    --precision fp16 \
+    --batch-size 16 \
+    --max-length 1000 \
+    --warmup-batches 3 \
+    --num-batches 8 \
+    --skip-on-error
+
+echo "=== 18-TASK GPU SWEEP DONE; CSVs under $OUTPUT_PATH/benchmark/ ==="
+find "$OUTPUT_PATH/benchmark" -name "all_benchmark.csv" 2>/dev/null | head

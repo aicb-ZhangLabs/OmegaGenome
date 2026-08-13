@@ -1,0 +1,4 @@
+[specs 15:27:10] splice_original_confirm_specs.txt: 2 jobs to submit
+[15:27:10] (1/2) -> laniakea job=241918 :: carbon-raw-original --task-names splice_sites_acceptors --distillation-config.weight-ce 0.5 --distillation-config.weight-kl 0.0 --distillation-config.weight-mse 0.0 --distillation-config.temperature 0.5 --trainer-config.epochs 200 --trainer-config.early-stop-patience 0 --random-state 0 --slurm-config.mode run
+[15:27:15] (2/2) -> laniakea job=241919 :: carbon-raw-original --task-names splice_sites_donors --distillation-config.weight-ce 0.5 --distillation-config.weight-kl 0.0 --distillation-config.weight-mse 0.0 --distillation-config.temperature 0.5 --trainer-config.epochs 200 --trainer-config.early-stop-patience 0 --random-state 0 --slurm-config.mode run
+[specs 15:27:20] all 2 submitted

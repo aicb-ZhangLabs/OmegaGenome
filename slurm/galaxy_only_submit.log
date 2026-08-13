@@ -1,0 +1,6 @@
+[Mon Aug 10 01:42:45 AM PDT 2026] GALAXY-ONLY relaunch start; CAP=5; CACHE_BASE=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase
+[Mon Aug 10 01:42:45 AM PDT 2026] submitted promoter_tata -> jid 265983 (galaxy)
+[Mon Aug 10 01:42:49 AM PDT 2026] submitted promoter_no_tata -> jid 265984 (galaxy)
+[Mon Aug 10 01:42:53 AM PDT 2026] submitted promoter_all -> jid 265985 (galaxy)
+[Mon Aug 10 01:42:57 AM PDT 2026] submitted enhancers -> jid 265986 (galaxy)
+[Mon Aug 10 01:43:02 AM PDT 2026] submitted enhancers_types -> jid 265987 (galaxy)
