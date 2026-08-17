@@ -52,21 +52,21 @@ _Auto-refreshed as each assay's kd+base pair (same seed) completes, via `scripts
 
 | assay | distilled (mean Pearson) | from-scratch | Δ (distilled−baseline) | seed pairs |
 |---|---|---|---|---|
-| atac | 0.6499 | 0.6277 | **0.0222** | 1 |
+| atac | 0.6504±0.0005 | 0.6264±0.0013 | **0.0240±0.0018** | 2 |
 | histone | 0.6217 | 0.5834 | **0.0383** | 1 |
 | rnaseq | 0.5078 | 0.4761 | **0.0317** | 1 |
 | procap | (no complete seed pair yet) | | | 3 |
 | eclip | (no complete seed pair yet) | | | 3 |
 
-**atac** — per-track distilled−baseline Δ (mean over 1 seed pair(s)):
+**atac** — per-track distilled−baseline Δ (mean over 2 seed pair(s)):
 
 | track | Δ Pearson | distilled | baseline |
 |---|---|---|---|
-| ENCSR325NFE | **0.0146** | 0.7452 | 0.7307 |
-| ENCSR410DWV | **0.0291** | 0.6535 | 0.6244 |
-| ENCSR487QSB | **0.0266** | 0.6080 | 0.5814 |
-| ENCSR628PLS | **0.0279** | 0.5364 | 0.5085 |
-| ENCSR814RGG | **0.0128** | 0.7065 | 0.6936 |
+| ENCSR325NFE | **0.0157±0.0012** | 0.7452 | 0.7307 |
+| ENCSR410DWV | **0.0319±0.0029** | 0.6535 | 0.6244 |
+| ENCSR487QSB | **0.0277±0.0011** | 0.6080 | 0.5814 |
+| ENCSR628PLS | **0.0297±0.0018** | 0.5364 | 0.5085 |
+| ENCSR814RGG | **0.0150±0.0022** | 0.7065 | 0.6936 |
 
 **histone** — per-track distilled−baseline Δ (mean over 1 seed pair(s)):
 
@@ -87,6 +87,6 @@ _Auto-refreshed as each assay's kd+base pair (same seed) completes, via `scripts
 | ENCSR619DQO_P | **0.0241** | 0.5850 | 0.5609 |
 | ENCSR701YIC | **0.0239** | 0.4503 | 0.4264 |
 
-_Still running / not yet paired (21): atac/8m_base_s1, atac/8m_base_s2, atac/8m_kd_s2, eclip/8m_base_s0, eclip/8m_base_s1, eclip/8m_base_s2, eclip/8m_kd_s0, eclip/8m_kd_s1, eclip/8m_kd_s2, histone/8m_base_s1, histone/8m_base_s2, histone/8m_kd_s1, histone/8m_kd_s2, procap/8m_base_s0, procap/8m_base_s1, procap/8m_base_s2, procap/8m_kd_s1, procap/8m_kd_s2, rnaseq/8m_base_s1, rnaseq/8m_base_s2, rnaseq/8m_kd_s2_
+_Still running / not yet paired (18): atac/8m_base_s2, atac/8m_kd_s2, eclip/8m_base_s0, eclip/8m_base_s1, eclip/8m_base_s2, eclip/8m_kd_s0, eclip/8m_kd_s2, histone/8m_base_s2, histone/8m_kd_s1, histone/8m_kd_s2, procap/8m_base_s0, procap/8m_base_s1, procap/8m_base_s2, procap/8m_kd_s1, procap/8m_kd_s2, rnaseq/8m_base_s1, rnaseq/8m_base_s2, rnaseq/8m_kd_s2_
 
 **Complete pairs so far (3 assays: atac, histone, rnaseq):** distillation helps on **every track of every completed assay**, under the data-matched setting where the ONLY difference is the 650M teacher's soft targets. Table refreshes as remaining assays/seeds land.
