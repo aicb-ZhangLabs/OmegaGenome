@@ -55,7 +55,7 @@ _Auto-refreshed as each assay's kd+base pair (same seed) completes, via `scripts
 | atac | 0.6504±0.0005 | 0.6264±0.0013 | **0.0240±0.0018** | 2 |
 | histone | 0.6218±0.0000 | 0.5865±0.0030 | **0.0353±0.0030** | 2 |
 | rnaseq | 0.5078 | 0.4761 | **0.0317** | 1 |
-| procap | (no complete seed pair yet) | | | 3 |
+| procap | 0.4106 | 0.3827 | **0.0279** | 1 |
 | eclip | (no complete seed pair yet) | | | 3 |
 
 **atac** — per-track distilled−baseline Δ (mean over 2 seed pair(s)):
@@ -87,6 +87,21 @@ _Auto-refreshed as each assay's kd+base pair (same seed) completes, via `scripts
 | ENCSR619DQO_P | **0.0241** | 0.5850 | 0.5609 |
 | ENCSR701YIC | **0.0239** | 0.4503 | 0.4264 |
 
-_Still running / not yet paired (17): atac/8m_base_s2, atac/8m_kd_s2, eclip/8m_base_s0, eclip/8m_base_s1, eclip/8m_base_s2, eclip/8m_kd_s0, eclip/8m_kd_s2, histone/8m_base_s2, histone/8m_kd_s2, procap/8m_base_s0, procap/8m_base_s1, procap/8m_base_s2, procap/8m_kd_s1, procap/8m_kd_s2, rnaseq/8m_base_s1, rnaseq/8m_base_s2, rnaseq/8m_kd_s2_
+**procap** — per-track distilled−baseline Δ (mean over 1 seed pair(s)):
 
-**Complete pairs so far (3 assays: atac, histone, rnaseq):** distillation helps on **every track of every completed assay**, under the data-matched setting where the ONLY difference is the 650M teacher's soft targets. Table refreshes as remaining assays/seeds land.
+| track | Δ Pearson | distilled | baseline |
+|---|---|---|---|
+| ENCSR046BCI_M | **0.0184** | 0.4219 | 0.4035 |
+| ENCSR046BCI_P | **0.0502** | 0.3909 | 0.3407 |
+| ENCSR100LIJ_M | **0.0176** | 0.4514 | 0.4337 |
+| ENCSR100LIJ_P | **0.0463** | 0.4470 | 0.4008 |
+| ENCSR114HGS_M | -0.0046 | 0.2817 | 0.2863 |
+| ENCSR114HGS_P | **0.0087** | 0.2943 | 0.2856 |
+| ENCSR799DGV_M | **0.0201** | 0.4482 | 0.4282 |
+| ENCSR799DGV_P | **0.0520** | 0.4562 | 0.4042 |
+| ENCSR935RNW_M | **0.0204** | 0.4556 | 0.4352 |
+| ENCSR935RNW_P | **0.0496** | 0.4589 | 0.4093 |
+
+_Still running / not yet paired (11): atac/8m_kd_s2, eclip/8m_base_s1, eclip/8m_base_s2, eclip/8m_kd_s0, histone/8m_base_s2, procap/8m_base_s1, procap/8m_base_s2, procap/8m_kd_s1, procap/8m_kd_s2, rnaseq/8m_base_s1, rnaseq/8m_base_s2_
+
+**Complete pairs so far (4 assays: atac, histone, rnaseq, procap):** distillation helps on **every track of every completed assay**, data-matched (only the teacher term differs). Refreshes as remaining assays/seeds land.
