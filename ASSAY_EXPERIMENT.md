@@ -47,28 +47,37 @@ Results per run: `$SSD/ntv3_targets/assay_experiment/<assay>/8m_<mode>_s<seed>/n
 once seed 0 lands.
 
 ## Results — per-assay distilled vs from-scratch (8M student)
-_Auto-refreshed as each assay's kd+base pair (same seed) completes, via
-`scripts/aggregate_assay_results.py --root $SSD/ntv3_targets/assay_experiment`. Δ = distilled − from-scratch
-per-track Pearson (positive = distillation helps). Numbers are mean±std over completed seed pairs._
+_Auto-refreshed as each assay's kd+base pair (same seed) completes, via `scripts/aggregate_assay_results.py`. Δ = distilled − from-scratch per-track Pearson (positive = distillation helps); mean±std over completed seed pairs._
+
 
 | assay | distilled (mean Pearson) | from-scratch | Δ (distilled−baseline) | seed pairs |
 |---|---|---|---|---|
-| atac | (base s0 in, kd s0 finishing) | | | 3 |
-| histone | (kd s0 in, base s0 finishing) | | | 3 |
-| rnaseq | 0.5078 | 0.4761 | **+0.0317** | 1 (s0) |
-| procap | (kd s0 in, base s0 pending) | | | 3 |
-| eclip | (running) | | | 3 |
+| atac | 0.6499 | 0.6277 | **0.0222** | 1 |
+| histone | (no complete seed pair yet) | | | 3 |
+| rnaseq | 0.5078 | 0.4761 | **0.0317** | 1 |
+| procap | (no complete seed pair yet) | | | 3 |
+| eclip | (no complete seed pair yet) | | | 3 |
 
-**rnaseq** — per-track distilled−baseline Δ (seed 0):
+**atac** — per-track distilled−baseline Δ (mean over 1 seed pair(s)):
 
 | track | Δ Pearson | distilled | baseline |
 |---|---|---|---|
-| ENCSR527JGN_M | **+0.0382** | 0.3711 | 0.3329 |
-| ENCSR527JGN_P | **+0.0378** | 0.5529 | 0.5150 |
-| ENCSR619DQO_M | **+0.0347** | 0.5799 | 0.5452 |
-| ENCSR619DQO_P | **+0.0241** | 0.5850 | 0.5609 |
-| ENCSR701YIC   | **+0.0239** | 0.4503 | 0.4264 |
+| ENCSR325NFE | **0.0146** | 0.7452 | 0.7307 |
+| ENCSR410DWV | **0.0291** | 0.6535 | 0.6244 |
+| ENCSR487QSB | **0.0266** | 0.6080 | 0.5814 |
+| ENCSR628PLS | **0.0279** | 0.5364 | 0.5085 |
+| ENCSR814RGG | **0.0128** | 0.7065 | 0.6936 |
 
-**First complete pair (rnaseq s0): distillation improves every track** (+0.024 to +0.038, mean +0.032),
-i.e. the 650M teacher's soft targets lift the 8M student's RNA-seq coverage prediction across all 5
-tracks under the data-matched setting. Remaining assays/seeds refresh this table as they land.
+**rnaseq** — per-track distilled−baseline Δ (mean over 1 seed pair(s)):
+
+| track | Δ Pearson | distilled | baseline |
+|---|---|---|---|
+| ENCSR527JGN_M | **0.0382** | 0.3711 | 0.3329 |
+| ENCSR527JGN_P | **0.0378** | 0.5529 | 0.5150 |
+| ENCSR619DQO_M | **0.0347** | 0.5799 | 0.5452 |
+| ENCSR619DQO_P | **0.0241** | 0.5850 | 0.5609 |
+| ENCSR701YIC | **0.0239** | 0.4503 | 0.4264 |
+
+_Still running / not yet paired (22): atac/8m_base_s1, atac/8m_base_s2, atac/8m_kd_s2, eclip/8m_base_s0, eclip/8m_base_s1, eclip/8m_base_s2, eclip/8m_kd_s0, eclip/8m_kd_s1, eclip/8m_kd_s2, histone/8m_base_s0, histone/8m_base_s1, histone/8m_base_s2, histone/8m_kd_s1, histone/8m_kd_s2, procap/8m_base_s0, procap/8m_base_s1, procap/8m_base_s2, procap/8m_kd_s1, procap/8m_kd_s2, rnaseq/8m_base_s1, rnaseq/8m_base_s2, rnaseq/8m_kd_s2_
+
+**Complete pairs so far:** every assay measured shows distillation helping on **every track** (atac s0 Δ+0.022, rnaseq s0 Δ+0.032 — 10/10 tracks positive), under the data-matched setting where the ONLY difference is the 650M teacher's soft targets. Table refreshes as the remaining assays/seeds land.
