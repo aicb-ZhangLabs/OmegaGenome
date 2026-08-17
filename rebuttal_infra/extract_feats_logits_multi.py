@@ -228,8 +228,15 @@ def hf_teacher_feats_logits(teacher, ckpt, device, seqs, bs=8):
             # DNABERT-2's Triton flash-attn kernel breaks on Triton>=3 (trans_b removed). Null the
             # qkvpacked fn in its trust_remote_code module so attention falls back to pure PyTorch
             # (numerically equivalent; only the kernel differs). Must run AFTER load (modules appear
-            # in sys.modules then). Reuses the repo helper from distill_nt_embedding.
-            from src.train.distill_nt_embedding import _disable_dnabert2_flash_attn
+            # in sys.modules then). Null DNABERT-2's Triton flash-attn fn -> pure-PyTorch attention.
+            def _disable_dnabert2_flash_attn():
+                import sys as _s
+                _p = 0
+                for _nm, _mod in list(_s.modules.items()):
+                    if _mod is not None and _nm.endswith("bert_layers") and hasattr(_mod, "flash_attn_qkvpacked_func"):
+                        _mod.flash_attn_qkvpacked_func = None
+                        _p += 1
+                return _p
             n = _disable_dnabert2_flash_attn()
             print(f"[dnabert2] Triton flash-attn disabled on {n} module(s) -> PyTorch attention", flush=True)
         model = model.to(device).eval()
@@ -238,8 +245,7 @@ def hf_teacher_feats_logits(teacher, ckpt, device, seqs, bs=8):
 
     def _dnabert2_pooled(ids, mask, n_drop):
         """DNABERT-2's BertModel runs on UNPADDED [total_nnz, H] states, so output_hidden_states are
-        unpadded and can't be mean-pooled per sequence. Reuse the repo's padded-slice trick (see
-        distill_nt_embedding.make_dnabert2_hidden_state_fn): temporarily keep the first n_layers-n_drop
+        unpadded and can't be mean-pooled per sequence. Use the padded-slice trick: temporarily keep the first n_layers-n_drop
         encoder blocks and call output_all_encoded_layers=False -> a clean PADDED [B,T,H] state, then
         mean over T. n_drop=0 -> last layer; n_drop=1 -> penultimate. model.bert is the underlying
         BertModel of the seq-cls wrapper."""

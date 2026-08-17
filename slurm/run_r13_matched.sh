@@ -4,18 +4,17 @@
 # Per task, at that task's BEST-HP config (rebuttal_infra/best_hp/best_hp_nt.yaml) + the SAME strong
 # NT-2.5B teacher (best-val staged adapter), this runs ALL arms into ONE per-task results CSV so the
 # CSV is a self-contained "best-HP one-hot baseline vs best-HP pretrained-embedding" table:
-#   (1) onehot                         <- BASELINE: must reproduce the paper's distilled student
-#   (2) nt_embedding replaceK   nt     <- embedding variant (widened stem, no D->4 bottleneck)
-#   (3) nt_embedding latefuse_onehot nt<- FAITHFUL: real one-hot stem + deep NT-embedding concat
-#   (4) nt_embedding replaceK   dnabert2
-#   (5) nt_embedding latefuse_onehot dnabert2
+#   (1) onehot                            <- BASELINE: reproduces the paper's distilled student
+#   (2) nt_embedding replaceK  nt_tokenemb  <- token-emb input + widened-stem 0.12M BPNet
+#   (3) nt_embedding replace4  nt_tokenemb  <- token-emb input + D->4 bottleneck 0.12M BPNet
+#   (4) nt_embedding replace4c64 nt_tokenemb<- token-emb input + FULL C=64 BPNet (0.12M, arch-identical)
 # All arms share the per-task per-bp embedding cache (cache_embedding/), computed once on the first
 # nt arm and reused (the dnabert2 arms write a separate dnabert2-tagged cache once). embedding-layer
 # = mid (driver default). The one-hot baseline does NOT touch the embedding cache.
 #
 # Usage:
 #   sbatch --nodelist=voyager --export=ALL,TASK=splice_sites_all run_r13_matched.sh
-#   SMOKE=1 ARMS="onehot replaceK_nt" EPOCHS=2 ...  (smoke: subset + few steps, verify config)
+#   SMOKE=1 ARMS="onehot replaceK_tokenemb" EPOCHS=2 ...  (smoke: subset + few steps, verify config)
 #
 #SBATCH --job-name=r13-match
 #SBATCH --nodes=1
@@ -74,8 +73,8 @@ TASK="${TASK:?set TASK=<task_name> via --export}"
 RESULTS_CSV="${RESULTS_CSV:-$RNT/run/results/r13_matched_${TASK}.csv}"
 BEST_HP="${BEST_HP:-/home/pengchx3/text-dna/OmegaGenome_Revise_202606/rebuttal_infra/best_hp/best_hp_nt.yaml}"
 
-# Arms to run (default = full matched set). Override with ARMS="onehot replaceK_nt" for a smoke.
-ARMS="${ARMS:-onehot replaceK_nt latefuse_onehot_nt replaceK_dnabert2 latefuse_onehot_dnabert2}"
+# Arms to run (default = full matched set). Override with ARMS="onehot replaceK_tokenemb" for a smoke.
+ARMS="${ARMS:-onehot replaceK_tokenemb replace4_tokenemb replace4c64_tokenemb}"
 
 COMMON=( --task-name "$TASK" --best-hp "$BEST_HP" --results-csv "$RESULTS_CSV"
          --nt-parent "$NT_PARENT" --cache-base "$CACHE_BASE"
@@ -121,16 +120,9 @@ echo "RESULTS_CSV=$RESULTS_CSV  ARMS='$ARMS'  SMOKE=${SMOKE:-0} EPOCHS=${EPOCHS:
 arm_csv_sig() {
   case "$1" in
     onehot)                   echo ',onehot,' ;;
-    replace4_ntbase)          echo ',nt_base,mid,replace4,' ;;
-    replace4c64_ntbase)       echo ',nt_base,mid,replace4,' ;;   # same front_end string; isolated in its own RESULTS_CSV
-    replaceK_ntbase)          echo ',nt_base,mid,replaceK,' ;;
     replaceK_tokenemb)        echo ',nt_tokenemb,mid,replaceK,' ;;   # token-emb input + 0.12M BPNet
     replace4_tokenemb)        echo ',nt_tokenemb,mid,replace4,' ;;
     replace4c64_tokenemb)     echo ',nt_tokenemb,mid,replace4,' ;;   # frozen token-emb -> proj D->4 -> FULL C=64 BPNet
-    latefuse_onehot_ntbase)   echo ',nt_base,mid,latefuse_onehot,' ;;
-    replace4_nt)              echo ',nt,mid,replace4,' ;;
-    replaceK_nt)              echo ',nt,mid,replaceK,' ;;
-    latefuse_onehot_nt)       echo ',nt,mid,latefuse_onehot,' ;;
     *)                        echo '' ;;
   esac
 }
@@ -162,18 +154,9 @@ run_arm() {
 for arm in $ARMS; do
   case "$arm" in
     onehot)                    run_arm onehot --input-mode onehot ;;
-    replace4_nt)               run_arm replace4_nt --input-mode nt_embedding --embedding-source nt       --fusion replace4 ;;
-    replaceK_nt)               run_arm replaceK_nt --input-mode nt_embedding --embedding-source nt       --fusion replaceK ;;
-    latefuse_onehot_nt)        run_arm latefuse_onehot_nt --input-mode nt_embedding --embedding-source nt       --fusion latefuse_onehot ;;
-    replace4_ntbase)           run_arm replace4_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion replace4 ;;
-    replace4c64_ntbase)        run_arm replace4c64_ntbase --input-mode nt_embedding --embedding-source nt_base --fusion replace4 --model-size original ;;
-    replaceK_ntbase)           run_arm replaceK_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion replaceK ;;
     replaceK_tokenemb)         run_arm replaceK_tokenemb --input-mode nt_embedding --embedding-source nt_tokenemb --fusion replaceK ;;
     replace4_tokenemb)         run_arm replace4_tokenemb --input-mode nt_embedding --embedding-source nt_tokenemb --fusion replace4 ;;
     replace4c64_tokenemb)      run_arm replace4c64_tokenemb --input-mode nt_embedding --embedding-source nt_tokenemb --fusion replace4 --model-size original ;;
-    latefuse_onehot_ntbase)    run_arm latefuse_onehot_ntbase --input-mode nt_embedding --embedding-source nt_base   --fusion latefuse_onehot ;;
-    replaceK_dnabert2)         run_arm replaceK_dnabert2 --input-mode nt_embedding --embedding-source dnabert2 --fusion replaceK ;;
-    latefuse_onehot_dnabert2)  run_arm latefuse_onehot_dnabert2 --input-mode nt_embedding --embedding-source dnabert2 --fusion latefuse_onehot ;;
     *) echo "[WARN] unknown arm '$arm' skipped" ;;
   esac
 done

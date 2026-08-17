@@ -1,25 +1,23 @@
 #!/usr/bin/env python
-"""R1.3 rebuttal: NT-embedding-input BPNet distillation (one job per task, best-HP).
+"""R1.3 rebuttal: minimal-NT (frozen token-embedding) input BPNet distillation, one job per task.
 
 Reviewer R1.3: "In the baseline, one-hot encoding is used. Wouldn't it be more reasonable
 to use a sequence embedding from a model trained on lots of unlabeled data?"
 
-This driver runs the SAME NT-2.5B -> BPNet distillation as the one-hot baseline, but feeds the
-BPNet student PER-BP NT embeddings instead of one-hot (``input_mode='nt_embedding'``). Everything
-else is held fixed for an apples-to-apples comparison:
+This driver runs the SAME NT-2.5B -> BPNet distillation as the one-hot baseline, but replaces the
+BPNet student's one-hot input with NT-2.5B's FROZEN token (word) embedding lookup
+(``--input-mode nt_embedding --embedding-source nt_tokenemb``) -- a context-free per-6-mer table, NO
+2.5B forward. Everything else is held fixed for an apples-to-apples comparison:
   * teacher = the SAME finetuned NT-2.5B LoRA checkpoint (best val MCC) per task,
-  * KD targets = the SAME teacher logits (+ optional features) the one-hot run used (reused from /
-    written to the SAME ``data/cache`` via ``precompute_teacher_logits``),
+  * KD targets = the SAME teacher logits (+ optional features) the one-hot run used,
   * losses / best-ckpt-by-val-MCC / eval = the SAME ``DistillationModel`` + trainer helpers,
-  * hyperparameters = each task's BEST-HP row from ``rebuttal_infra/best_hp/best_hp_nt.yaml``.
-
-The ONLY differences vs the one-hot path: (1) the student input is per-bp NT embeddings (cached by
-``embedding_cache.precompute_perbp_embeddings``), and (2) the student has a tiny learned 1x1-conv
-``input_adapter`` mapping embedding_dim -> 4 channels. Both are gated; the one-hot path is untouched.
+  * hyperparameters = each task's BEST-HP row.
+``--input-mode onehot`` is the MATCHED CONTROL (same teacher/KD-targets/trainer/data-splits, one-hot
+BPNet student). This is the minimal-NT ablation reported in the paper (Table S9).
 
 Usage (one task):
     python -m src.train.distill_nt_embedding --task-name promoter_tata \
-        --best-hp rebuttal_infra/best_hp/best_hp_nt.yaml \
+        --best-hp rebuttal_infra/best_hp/best_hp_nt.yaml --wordemb <nt_wordemb.pt> \
         --results-csv <out.csv> [--epochs N] [--max-steps N] [--smoke]
 """
 
@@ -60,7 +58,7 @@ from src.data.dataset import (
     SeqDataset,
 )
 from src.trainer.utils import precompute_teacher_logits
-from src.trainer.embedding_cache import precompute_perbp_embeddings, embedding_cache_hit
+from src.trainer.embedding_cache import precompute_perbp_embeddings
 from src.trainer.distill_trainer import (
     evaluate,
     save_checkpoint,
@@ -75,95 +73,6 @@ NT_PARENT_PATH_DEFAULT = (
     "2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch20-10-17-revised-r32-fix-num-label"
 )
 NT_EMBEDDING_DIM = 2560  # NT-2.5B hidden size (per-token / per-bp embedding width)
-
-# DNABERT-2 embedding teacher (R1.3, fast variant): 117M BPE encoder, hidden size 768. Used ONLY as
-# the per-bp EMBEDDING source for the student input; the KD targets (logits/features) still come from
-# the SAME NT-2.5B teacher, so the comparison is purely "which embedding feeds the student input".
-DNABERT2_MODEL = "zhihan1996/DNABERT-2-117M"
-DNABERT2_EMBEDDING_DIM = 768
-
-
-def _disable_dnabert2_flash_attn() -> int:
-    """Force DNABERT-2's PyTorch attention fallback by nulling its Triton flash-attn fn.
-
-    DNABERT-2 (trust_remote_code) lands its ``bert_layers`` module in sys.modules under a
-    transformers_modules.* path. Setting ``flash_attn_qkvpacked_func`` to None there makes
-    BertUnpadSelfAttention take the pure-PyTorch branch (numerically equivalent; only the kernel
-    differs), avoiding the Triton>=3 ``trans_b`` incompat. Returns #modules patched. Mirrors the
-    helper in benchmark_inference.py.
-    """
-    import sys
-    patched = 0
-    for name, mod in list(sys.modules.items()):
-        if mod is None:
-            continue
-        # Match by the module suffix + the symbol's presence (robust to the local dir name, which may
-        # not contain "DNABERT" -- e.g. a 'dnabert2_local' assembled snapshot dir).
-        if name.endswith("bert_layers") and hasattr(mod, "flash_attn_qkvpacked_func"):
-            mod.flash_attn_qkvpacked_func = None
-            patched += 1
-    return patched
-
-
-def load_dnabert2_embedder(device: str, model_path: str = ""):
-    """Load base DNABERT-2-117M as an embedding teacher (tokenizer, model, hidden_size=768).
-
-    Uses ``AutoModel`` (the encoder, not a seq-classification head). The Triton flash-attn kernel is
-    disabled in-process (pure-PyTorch attention fallback) for Triton>=3 compatibility. ``model_path``
-    is a local assembled dir (offline); empty falls back to the HF id.
-    """
-    from transformers import AutoTokenizer, AutoModel
-    src = model_path or DNABERT2_MODEL
-    tok = AutoTokenizer.from_pretrained(src, trust_remote_code=True)
-    model = AutoModel.from_pretrained(src, trust_remote_code=True)
-    _patched = _disable_dnabert2_flash_attn()
-    print(f"[dnabert2] Triton flash-attn disabled on {_patched} module(s) -> PyTorch attention fallback")
-    model = model.to(device).eval()
-    hidden = int(getattr(model.config, "hidden_size", DNABERT2_EMBEDDING_DIM))
-    return tok, model, hidden
-
-
-def make_dnabert2_hidden_state_fn():
-    """Return a ``hidden_state_fn`` for precompute_perbp_embeddings that reads DNABERT-2 layer states.
-
-    DNABERT-2's ``BertModel`` returns ``(encoded_layers, pooled)`` (no HF ``hidden_states`` attr), and
-    its ``output_all_encoded_layers=True`` path emits UNPADDED ``[total_nnz, H]`` states (the pooler
-    even crashes on it). To read a clean PADDED ``[B, T, H]`` layer-L output we instead TEMPORARILY
-    slice ``encoder.layer`` to the first L blocks and call ``output_all_encoded_layers=False`` (returns
-    the padded last-of-the-slice state). embedding_layer=None -> middle (n//2); -1 -> all 12 layers
-    (full last layer); >=1 -> that many leading blocks; **0 -> the RAW BPE token embeddings** (the
-    pre-transformer ``model.embeddings`` output, no context -- the "learned BPE/byte encoding" control).
-    """
-    import torch.nn as nn
-
-    def _fn(model, input_ids, attention_mask, embedding_layer):
-        n_layers = len(model.encoder.layer)
-        if embedding_layer == 0:
-            # Layer 0 = raw BPE token embeddings BEFORE any transformer block (no context). Padded
-            # [B, T, 768] directly from the embedding module. token_type_ids default to zeros.
-            tti = torch.zeros_like(input_ids)
-            emb = model.embeddings(input_ids, tti)
-            return emb, 0
-        if embedding_layer is None:
-            keep = n_layers // 2
-        elif embedding_layer == -1 or embedding_layer >= n_layers:
-            keep = n_layers
-        else:
-            keep = max(1, embedding_layer)
-        orig = model.encoder.layer
-        try:
-            if keep != n_layers:
-                model.encoder.layer = nn.ModuleList(list(orig)[:keep])
-            seq_out, _ = model(
-                input_ids=input_ids, attention_mask=attention_mask,
-                output_all_encoded_layers=False,
-            )  # padded [B, T, 768]
-        finally:
-            model.encoder.layer = orig
-        return seq_out, keep
-
-    return _fn
-
 
 def load_best_hp(yaml_path: str, task_name: str) -> dict:
     """Return the best-HP dict for ``task_name`` from the rebuttal best_hp_nt.yaml.
@@ -250,23 +159,16 @@ def main():
                    help="force embedding-cache use on/off (default: off in --smoke, on otherwise). Set to 1 "
                         "in a smoke to EXERCISE the cache HIT (in-RAM) read path on the sshfs node.")
     p.add_argument("--input-mode", choices=["nt_embedding", "onehot"], default="nt_embedding",
-                   help="student input front-end. 'nt_embedding' (DEFAULT, the R1.3 experiment) feeds per-bp "
-                        "NT embeddings; 'onehot' is a MATCHED CONTROL that runs the SAME teacher/KD-targets/"
-                        "trainer/data-splits but with the one-hot BPNet student, for apples-to-apples diagnosis.")
-    p.add_argument("--embedding-source", choices=["nt", "nt_base", "dnabert2", "nt_tokenemb"], default="nt",
-                   help="WHICH pretrained model provides the student's per-bp INPUT embeddings. 'nt' "
-                        "(default) reuses the NT-2.5B FINE-TUNED teacher; 'nt_base' uses the RAW base "
-                        "NT-2.5B foundation model (NO LoRA, un-fine-tuned, hidden 2560); 'dnabert2' uses "
-                        "base DNABERT-2-117M (much faster, hidden 768). The KD TARGETS (logits/features) "
-                        "ALWAYS come from the NT-2.5B fine-tuned teacher either way, so this isolates the "
-                        "input-representation effect.")
+                   help="student input front-end. 'nt_embedding' (DEFAULT) feeds the frozen NT token-embedding "
+                        "lookup (see --embedding-source nt_tokenemb); 'onehot' is the MATCHED CONTROL running the "
+                        "SAME teacher/KD-targets/trainer/data-splits with the one-hot BPNet student.")
+    p.add_argument("--embedding-source", choices=["nt_tokenemb"], default="nt_tokenemb",
+                   help="pretrained representation feeding the student INPUT. 'nt_tokenemb' = NT-2.5B's FROZEN "
+                        "token (word) embedding lookup ONLY (context-free per-6-mer table; no 2.5B forward). The "
+                        "KD TARGETS still come from the NT-2.5B fine-tuned teacher, isolating the input effect.")
     p.add_argument("--embedding-layer", type=int, default=-999,
-                   help="teacher hidden-state layer for the input embeddings. -999 (default) = MIDDLE "
-                        "layer (n//2; more transferable than the task-specialized last layer); -1 = last "
-                        "layer; >=0 = that exact index.")
-    p.add_argument("--dnabert2-path", default="",
-                   help="local dir with the assembled DNABERT-2 model+code (offline). If empty, falls back "
-                        "to the HF id 'zhihan1996/DNABERT-2-117M'.")
+                   help="cache-key layer tag (kept for cache-path stability). The token-embedding lookup is "
+                        "context-free, so this does not change the representation; leave at the default.")
     p.add_argument("--fusion", choices=["replace4", "replaceK", "latefuse_emb", "latefuse_onehot"],
                    default="replace4",
                    help="embedding FRONT-END (reuses cached embeddings; no re-precompute). replace4 "
@@ -313,8 +215,8 @@ def main():
 
     # -999 sentinel -> middle layer (None passed to the cache, which resolves n//2 per teacher).
     embedding_layer = None if args.embedding_layer == -999 else args.embedding_layer
-    # Per-bp input width depends on the embedding source (DNABERT-2=768, NT-2.5B=2560).
-    emb_input_dim = DNABERT2_EMBEDDING_DIM if args.embedding_source == "dnabert2" else NT_EMBEDDING_DIM
+    # Per-position input width = NT-2.5B token-embedding width.
+    emb_input_dim = NT_EMBEDDING_DIM
 
     hp = load_best_hp(args.best_hp, task_name)
     if args.model_size:
@@ -331,14 +233,9 @@ def main():
     # consumes -- the fine-tuned NT-2.5B teacher would be loaded ONLY to log the reference teacher MCC.
     from_scratch = hp["weight_kl"] == 0 and hp["weight_mse"] == 0
     # SKIP_TEACHER_EVAL=1 (env): on from-scratch arms, skip the fine-tuned NT-2.5B teacher load + eval
-    # entirely (removes one huge sshfs model load from the stall path; teacher_test_mcc CSV col stays
-    # empty -- we have it from Exp-1b). NEVER skip when the 'nt' embedding source REUSES the teacher as
-    # the per-bp embedder (that path genuinely needs it); nt_base/dnabert2/onehot arms do not.
-    skip_teacher = (
-        os.environ.get("SKIP_TEACHER_EVAL") == "1"
-        and from_scratch
-        and not (args.input_mode == "nt_embedding" and args.embedding_source == "nt")
-    )
+    # entirely (teacher_test_mcc CSV col stays empty). The token-embedding input is a frozen table, never
+    # the teacher, so from-scratch arms never need the teacher.
+    skip_teacher = os.environ.get("SKIP_TEACHER_EVAL") == "1" and from_scratch
     # --teacher-target-dir: distill from PRECOMPUTED cached KD targets -> never load the 2.5B teacher.
     if args.teacher_target_dir:
         skip_teacher = True
@@ -440,55 +337,16 @@ def main():
     # nt_embedding (default, the experiment): per-bp NT embeddings (cached).
     # onehot (matched control): no embeddings; the student one-hot-encodes char ids itself.
     emb_train = emb_val = emb_test = None
-    dnabert2_model = None
     if args.input_mode == "nt_embedding":
         # Whether the per-bp embedding cache is consulted (off in smoke unless --emb-cache forces it).
-        # Computed once here so the nt_base cache-hit skip and the precompute call stay consistent.
+        # Computed once here so the precompute call is consistent.
         use_emb_cache = args.emb_cache if args.emb_cache is not None else not args.smoke
-        if args.embedding_source == "dnabert2":
-            # Embedding source = base DNABERT-2-117M (fast). KD targets stay NT-2.5B (above). The cache
-            # lands under a DNABERT-2-tagged teacher_parent_dir so it never collides with the NT cache.
-            emb_tokenizer, dnabert2_model, dnabert2_hidden = load_dnabert2_embedder(device, args.dnabert2_path)
-            assert dnabert2_hidden == emb_input_dim, f"DNABERT-2 hidden {dnabert2_hidden} != {emb_input_dim}"
-            emb_model = dnabert2_model
-            emb_teacher_parent = os.path.join(os.path.dirname(args.nt_parent), "dnabert2_emb")
-            emb_ckpt = f"dnabert2-117m-base/{DNABERT2_MODEL}"
-            emb_hsfn = make_dnabert2_hidden_state_fn()
-        elif args.embedding_source == "nt_base":
-            # Embedding source = the RAW base NT-2.5B foundation model (NO LoRA, un-fine-tuned). The KD
-            # TARGETS (P2) and the reference teacher MCC (P1) still come from the FINE-TUNED NT-2.5B
-            # teacher (loaded above); ONLY the student INPUT embedding changes. The per-bp cache lands
-            # under a DISTINCT "nt_base_emb" teacher_parent_dir so it never collides with the fine-tuned
-            # "nt_adapters" cache. hidden_states are the standard HF tuple (same class as the teacher),
-            # so the SAME mid-layer extraction (emb_hsfn=None) applies; the random classification head is
-            # unused (only hidden_states[mid] is read).
-            emb_teacher_parent = os.path.join(os.path.dirname(args.nt_parent), "nt_base_emb")  # DISTINCT cache
-            emb_ckpt = "nt-2.5b-base"
-            emb_hsfn = None  # base NT has standard hidden_states -> same mid-layer extraction as the fine-tuned NT
-            # LOAD-ONCE: the base NT-2.5B is a ~10GB sshfs load whose read intermittently STALLS. When the
-            # per-bp cache for ALL three splits is already present+valid, precompute_perbp_embeddings reads
-            # purely from disk and NEVER dereferences emb_model/emb_tokenizer, so skip the load entirely.
-            # Only the FIRST embedding arm of a task (cache MISS -> replace4) actually loads base-NT to
-            # BUILD the cache; replaceK/latefuse hit the cache and load nothing.
-            cache_ready = use_emb_cache and all(
-                embedding_cache_hit(cache_base, emb_teacher_parent, task_name, seqs, emb_ckpt,
-                                    args.max_len, split=sp, embedding_layer=embedding_layer)
-                for sp, seqs in (("train", X_train), ("val", X_val), ("test", X_test)))
-            if cache_ready:
-                print("[load-once] nt_base per-bp cache HIT for train/val/test -> skipping base NT-2.5B load")
-                emb_tokenizer, emb_model = None, None
-            else:
-                from transformers import AutoTokenizer, AutoModelForSequenceClassification
-                emb_tokenizer = AutoTokenizer.from_pretrained(NT_BASE, trust_remote_code=True)
-                _base = AutoModelForSequenceClassification.from_pretrained(
-                    NT_BASE, num_labels=num_labels, output_hidden_states=True, trust_remote_code=True)
-                emb_model = _base.to(device).eval()
-        elif args.embedding_source == "nt_tokenemb":
+        if args.embedding_source == "nt_tokenemb":
             # Minimal-NT input: per-position = NT-2.5B's FROZEN WORD (token) embedding lookup ONLY -- no
             # transformer layers, no 2.5B forward. The "embedding model" is a frozen nn.Embedding holding
             # the [vocab,2560] table; the hidden_state_fn returns W[input_ids] per token. The per-bp cache
             # is built by lookup (cheap) and lands under a DISTINCT "nt_tokenemb_emb" dir. Feeds the SAME
-            # replaceK/replace4 front-end + 0.12M BPNet as the mid-layer arms (input representation only).
+            # replaceK/replace4 front-end + 0.12M BPNet as the one-hot student (input representation only).
             import torch.nn as _nn
             from transformers import AutoTokenizer as _AT
             assert args.wordemb, "--embedding-source nt_tokenemb requires --wordemb <table.pt>"
@@ -499,9 +357,6 @@ def main():
             emb_teacher_parent = os.path.join(os.path.dirname(args.nt_parent), "nt_tokenemb_emb")
             emb_ckpt = "nt-2.5b-tokenemb"
             emb_hsfn = lambda m, ids, mask, layer: (m(ids), 0)  # per-token word-embedding lookup
-        else:  # 'nt': reuse the NT-2.5B teacher as the embedding source
-            emb_tokenizer, emb_model = teacher_tokenizer, teacher_model
-            emb_teacher_parent, emb_ckpt, emb_hsfn = args.nt_parent, teacher_ckpt, None
         # EMB_LOAD_IN_RAM=0 (default here): read the per-bp cache via mmap_mode='r' instead of loading
         # the full ~27GB fp16 array into RAM. The cache now lives in node-local /dev/shm (RAM), so mmap
         # reads are fast, and this avoids both the 27GB in-RAM copy AND the num_workers fork-COW blowup
@@ -531,12 +386,10 @@ def main():
         except Exception as e:
             print(f"teacher eval skipped: {e}")
 
-    # Free the 2.5B teacher (+ DNABERT-2 embedder if loaded); the student trains from cached arrays only.
-    # teacher_model is None when SKIP_TEACHER_EVAL skipped the load (from-scratch); nothing to free then.
+    # Free the 2.5B teacher; the student trains from cached arrays only. teacher_model is None when
+    # SKIP_TEACHER_EVAL skipped the load (from-scratch); nothing to free then.
     if teacher_model is not None:
         del teacher_model
-    if dnabert2_model is not None:
-        del dnabert2_model
     if device == "cuda":
         torch.cuda.empty_cache()
 
