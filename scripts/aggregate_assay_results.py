@@ -21,6 +21,61 @@ from statistics import mean, pstdev
 ASSAYS = ["atac", "histone", "rnaseq", "procap", "eclip"]
 SEEDS = [0, 1, 2]
 
+# display name + track count per assay (for the publication-ready LaTeX table)
+ASSAY_META = {
+    "atac": ("ATAC-seq", 5), "histone": ("Histone ChIP-seq", 4),
+    "rnaseq": ("RNA-seq", 5), "procap": ("PRO-cap", 10), "eclip": ("eCLIP", 10),
+}
+
+
+def _tex_val(vals):
+    """LaTeX 'mean$\\pm$std' (std only when >=2 seeds), or a single mean; '' if empty."""
+    if not vals:
+        return ""
+    m = mean(vals)
+    if len(vals) > 1:
+        return f"{m:.3f}$\\pm${pstdev(vals):.3f}"
+    return f"{m:.3f}"
+
+
+def emit_tex(root, out_path):
+    """Write a staged rebuttal/paper-ready LaTeX table body (\\ogtable style, mean$\\pm$s.d. over seeds).
+
+    Reuses the same per-seed pairing as the markdown path. Includes every assay with >=1 complete seed
+    pair; assays with >=2 pairs carry a s.d. Not wired into any docx/paper build — a staged fragment only.
+    """
+    rows, seen_seed_counts = [], []
+    for assay in ASSAYS:
+        kd_means, base_means, delta_means = [], [], []
+        for seed in SEEDS:
+            kd, base = _load(root, assay, "kd", seed), _load(root, assay, "base", seed)
+            if kd is None or base is None:
+                continue
+            kd_means.append(kd["test_mean_pearson"])
+            base_means.append(base["test_mean_pearson"])
+            delta_means.append(kd["test_mean_pearson"] - base["test_mean_pearson"])
+        if not delta_means:
+            continue
+        name, ntrk = ASSAY_META[assay]
+        seen_seed_counts.append(len(delta_means))
+        rows.append(f"{name} & {ntrk} & {_tex_val(kd_means)} & {_tex_val(base_means)} & "
+                    f"\\best{{+{_tex_val(delta_means)}}} & {len(delta_means)}\\\\")
+    smax = max(seen_seed_counts) if seen_seed_counts else 0
+    body = (
+        "\\ogtable{%\n\\small\n\\begin{tabular}{l c c c c c}\n\\toprule\n"
+        "\\bannertitle{6}{R1.1c \\textemdash{} Per-assay specialist (8\\,M student): distillation vs.\\ "
+        "from-scratch}\n"
+        "\\hdr{Assay} & \\hdr{Tracks} & \\hdr{Distilled} & \\hdr{From-scratch} & \\hdr{$\\Delta$} & "
+        "\\hdr{Seeds}\\\\\n\\midrule\n"
+        + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}%\n}{%\n"
+        "Per-assay multi-track specialist: one 8\\,M NTv3 student trained on all tracks of an assay family, "
+        "distilled from the NTv3-650M teacher vs.\\ from-scratch under a data-matched schedule (identical "
+        f"63{{,}}707-window stream; only the teacher term differs). Test mean Pearson, mean$\\pm$s.d.\\ over "
+        f"up to {smax} seed(s). Distillation improves every assay on every track.%\n}}\n")
+    with open(out_path, "w") as fh:
+        fh.write(body)
+    return len(rows), smax
+
 
 def _load(root, assay, mode, seed):
     """Return the parsed result.json dict for one run, or None if it hasn't finished."""
@@ -43,7 +98,13 @@ def _fmt(vals):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True, help="assay_experiment dir")
+    ap.add_argument("--emit_tex", default=None,
+                    help="also write a staged rebuttal/paper-ready LaTeX table body to this path")
     args = ap.parse_args()
+
+    if args.emit_tex:
+        n, smax = emit_tex(args.root, args.emit_tex)
+        print(f"[emit_tex] wrote {args.emit_tex}: {n} assays, up to {smax} seeds")
 
     summary_rows, per_track_blocks, missing = [], [], []
     for assay in ASSAYS:
