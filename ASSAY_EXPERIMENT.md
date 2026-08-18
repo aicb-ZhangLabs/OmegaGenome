@@ -46,7 +46,7 @@ Results per run: `$SSD/ntv3_targets/assay_experiment/<assay>/8m_<mode>_s<seed>/n
 (`test_mean_pearson`, `test_pearson_by_assay`, `per_track_pearson`). Aggregate KD delta per assay/track
 once seed 0 lands.
 
-_Progress: 25/30 runs complete (5 running: atac/kd_s2, procap/kd_s1+base_s1+base_s2, eclip/base_s2). Multi-seed means below; full 3-seed table swaps into the rebuttal when 30/30 lands._
+_Progress: 26/30 runs complete (4 running on galaxy: atac/kd_s2, procap/base_s1+base_s2+kd_s1). eCLIP now 3-seed complete; histone+rnaseq+eclip all 3-seed. Full 3-seed table swaps into the rebuttal when 30/30 lands._
 
 ## Results — per-assay distilled vs from-scratch (8M student)
 
@@ -56,7 +56,7 @@ _Progress: 25/30 runs complete (5 running: atac/kd_s2, procap/kd_s1+base_s1+base
 | histone | 0.6227±0.0013 | 0.5861±0.0025 | **0.0366±0.0030** | 3 |
 | rnaseq | 0.5056±0.0034 | 0.4738±0.0033 | **0.0318±0.0001** | 3 |
 | procap | 0.4106 | 0.3827 | **0.0279** | 1 |
-| eclip | 0.4636±0.0019 | 0.4505±0.0051 | **0.0131±0.0069** | 2 |
+| eclip | 0.4628±0.0019 | 0.4506±0.0041 | **0.0122±0.0058** | 3 |
 
 **atac** — per-track distilled−baseline Δ (mean over 2 seed pair(s)):
 
@@ -102,19 +102,19 @@ _Progress: 25/30 runs complete (5 running: atac/kd_s2, procap/kd_s1+base_s1+base
 | ENCSR935RNW_M | **0.0204** | 0.4556 | 0.4352 |
 | ENCSR935RNW_P | **0.0496** | 0.4589 | 0.4093 |
 
-**eclip** — per-track distilled−baseline Δ (mean over 2 seed pair(s)):
+**eclip** — per-track distilled−baseline Δ (mean over 3 seed pair(s)):
 
 | track | Δ Pearson | distilled | baseline |
 |---|---|---|---|
-| ENCSR154HRN_M | **0.0007±0.0094** | 0.4376 | 0.4275 |
-| ENCSR154HRN_P | **0.0108±0.0075** | 0.4478 | 0.4295 |
-| ENCSR249ROI_M | **0.0033±0.0086** | 0.5203 | 0.5084 |
-| ENCSR249ROI_P | **0.0069±0.0099** | 0.5036 | 0.4868 |
-| ENCSR321PWZ_M | **0.0203±0.0054** | 0.5259 | 0.5109 |
-| ENCSR321PWZ_P | **0.0334±0.0126** | 0.5698 | 0.5238 |
-| ENCSR484LTQ_M | **0.0056±0.0022** | 0.3717 | 0.3683 |
-| ENCSR484LTQ_P | **0.0138±0.0131** | 0.3967 | 0.3699 |
-| ENCSR862QCH_M | **0.0226±0.0002** | 0.4372 | 0.4144 |
-| ENCSR862QCH_P | **0.0140±0.0155** | 0.4444 | 0.4149 |
+| ENCSR154HRN_M | **0.0039±0.0090** | 0.4376 | 0.4275 |
+| ENCSR154HRN_P | **0.0100±0.0062** | 0.4478 | 0.4295 |
+| ENCSR249ROI_M | **0.0050±0.0074** | 0.5203 | 0.5084 |
+| ENCSR249ROI_P | **0.0074±0.0081** | 0.5036 | 0.4868 |
+| ENCSR321PWZ_M | **0.0158±0.0077** | 0.5259 | 0.5109 |
+| ENCSR321PWZ_P | **0.0292±0.0119** | 0.5698 | 0.5238 |
+| ENCSR484LTQ_M | **0.0067±0.0024** | 0.3717 | 0.3683 |
+| ENCSR484LTQ_P | **0.0131±0.0107** | 0.3967 | 0.3699 |
+| ENCSR862QCH_M | **0.0182±0.0062** | 0.4372 | 0.4144 |
+| ENCSR862QCH_P | **0.0127±0.0128** | 0.4444 | 0.4149 |
 
-_Still running / not yet paired (5): atac/8m_kd_s2, eclip/8m_base_s2, procap/8m_base_s1, procap/8m_base_s2, procap/8m_kd_s1_
+_Still running / not yet paired (4): atac/8m_kd_s2, procap/8m_base_s1, procap/8m_base_s2, procap/8m_kd_s1_
