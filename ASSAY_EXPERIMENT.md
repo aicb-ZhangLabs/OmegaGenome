@@ -47,7 +47,7 @@ Results per run: `$SSD/ntv3_targets/assay_experiment/<assay>/8m_<mode>_s<seed>/n
 once seed 0 lands.
 
 ## Results — per-assay distilled vs from-scratch (8M student)
-_Auto-refreshed as each assay's kd+base pair (same seed) completes, via `scripts/aggregate_assay_results.py`. Δ = distilled − from-scratch per-track Pearson (positive = distillation helps); mean±std over completed seed pairs._
+_Auto-refreshed as each assay's kd+base pair completes, via `scripts/aggregate_assay_results.py`. Δ = distilled − from-scratch per-track Pearson (positive = distillation helps); mean±std over seed pairs._
 
 
 | assay | distilled (mean Pearson) | from-scratch | Δ (distilled−baseline) | seed pairs |
@@ -56,7 +56,7 @@ _Auto-refreshed as each assay's kd+base pair (same seed) completes, via `scripts
 | histone | 0.6227±0.0013 | 0.5861±0.0025 | **0.0366±0.0030** | 3 |
 | rnaseq | 0.5080±0.0001 | 0.4761±0.0000 | **0.0318±0.0001** | 2 |
 | procap | 0.4106 | 0.3827 | **0.0279** | 1 |
-| eclip | (no complete seed pair yet) | | | 3 |
+| eclip | 0.4655 | 0.4454 | **0.0201** | 1 |
 
 **atac** — per-track distilled−baseline Δ (mean over 2 seed pair(s)):
 
@@ -102,6 +102,21 @@ _Auto-refreshed as each assay's kd+base pair (same seed) completes, via `scripts
 | ENCSR935RNW_M | **0.0204** | 0.4556 | 0.4352 |
 | ENCSR935RNW_P | **0.0496** | 0.4589 | 0.4093 |
 
-_Still running / not yet paired (9): atac/8m_kd_s2, eclip/8m_base_s1, eclip/8m_base_s2, eclip/8m_kd_s0, procap/8m_base_s1, procap/8m_base_s2, procap/8m_kd_s1, procap/8m_kd_s2, rnaseq/8m_base_s2_
+**eclip** — per-track distilled−baseline Δ (mean over 1 seed pair(s)):
 
-**Complete pairs so far (4 assays: atac, histone, rnaseq, procap):** distillation helps on **every track of every completed assay**, data-matched (only the teacher term differs). Refreshes as remaining assays/seeds land.
+| track | Δ Pearson | distilled | baseline |
+|---|---|---|---|
+| ENCSR154HRN_M | **0.0101** | 0.4376 | 0.4275 |
+| ENCSR154HRN_P | **0.0183** | 0.4478 | 0.4295 |
+| ENCSR249ROI_M | **0.0120** | 0.5203 | 0.5084 |
+| ENCSR249ROI_P | **0.0168** | 0.5036 | 0.4868 |
+| ENCSR321PWZ_M | **0.0149** | 0.5259 | 0.5109 |
+| ENCSR321PWZ_P | **0.0460** | 0.5698 | 0.5238 |
+| ENCSR484LTQ_M | **0.0034** | 0.3717 | 0.3683 |
+| ENCSR484LTQ_P | **0.0268** | 0.3967 | 0.3699 |
+| ENCSR862QCH_M | **0.0228** | 0.4372 | 0.4144 |
+| ENCSR862QCH_P | **0.0295** | 0.4444 | 0.4149 |
+
+_Still running / not yet paired (8): atac/8m_kd_s2, eclip/8m_base_s1, eclip/8m_base_s2, procap/8m_base_s1, procap/8m_base_s2, procap/8m_kd_s1, procap/8m_kd_s2, rnaseq/8m_base_s2_
+
+**All 5 assays paired:** distillation helps on **every track of every assay** (data-matched; only the teacher term differs). atac +0.024, histone +0.037, rnaseq +0.032, procap +0.028, eclip +0.020.
