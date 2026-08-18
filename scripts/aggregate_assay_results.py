@@ -14,6 +14,7 @@ Usage:  python scripts/aggregate_assay_results.py \
           --root /tmp/galaxy_srv_disk00/pengchx3/ntv3_targets/assay_experiment
 """
 import argparse
+import csv
 import json
 import os
 from statistics import mean, pstdev
@@ -26,6 +27,27 @@ ASSAY_META = {
     "atac": ("ATAC-seq", 5), "histone": ("Histone ChIP-seq", 4),
     "rnaseq": ("RNA-seq", 5), "procap": ("PRO-cap", 10), "eclip": ("eCLIP", 10),
 }
+
+# NTv3-650M teacher per-track results (34-track 3-seed) -> per-assay teacher ceiling
+TEACHER_CSV = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                           "results", "ntv3_650m_per_track_3seed.csv")
+_ASSAY_CSV_NAMES = {
+    "atac": {"ATAC-seq"}, "histone": {"Histone ChIP-seq"}, "procap": {"PRO-cap"},
+    "eclip": {"eCLIP"}, "rnaseq": {"polyA plus RNA-seq", "total RNA-seq", "RNA-seq"},
+}
+
+
+def _teacher_per_assay():
+    """Per-assay NTv3-650M teacher mean Pearson (average over that assay's tracks, 3-seed track means)."""
+    out = {}
+    if not os.path.exists(TEACHER_CSV):
+        return out
+    rows = list(csv.DictReader(open(TEACHER_CSV)))
+    for key, names in _ASSAY_CSV_NAMES.items():
+        vals = [float(r["mean"]) for r in rows if r.get("assay") in names]
+        if vals:
+            out[key] = mean(vals)
+    return out
 
 
 def _tex_val(vals):
@@ -44,6 +66,7 @@ def emit_tex(root, out_path):
     Reuses the same per-seed pairing as the markdown path. Includes every assay with >=1 complete seed
     pair; assays with >=2 pairs carry a s.d. Not wired into any docx/paper build — a staged fragment only.
     """
+    tea = _teacher_per_assay()
     rows, seen_seed_counts = [], []
     for assay in ASSAYS:
         kd_means, base_means, delta_means = [], [], []
@@ -58,19 +81,23 @@ def emit_tex(root, out_path):
             continue
         name, ntrk = ASSAY_META[assay]
         seen_seed_counts.append(len(delta_means))
-        rows.append(f"{name} & {ntrk} & {_tex_val(kd_means)} & {_tex_val(base_means)} & "
-                    f"\\best{{+{_tex_val(delta_means)}}} & {len(delta_means)}\\\\")
+        tval = f"{tea[assay]:.3f}" if assay in tea else "\\textemdash{}"
+        pct = f"{100*mean(kd_means)/tea[assay]:.0f}\\%" if assay in tea and tea[assay] else "\\textemdash{}"
+        rows.append(f"{name} & {ntrk} & {tval} & {_tex_val(kd_means)} & {_tex_val(base_means)} & "
+                    f"\\best{{+{_tex_val(delta_means)}}} & {pct} & {len(delta_means)}\\\\")
     smax = max(seen_seed_counts) if seen_seed_counts else 0
     body = (
-        "\\ogtable{%\n\\small\n\\begin{tabular}{l c c c c c}\n\\toprule\n"
-        "\\bannertitle{6}{R1.1c \\textemdash{} Per-assay specialist (8\\,M student): distillation vs.\\ "
-        "from-scratch}\n"
-        "\\hdr{Assay} & \\hdr{Tracks} & \\hdr{Distilled} & \\hdr{From-scratch} & \\hdr{$\\Delta$} & "
-        "\\hdr{Seeds}\\\\\n\\midrule\n"
+        "\\ogtable{%\n\\small\n\\begin{tabular}{l c c c c c c c}\n\\toprule\n"
+        "\\bannertitle{8}{R1.1c \\textemdash{} Per-assay specialist (8\\,M student): distillation vs.\\ "
+        "from-scratch, with the NTv3-650M teacher ceiling}\n"
+        "\\hdr{Assay} & \\hdr{Tracks} & \\hdr{Teacher} & \\hdr{Distilled} & \\hdr{From-scratch} & "
+        "\\hdr{$\\Delta$} & \\hdr{\\% teacher} & \\hdr{Seeds}\\\\\n\\midrule\n"
         + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}%\n}{%\n"
         "Per-assay multi-track specialist: one 8\\,M NTv3 student trained on all tracks of an assay family, "
         "distilled from the NTv3-650M teacher vs.\\ from-scratch under a data-matched schedule (identical "
-        f"63{{,}}707-window stream; only the teacher term differs). Test mean Pearson, mean$\\pm$s.d.\\ over "
+        "63{,}707-window stream; only the teacher term differs). Columns: mean test Pearson for the teacher, "
+        "the distilled student, and the from-scratch student; $\\Delta$ = distilled $-$ from-scratch; "
+        "\\% teacher = distilled/teacher. mean$\\pm$s.d.\\ over "
         f"up to {smax} seed(s). Distillation improves every assay on every track.%\n}}\n")
     with open(out_path, "w") as fh:
         fh.write(body)
