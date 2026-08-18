@@ -50,7 +50,7 @@ def annotated_heatmap(model, disp):
     ax.set_yticks(range(n)); ax.set_yticklabels(labels, fontsize=16)
     ax.set_xlabel("evaluation task", fontsize=22, labelpad=12)
     ax.set_ylabel("teacher fine-tuned on task", fontsize=22, labelpad=12)
-    ax.set_title(f"Teacher cross-task transfer — {disp} fine-tuned teachers (R2.3)\n"
+    ax.set_title(f"Teacher cross-task transfer — {disp} fine-tuned teachers\n"
                  "diagonal = in-task; off-diagonal = transfer; blank = label-incompatible (multiclass)",
                  fontsize=24, pad=18)
     for i in range(n):
@@ -104,14 +104,16 @@ def five_panel():
     # hide unused trailing axes (the odd 6th slot)
     for k in range(len(MODELS), len(axflat)):
         axflat[k].axis("off")
-    fig.suptitle("Teacher cross-task transfer — five foundation models (R2.3)",
+    fig.suptitle("Teacher cross-task transfer — five foundation models",
                  fontsize=32, fontweight="bold", y=0.997)
-    # large colorbar in the empty bottom-right slot so no panel width is stolen
-    cb = fig.colorbar(im, ax=axflat[len(MODELS):].tolist() or [axflat[-1]],
-                      fraction=0.42, pad=0.02, aspect=18)
-    cb.set_label("transfer MCC", fontsize=24); cb.ax.tick_params(labelsize=19)
-    # tight spacing -> compact (no inter-row x-labels now); bbox_inches='tight' crops the margin
-    fig.subplots_adjust(left=0.07, right=0.99, top=0.955, bottom=0.05, hspace=0.10, wspace=0.05)
+    # compact spacing; the empty bottom-right (6th) slot hosts the shared colorbar. A little extra
+    # hspace gives the Enformer panel's x-tick labels room above that slot.
+    fig.subplots_adjust(left=0.07, right=0.99, top=0.955, bottom=0.06, hspace=0.16, wspace=0.05)
+    # Horizontal colorbar placed low in the empty bottom-right slot, well below the Enformer panel's
+    # x-tick labels above it — fixes the legend/x-label overlap without stealing any panel width.
+    cax = fig.add_axes([0.605, 0.090, 0.315, 0.020])
+    cb = fig.colorbar(im, cax=cax, orientation="horizontal")
+    cb.set_label("transfer MCC", fontsize=24, labelpad=6); cb.ax.tick_params(labelsize=18)
     for ext in ("png", "pdf"):
         out = os.path.join(HERE, f"teacher_cross_task_5panel_nature.{ext}")
         fig.savefig(out, dpi=300, bbox_inches="tight")
