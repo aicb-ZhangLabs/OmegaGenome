@@ -46,27 +46,27 @@ Results per run: `$SSD/ntv3_targets/assay_experiment/<assay>/8m_<mode>_s<seed>/n
 (`test_mean_pearson`, `test_pearson_by_assay`, `per_track_pearson`). Aggregate KD delta per assay/track
 once seed 0 lands.
 
-_Progress: 26/30 runs complete (4 running on galaxy: atac/kd_s2, procap/base_s1+base_s2+kd_s1). eCLIP now 3-seed complete; histone+rnaseq+eclip all 3-seed. Full 3-seed table swaps into the rebuttal when 30/30 lands._
+_Progress: **COMPLETE — 30/30 runs finished (all 5 assays × {kd,base} × 3 seeds).** Full 3-seed mean±s.d. below; every assay shows a positive distilled−from-scratch Δ. atac +0.024, histone +0.037, rnaseq +0.032, procap +0.037, eclip +0.012._
 
 ## Results — per-assay distilled vs from-scratch (8M student)
 
 | assay | distilled (mean Pearson) | from-scratch | Δ (distilled−baseline) | seed pairs |
 |---|---|---|---|---|
-| atac | 0.6504±0.0005 | 0.6264±0.0013 | **0.0240±0.0018** | 2 |
+| atac | 0.6505±0.0004 | 0.6268±0.0012 | **0.0237±0.0015** | 3 |
 | histone | 0.6227±0.0013 | 0.5861±0.0025 | **0.0366±0.0030** | 3 |
 | rnaseq | 0.5056±0.0034 | 0.4738±0.0033 | **0.0318±0.0001** | 3 |
-| procap | 0.4106 | 0.3827 | **0.0279** | 1 |
+| procap | 0.4087±0.0032 | 0.3721±0.0075 | **0.0366±0.0066** | 3 |
 | eclip | 0.4628±0.0019 | 0.4506±0.0041 | **0.0122±0.0058** | 3 |
 
-**atac** — per-track distilled−baseline Δ (mean over 2 seed pair(s)):
+**atac** — per-track distilled−baseline Δ (mean over 3 seed pair(s)):
 
 | track | Δ Pearson | distilled | baseline |
 |---|---|---|---|
-| ENCSR325NFE | **0.0157±0.0012** | 0.7452 | 0.7307 |
-| ENCSR410DWV | **0.0319±0.0029** | 0.6535 | 0.6244 |
-| ENCSR487QSB | **0.0277±0.0011** | 0.6080 | 0.5814 |
-| ENCSR628PLS | **0.0297±0.0018** | 0.5364 | 0.5085 |
-| ENCSR814RGG | **0.0150±0.0022** | 0.7065 | 0.6936 |
+| ENCSR325NFE | **0.0155±0.0010** | 0.7452 | 0.7307 |
+| ENCSR410DWV | **0.0295±0.0041** | 0.6535 | 0.6244 |
+| ENCSR487QSB | **0.0274±0.0010** | 0.6080 | 0.5814 |
+| ENCSR628PLS | **0.0308±0.0021** | 0.5364 | 0.5085 |
+| ENCSR814RGG | **0.0155±0.0019** | 0.7065 | 0.6936 |
 
 **histone** — per-track distilled−baseline Δ (mean over 3 seed pair(s)):
 
@@ -87,20 +87,20 @@ _Progress: 26/30 runs complete (4 running on galaxy: atac/kd_s2, procap/base_s1+
 | ENCSR619DQO_P | **0.0351±0.0092** | 0.5850 | 0.5609 |
 | ENCSR701YIC | **0.0220±0.0049** | 0.4503 | 0.4264 |
 
-**procap** — per-track distilled−baseline Δ (mean over 1 seed pair(s)):
+**procap** — per-track distilled−baseline Δ (mean over 3 seed pair(s)):
 
 | track | Δ Pearson | distilled | baseline |
 |---|---|---|---|
-| ENCSR046BCI_M | **0.0184** | 0.4219 | 0.4035 |
-| ENCSR046BCI_P | **0.0502** | 0.3909 | 0.3407 |
-| ENCSR100LIJ_M | **0.0176** | 0.4514 | 0.4337 |
-| ENCSR100LIJ_P | **0.0463** | 0.4470 | 0.4008 |
-| ENCSR114HGS_M | -0.0046 | 0.2817 | 0.2863 |
-| ENCSR114HGS_P | **0.0087** | 0.2943 | 0.2856 |
-| ENCSR799DGV_M | **0.0201** | 0.4482 | 0.4282 |
-| ENCSR799DGV_P | **0.0520** | 0.4562 | 0.4042 |
-| ENCSR935RNW_M | **0.0204** | 0.4556 | 0.4352 |
-| ENCSR935RNW_P | **0.0496** | 0.4589 | 0.4093 |
+| ENCSR046BCI_M | **0.0308±0.0093** | 0.4219 | 0.4035 |
+| ENCSR046BCI_P | **0.0509±0.0005** | 0.3909 | 0.3407 |
+| ENCSR100LIJ_M | **0.0336±0.0120** | 0.4514 | 0.4337 |
+| ENCSR100LIJ_P | **0.0513±0.0039** | 0.4470 | 0.4008 |
+| ENCSR114HGS_M | **0.0070±0.0086** | 0.2817 | 0.2863 |
+| ENCSR114HGS_P | **0.0098±0.0049** | 0.2943 | 0.2856 |
+| ENCSR799DGV_M | **0.0374±0.0128** | 0.4482 | 0.4282 |
+| ENCSR799DGV_P | **0.0545±0.0033** | 0.4562 | 0.4042 |
+| ENCSR935RNW_M | **0.0370±0.0118** | 0.4556 | 0.4352 |
+| ENCSR935RNW_P | **0.0535±0.0029** | 0.4589 | 0.4093 |
 
 **eclip** — per-track distilled−baseline Δ (mean over 3 seed pair(s)):
 
@@ -116,5 +116,3 @@ _Progress: 26/30 runs complete (4 running on galaxy: atac/kd_s2, procap/base_s1+
 | ENCSR484LTQ_P | **0.0131±0.0107** | 0.3967 | 0.3699 |
 | ENCSR862QCH_M | **0.0182±0.0062** | 0.4372 | 0.4144 |
 | ENCSR862QCH_P | **0.0127±0.0128** | 0.4444 | 0.4149 |
-
-_Still running / not yet paired (4): atac/8m_kd_s2, procap/8m_base_s1, procap/8m_base_s2, procap/8m_kd_s1_
