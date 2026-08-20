@@ -1,0 +1,49 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.venv_*
+
+# Environment variables
+data
+output
+output_original
+output_caduceus_hyperparam
+output_bpnet_medium
+env.toml
+wandb/
+!src/data
+
+# carbon caches/venvs/outputs
+.venv_carbon*/
+.hf_cache/
+.uv_cache/
+.wandb_cache/
+wandb/
+slurm-*.out
+# machine-specific convenience symlinks (carbon_3b cache/teachers/outputs live on SSD + /home)
+/data/cache/carbon_3b_lora
+/data/finetuned_models/carbon_3b_lora
+/data/carbon_distillation_outputs
+REMOTE_H100_VAST.md
+
+# --- run/log/cache artifacts (kept out of the formal release) ---
+*.gz
+*.log
+*.out
+*.pid
+*.bak
+*.superseded
+*.jsonl
+*.npz
+__pycache__/
+*.pyc
+nfs[0-9a-f]*
+slurm-*.out*
+quota_test*

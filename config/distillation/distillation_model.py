@@ -47,3 +47,22 @@ nt_different_size_model_config = DistillationModelConfig(
     temperature=4.0,
     distill_method="vanilla",
 )
+
+# Carbon -> deploy_120k BPNet: the requested ce0.5/kl0.5/mse0.2 vanilla config. Two variants for the
+# raw-vs-L2-norm-MSE comparison (only difference is mse_normalize; loss math otherwise identical).
+carbon_vanilla_mse_raw = DistillationModelConfig(
+    weight_ce=0.5,
+    weight_kl=0.5,
+    weight_mse=0.2,
+    temperature=2.0,
+    distill_method="vanilla",
+    mse_normalize=False,
+)
+carbon_vanilla_mse_l2norm = DistillationModelConfig(
+    weight_ce=0.5,
+    weight_kl=0.5,
+    weight_mse=0.2,
+    temperature=2.0,
+    distill_method="vanilla",
+    mse_normalize=True,
+)

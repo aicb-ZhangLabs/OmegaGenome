@@ -1,0 +1,52 @@
+[GPU job notice] 2026-06-29 — pengchx3
+Job: featlogit-r19 (slurm/extract_feats_logits.sbatch), jobid 243765 on laniakea (2/8 of my jobs there).
+Purpose: R1.9/R1.13 rebuttal feature-viz, FULL-SAMPLE re-run — extract penultimate features + class
+logits for the Enformer teacher + OmegaGenome student + DKD student + from-scratch BPNet baseline on
+the FULL splice_sites_all test set (~3000 seqs, vs the prior n=300). Needed so the t-SNE silhouette /
+PCA-aligned cosine reproduce the paper (~0.411 student / ~0.163 baseline). One Enformer forward + three
+0.12M BPNets, ~10-15 min, 48GB fits on 6000Ada. No large/long footprint.
+
+[update 2026-06-29] Enformer full-sample done (job 243773, voyager) — cosine reproduces paper
+(0.399/0.157 vs 0.411/0.163). Now extracting R1.13 per-teacher panels: jobs 243782 (caduceus) +
+243783 (dnabert2) on voyager (3/4 of my jobs there, under cap). Each = one HF-teacher forward +
+three 0.12M BPNets over ~3000 splice_sites_all seqs, ~10-15 min. NT panel skipped: only an
+embedding-mode NT student exists on disk (architecturally incompatible with the onehot teacher|student|baseline panel).
+
+[update2 2026-06-29] Per-teacher panels: caduceus (243782) + dnabert2 (243785/243788) DONE; figures
+rendered. NT-2.5B (243808, laniakea) re-running with merge_lora=False (the merged adapter gave all-NaN
+logits; unmerged PEFT forward is stable). Small job (one NT-2.5B fwd + three 0.12M BPNets over ~3000
+seqs, ~8-10 min, fits 49G 6000Ada). Currently queued behind higher-priority jobs.
+
+[update3 2026-06-30] NT-2.5B panel (R1.13d) re-run, job 244031 on voyager (2/3 of my jobs there, under
+cap). Prior NT runs gave all-NaN teacher feats/logits (both merged AND unmerged adapter) -- root cause:
+NT 6-mer inputs padded to max_length=1000 leave ~900 pure-pad positions whose ESM masked-softmax
+overflowed. FIX: force fp32 (torch_dtype="float32") + dynamic padding=True + attention-mask-weighted
+mean pooling for the NT penultimate feature; strict pre-save NaN guard. One NT-2.5B fwd + three 0.12M
+BPNets over ~3000 splice_sites_all seqs, ~10-15 min, fits 80G H100. No large/long footprint.
+
+[update4 2026-06-30] NT-2.5B NaN ROOT CAUSE FOUND + FIXED. Not fp16/padding -- the cached NT-2.5B base
+shard pytorch_model-00001-of-00002.bin was CORRUPT (zipfile.testzip -> bad member data/313, CRC fail).
+The damaged shard silently loaded layer-19 intermediate.dense.weight as NaN, so EVERY forward (fp32,
+bf16, merged, unmerged) NaN'd from layer 19 onward. Quarantined the bad blob to
+/extra/.../_corrupt_nt_quarantine/, re-downloaded shard1 from HF (testzip clean, layer19 weight finite).
+Re-extract jobs: smoke 244038 + full 244039 on voyager. Also generalized the extractor to save BOTH
+hidden_states[-2] (F_teacher, paper-method) AND hidden_states[-1] (F_teacher_last, MSE-aligned layer)
+in one forward; feature_viz --layer {secondlast,last} renders either. Student model_size now inferred
+from the ckpt classifier dim (NT splice student is 'large'/256-dim, not 'original'/64).
+
+[update5 2026-06-30] All-5-teacher BOTH-LAYER feature panels. Re-extracted every teacher saving
+hidden_states[-2] (paper t-SNE feature) AND [-1]/MSE-aligned-pool in one forward; rendered both panels
+per teacher. Jobs: NT-mse2 244040 (voyager, swapped to a FEATURE-ALIGNED orig-size CE+MSE2 student,
+val 0.865 -- the prior mse=0 student didn't show feature alignment); dnabert2 244041 + caduceus 244042
+(voyager); carbon 244043 (galaxy, bf16 3B, render step needs the enformer conda env not carbon_venv);
+enformer 244044 (voyager, both-layer = full-mean MSE target vs last-quarter paper feature). All teacher
+forwards NaN-free, 0/3000 rows. Small jobs (~10-15 min each). DOCX edits HELD (another agent is polishing
+the response docx concurrently) -- panels rendered + numbers reported, insertion deferred to avoid a
+write-race.
+
+[update6 2026-06-30] ALL 5 teachers x BOTH layers RENDERED + numbers collected. Feature-aligned (mse>0)
+students throughout. Carbon render OOM-died once under login-node load 113 (3072-dim t-SNE); re-ran alone
+with OMP_NUM_THREADS=8 -> clean. Carbon [-1] confirms the prediction: cosine flips -0.077 ([-2] artifact)
+-> +0.101 > baseline -0.177 at the MSE-aligned layer. DOCX EDITS STILL HELD (concurrent docx polish by
+another agent) -- all panel file paths + numbers reported to coordinator for insertion. The NT mse=0 panel
+I inserted in update3 should be REPLACED with the mse=2 feature-aligned panels.

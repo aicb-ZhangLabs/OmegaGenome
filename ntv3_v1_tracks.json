@@ -1,0 +1,47 @@
+{
+  "H3K4me3": {
+    "encode_acc": "ENCSR668LDD",
+    "ntv3_tracks": [
+      [
+        "ENCSR668LDD",
+        1538
+      ]
+    ]
+  },
+  "H3K4me1": {
+    "encode_acc": "ENCSR000EWC",
+    "ntv3_tracks": [
+      [
+        "ENCSR000EWC",
+        1533
+      ]
+    ]
+  },
+  "H3K27me3": {
+    "encode_acc": "ENCSR000EWB",
+    "ntv3_tracks": [
+      [
+        "ENCSR000EWB",
+        1530
+      ]
+    ]
+  },
+  "H3K36me3": {
+    "encode_acc": "ENCSR000DWB",
+    "ntv3_tracks": [
+      [
+        "ENCSR000DWB",
+        1532
+      ]
+    ]
+  },
+  "H3K9me3": {
+    "encode_acc": "ENCSR000APE",
+    "ntv3_tracks": [
+      [
+        "ENCSR000APE",
+        1543
+      ]
+    ]
+  }
+}

@@ -36,7 +36,10 @@ from typing import List, Tuple, Dict, Literal, Optional
 # ============================================================================
 # GLOBAL DEBUG SETTINGS
 # ============================================================================
-DEBUG = True
+import os as _os
+DEBUG = _os.environ.get("DISTILL_DEBUG", "0") == "1"  # default OFF (was hardcoded True -> ~3k log
+# lines/job of "[DEBUG batch=..] Teacher logits=None"; 574 grid jobs => GBs of /home log spam).
+# Set DISTILL_DEBUG=1 to restore the per-batch debug logging. Logging-only; no effect on results.
 DEBUG_LOG_EVERY = 50  # Log every N batches
 DEBUG_BATCH = 0
 DEBUG_LOG_FIRST_N = 5  # Always log first N batches
@@ -97,6 +100,7 @@ class DistillationModelConfig:
     temperature: float = 2.0
     zscore: bool = False
     kl_method: Literal["kl", "mse"] = "kl"
+    mse_normalize: bool = False  # L2-normalize features before MSE (cosine-style) vs raw MSE
 
     # Extended for new distillation methods
     distill_method: Literal["vanilla", "logit_standard", "dkd", "dist"] = "vanilla"
@@ -274,30 +278,12 @@ class DistillationModel(nn.Module):
         s_logits, s_feats = self.get_student_knowledge(inputs)
         tlog, tfeats = self.get_teacher_knowledge(inputs)
 
-        log(f"\n{'='*60}")
-        log(f"METHOD: {self.config.distill_method}")
-        log(per_sample(s_logits, "Student logits"))
-        log(per_sample(tlog, "Teacher logits"))
-
-        # CHECK: Are teacher logits actually different from student?
-        if tlog is not None and s_logits.shape == tlog.shape:
-            diff = (s_logits - tlog).abs().mean()
-            log(f"Student-Teacher logit diff: {diff.item():.6f}")
-            if diff < 0.01:
-                log(
-                    "!!! WARNING: Student and teacher logits are nearly identical !!!",
-                    force=True,
-                )
-
-        # Label info
+        # --- loss computation (unconditional; identical math + order to before) ---
         labels = inputs["labs"]
-        unique, counts = torch.unique(labels, return_counts=True)
-        log(f"Labels: unique={unique.tolist()}, counts={counts.tolist()}")
 
         # CE Loss
         ce = F.cross_entropy(s_logits, labels)
         loss = self.config.weight_ce * ce
-        log(f"CE: raw={ce.item():.6f}, weighted={loss.item():.6f}")
 
         # KL Loss
         kl = self.kl_term(s_logits, tlog, labels)
@@ -307,8 +293,36 @@ class DistillationModel(nn.Module):
         mse = self.mse_term(s_feats, tfeats)
         loss += mse
 
-        log(f"TOTAL: {loss.item():.6f}")
-        log(f"{'='*60}\n")
+        # --- per-step debug logging (gated on DISTILL_DEBUG, default OFF) ---
+        # Python evaluates these f-string args EAGERLY before log() decides whether to
+        # print, so the .item()/.tolist() (GPU->CPU syncs) and the extra reductions
+        # (per_sample x2, abs().mean(), torch.unique) ran every single step even with
+        # logging disabled -- stalling the GPU pipeline (solo util ~31%). Guarding the
+        # whole block makes the disabled path sync-free. DEBUG=1 prints the same values
+        # (only the KL line, emitted inside kl_term, now precedes this block).
+        if DEBUG:
+            log(f"\n{'='*60}")
+            log(f"METHOD: {self.config.distill_method}")
+            log(per_sample(s_logits, "Student logits"))
+            log(per_sample(tlog, "Teacher logits"))
+
+            # CHECK: Are teacher logits actually different from student?
+            if tlog is not None and s_logits.shape == tlog.shape:
+                diff = (s_logits - tlog).abs().mean()
+                log(f"Student-Teacher logit diff: {diff.item():.6f}")
+                if diff < 0.01:
+                    log(
+                        "!!! WARNING: Student and teacher logits are nearly identical !!!",
+                        force=True,
+                    )
+
+            # Label info
+            unique, counts = torch.unique(labels, return_counts=True)
+            log(f"Labels: unique={unique.tolist()}, counts={counts.tolist()}")
+
+            log(f"CE: raw={ce.item():.6f}, weighted={(self.config.weight_ce * ce).item():.6f}")
+            log(f"TOTAL: {loss.item():.6f}")
+            log(f"{'='*60}\n")
 
         return loss, {
             "loss": loss.item(),
@@ -325,8 +339,10 @@ class DistillationModel(nn.Module):
         method = self.config.distill_method
 
         if method == "logit_standard":
-            # Logit Standardization (CVPR 2024) - FIXED
+            # Logit Standardization (CVPR 2024)
             kl = self._logit_standard_kl(s_logits, tlog)
+        elif method == "logit_standard_debug":
+            kl = self._logit_standard_kl_debug(s_logits, tlog)
         elif method == "dkd" and labels is not None:
             # Decoupled Knowledge Distillation (CVPR 2022) - IMPROVED
             kl = self._dkd_loss(s_logits, tlog, labels)
@@ -337,7 +353,8 @@ class DistillationModel(nn.Module):
             kl = self._vanilla_kl(s_logits, tlog)
 
         weighted = self.config.weight_kl * kl
-        log(f"KL: raw={kl.item():.6f}, weighted={weighted.item():.6f}")
+        if DEBUG:  # avoid 2 per-step GPU->CPU syncs (.item()) when logging is disabled
+            log(f"KL: raw={kl.item():.6f}, weighted={weighted.item():.6f}")
         return weighted
 
     def _vanilla_kl(self, s_logits, tlog):
@@ -350,6 +367,25 @@ class DistillationModel(nn.Module):
             reduction="batchmean",
         ) * (temp**2)
         return kl
+
+    def _logit_standard_kl(self, s_logits, t_logits):
+        """Logit Standardization KD (CVPR 2024) — clean production implementation.
+
+        Z-score each logit vector with POPULATION std (paper Algorithm 1), divide by temperature,
+        then KL(softmax(student) || softmax(teacher)) * T². Numerically identical to the verbose
+        ``_logit_standard_kl_debug`` below (same mean, unbiased=False std + 1e-7 eps, /T, batchmean).
+        Reference: https://github.com/sunshangquan/logit-standardization-KD
+        """
+        temp = self.config.temperature
+
+        def standardize(z):
+            mu = z.mean(dim=-1, keepdim=True)
+            sigma = z.std(dim=-1, keepdim=True, unbiased=False) + 1e-7
+            return (z - mu) / sigma / temp
+
+        s_norm, t_norm = standardize(s_logits), standardize(t_logits)
+        return F.kl_div(F.log_softmax(s_norm, dim=-1), F.softmax(t_norm, dim=-1),
+                        reduction="batchmean") * (temp ** 2)
 
     def _logit_standard_kl_debug(self, s_logits, t_logits):
         """
@@ -520,6 +556,11 @@ class DistillationModel(nn.Module):
     def mse_term(self, s_feats, tfeats):
         if self.config.weight_mse > 0 and tfeats is not None:
             s_feats, tfeats = self.student_model.aligned_feats(s_feats, tfeats)
+            if self.config.mse_normalize:
+                # L2-normalize each feature vector before MSE: removes the scale mismatch between
+                # a 3B-LLM hidden state and the tiny conv's pooled features (cosine-style matching).
+                s_feats = F.normalize(s_feats, dim=-1)
+                tfeats = F.normalize(tfeats, dim=-1)
             mse = F.mse_loss(s_feats, tfeats)
             mse = self.config.weight_mse * mse
         else:

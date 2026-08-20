@@ -1,0 +1,17 @@
+{
+  "comment": "NTv3 multi-track v1 subset (K562). Indices into config.bigwigs_per_species['human'] (NTv3-100M/650M-post). 8 histone marks match the paper's histone classification tasks (now as base-resolution signal) + DNase-seq accessibility. H3K27ac and H4K20me1 are not present in NTv3's K562 set. CAGE (FANTOM5) deferred to v1b.",
+  "cell_type": "K562",
+  "species": "human",
+  "ntv3_track_subset": [1527, 1528, 1530, 1532, 1533, 1534, 1535, 1540, 1543],
+  "tracks": [
+    {"label": "DNase-seq",      "assay": "DNase-seq",        "target": null,        "encode_acc": "ENCSR921NMD", "ntv3_index": 1527},
+    {"label": "H2AFZ",          "assay": "Histone ChIP-seq", "target": "H2AFZ",     "encode_acc": "ENCSR000APC", "ntv3_index": 1528},
+    {"label": "H3K27me3",       "assay": "Histone ChIP-seq", "target": "H3K27me3",  "encode_acc": "ENCSR000EWB", "ntv3_index": 1530},
+    {"label": "H3K36me3",       "assay": "Histone ChIP-seq", "target": "H3K36me3",  "encode_acc": "ENCSR000DWB", "ntv3_index": 1532},
+    {"label": "H3K4me1",        "assay": "Histone ChIP-seq", "target": "H3K4me1",   "encode_acc": "ENCSR000EWC", "ntv3_index": 1533},
+    {"label": "H3K4me2",        "assay": "Histone ChIP-seq", "target": "H3K4me2",   "encode_acc": "ENCSR000AKT", "ntv3_index": 1534},
+    {"label": "H3K4me3",        "assay": "Histone ChIP-seq", "target": "H3K4me3",   "encode_acc": "ENCSR000AKU", "ntv3_index": 1535},
+    {"label": "H3K9ac",         "assay": "Histone ChIP-seq", "target": "H3K9ac",    "encode_acc": "ENCSR000AKV", "ntv3_index": 1540},
+    {"label": "H3K9me3",        "assay": "Histone ChIP-seq", "target": "H3K9me3",   "encode_acc": "ENCSR000APE", "ntv3_index": 1543}
+  ]
+}

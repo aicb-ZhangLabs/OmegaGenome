@@ -59,6 +59,11 @@ def build_config_objects(config_dict: dict):
         output_hidden_states=config_dict["teacher_config"].get("output_hidden_states", True),
         is_lora=config_dict["teacher_config"].get("is_lora", None),
         base_model_path=config_dict["teacher_config"].get("base_model_path", None),
+        # Carbon teacher needs the "<dna>" prefix + add_special_tokens=False + bf16 load.
+        # No-op defaults ("", True, None) keep nt/dnabert2/caduceus byte-identical.
+        input_prefix=config_dict["teacher_config"].get("input_prefix", ""),
+        add_special_tokens=config_dict["teacher_config"].get("add_special_tokens", True),
+        torch_dtype=config_dict["teacher_config"].get("torch_dtype", None),
     )
     
     # Build BPNetClassifierConfig (student config)
@@ -170,23 +175,29 @@ def run_experiment(config_path: str):
     if score > 0:
         print(f"Teacher validation MCC: {score:.4f}")
     
-    # Create trainer config for get_teacher_model
+    # Create trainer config for get_teacher_model.
+    # Delegate every attribute to the real trainer_config so downstream teacher
+    # evaluation can read batch_size / teacher_batch_size / max_len / num_workers / etc.
     class TrainerConfigWrapper:
-        def __init__(self, device):
-            self.device = device
-    
+        def __init__(self, trainer_config):
+            self.__dict__["_tc"] = trainer_config
+            self.device = getattr(trainer_config, "device", "cuda")
+
+        def __getattr__(self, name):
+            return getattr(self.__dict__["_tc"], name)
+
     class FullConfig:
         def __init__(self, tc, tpd, mt, trc):
             self.teacher_config = tc
             self.teacher_parent_dir = tpd
             self.model_type = mt
             self.trainer_config = trc
-    
+
     full_config = FullConfig(
         teacher_config,
         config["teacher_parent_dir"],
         model_type,
-        TrainerConfigWrapper(config["trainer_config"].device),
+        TrainerConfigWrapper(config["trainer_config"]),
     )
     
     # Load teacher model
@@ -340,8 +351,14 @@ def run_experiment(config_path: str):
         run_dir,
         teacher_parent_dir=config["teacher_parent_dir"],
         teacher_ckpt=teacher_ckpt,
+        # Thread the teacher input formatting (Carbon "<dna>"/no-special-tokens) and the
+        # top-level seed so the teacher-logit precompute tokenizes correctly and the run is
+        # reproducible. No-op for nt/dnabert2/caduceus (prefix="" / add_special_tokens=True).
+        input_prefix=getattr(config["teacher_config"], "input_prefix", ""),
+        add_special_tokens=getattr(config["teacher_config"], "add_special_tokens", True),
+        random_state=config["random_state"],
     )
-    
+
     wandb.finish()
     
     print(f"\n{'=' * 80}")

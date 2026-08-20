@@ -1,0 +1,5 @@
+FINAL PREP READY @ 2026-06-23 23:01:26
+grid: 1440/1440 complete; full table -> results/carbon_grid_results.csv
+best_hyperparams.json + best_3seed_specs.txt (54 specs) generated.
+3-seed GPU jobs NOT launched (awaiting explicit go).
+to launch:  nohup bash slurm/auto_submit_specs.sh best_3seed_specs.txt > seed3.log 2>&1 &

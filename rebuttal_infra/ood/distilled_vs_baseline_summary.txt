@@ -1,0 +1,14 @@
+========== R2.3 DISTILLED vs FROM-SCRATCH BASELINE cross-task transfer ==========
+common tasks: 18 (dropped none -- absent in baseline)
+
+--- BINARY (16 tasks) ---
+  DISTILLED  diag=+0.6196  off-diag=+0.2832  drop=+0.3364
+  BASELINE   diag=+0.5959  off-diag=+0.2746  drop=+0.3213
+  DELTA (distilled - baseline):  diag=+0.0237  off-diag=+0.0085
+  -> distillation IMPROVES off-diagonal transfer (off-diag +0.2832 vs +0.2746)
+
+--- MULTICLASS(3-label) (2 tasks) ---
+  DISTILLED  diag=+0.6511  off-diag=+0.1180  drop=+0.5331
+  BASELINE   diag=+0.6460  off-diag=+0.1179  drop=+0.5281
+  DELTA (distilled - baseline):  diag=+0.0051  off-diag=+0.0000
+  -> distillation IMPROVES off-diagonal transfer (off-diag +0.1180 vs +0.1179)

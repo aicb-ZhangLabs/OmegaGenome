@@ -1,0 +1,12 @@
+TEACHER cross-task OOD matrix -- model=dnabert2 n=0 max_len=1000
+diagonal within tol (0.02): 18/18
+
+--- BINARY sub-matrix (16 tasks) ---
+  mean in-task (diag)  MCC = +0.6347
+  mean off-task (cross) MCC = +0.2748
+  transfer drop (diag - cross) = +0.3599
+
+--- TERNARY (3-label) sub-matrix (2 tasks) ---
+  mean in-task (diag)  MCC = +0.6758
+  mean off-task (cross) MCC = +0.0882
+  transfer drop (diag - cross) = +0.5876

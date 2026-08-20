@@ -84,7 +84,7 @@ class BenchmarkConfig:
 
     # Teachers to benchmark (empty = skip teacher benchmarking)
     # Note: dnabert2 excluded by default due to Triton compatibility issues
-    teachers: List[Literal["nt", "caduceus", "enformer", "dnabert2"]] = field(
+    teachers: List[Literal["nt", "caduceus", "enformer", "dnabert2", "carbon3b"]] = field(
         default_factory=lambda: ["nt", "caduceus", "enformer"]
     )
 
@@ -96,6 +96,15 @@ class BenchmarkConfig:
     max_length: int = 1000
     warmup_batches: int = 10
     num_batches: Optional[int] = 100  # None = use all test data
+
+    # Precision for ALL benchmarked models (teachers AND the BPNet student), so the
+    # latency/memory table is SINGLE-precision (R1.11; no apples-to-oranges fp16-vs-fp32
+    # split). "fp16": teacher weights cast to half AND the forward wrapped in a CUDA fp16
+    # autocast (autocast promotes the few stray fp32 bias/LayerNorm tensors in Enformer /
+    # DNABERT-2, which previously forced them onto a separate fp32 leg); the BPNet student
+    # runs the same fp16 autocast (it can't be half()-cast because forward() one-hot-encodes
+    # input_ids into float32 internally). "fp32": full precision, no autocast.
+    precision: Literal["fp16", "fp32"] = "fp16"
 
     # Error handling
     skip_on_error: bool = True  # Continue with other models if one fails
@@ -110,20 +119,51 @@ class BenchmarkConfig:
 
 def get_teacher_config_and_path(model_type: str):
     """Get teacher configuration and checkpoint path."""
-    from config.distillation.glm import nt_2b5, caduceus, enformer, dna_bert_v2
+    from config.distillation.glm import (
+        nt_2b5,
+        caduceus,
+        enformer,
+        dna_bert_v2,
+        carbon_3b_lora,
+    )
     from config.distillation.experiments.nt import NT_PARENT_PATH
     from config.distillation.experiments.caduceus import CADUCEUS_PARENT_PATH
     from config.distillation.experiments.enformer import ENFORMER_PARENT_PATH
     from config.distillation.experiments.dna_bert_v2 import DNABERT2_PARENT_PATH
+    from config.distillation.experiments.carbon import CARBON_PARENT_PATH
 
     config_map = {
         "nt": (nt_2b5, NT_PARENT_PATH, "nt"),
         "caduceus": (caduceus, CADUCEUS_PARENT_PATH, "caduceus"),
         "enformer": (enformer, ENFORMER_PARENT_PATH, "enformer"),
         "dnabert2": (dna_bert_v2, DNABERT2_PARENT_PATH, "glm"),
+        # Carbon-3B LoRA teacher (~3B): GLM family loader handles the per-task PEFT adapter
+        # under {CARBON_PARENT_PATH}/{task}_finetuned/ (auto-detected + merged by build_glm).
+        "carbon3b": (carbon_3b_lora, CARBON_PARENT_PATH, "glm"),
     }
 
     return config_map.get(model_type)
+
+
+def _disable_dnabert2_flash_attn() -> int:
+    """Force DNABERT-2's PyTorch attention fallback by nulling its Triton flash-attn fn.
+
+    DNABERT-2 is loaded via trust_remote_code, so its `bert_layers` module lands in
+    sys.modules under a transformers_modules.* path. We set `flash_attn_qkvpacked_func`
+    to None there (and unpad_input/pad_input stay), which makes BertUnpadSelfAttention
+    take the pure-PyTorch branch. Returns the number of modules patched.
+    """
+    import sys
+
+    patched = 0
+    for name, mod in list(sys.modules.items()):
+        if mod is None:
+            continue
+        if "DNABERT" in name and name.endswith("bert_layers"):
+            if hasattr(mod, "flash_attn_qkvpacked_func"):
+                mod.flash_attn_qkvpacked_func = None
+                patched += 1
+    return patched
 
 
 def benchmark_teachers_on_task(
@@ -210,6 +250,19 @@ def benchmark_teachers_on_task(
                 full_config, task_name, teacher_ckpt
             )
 
+            # DNABERT-2 bundles a Triton flash-attention kernel (flash_attn_triton.py)
+            # that calls tl.dot(..., trans_b=True); newer Triton (>=3) dropped trans_b,
+            # so the kernel raises at runtime. bert_layers.py has a pure-PyTorch
+            # attention fallback that activates when flash_attn_qkvpacked_func is None.
+            # Disable the Triton path on the loaded module to use that fallback (numerically
+            # equivalent attention; only the kernel differs). Lets DNABERT-2 run in-process.
+            if teacher_type == "dnabert2":
+                _disabled = _disable_dnabert2_flash_attn()
+                print(
+                    f"  DNABERT-2: Triton flash-attn disabled on {_disabled} module(s) "
+                    f"-> using PyTorch attention fallback."
+                )
+
             # Benchmark
             result = benchmark_teacher_inference(
                 model=teacher_model,
@@ -222,6 +275,9 @@ def benchmark_teachers_on_task(
                 max_length=config.max_length,
                 warmup_batches=config.warmup_batches,
                 num_batches=config.num_batches,
+                dtype=torch.float16 if config.precision == "fp16" else torch.float32,
+                input_prefix=getattr(teacher_config, "input_prefix", ""),
+                add_special_tokens=getattr(teacher_config, "add_special_tokens", True),
             )
 
             results.append(result)
@@ -321,6 +377,7 @@ def benchmark_students_on_task(
                 task_name=task_name,
                 warmup_batches=config.warmup_batches,
                 num_batches=config.num_batches,
+                dtype=torch.float16 if config.precision == "fp16" else torch.float32,
             )
 
             results.append(result)
@@ -368,29 +425,52 @@ def print_summary_table(results: List[BenchmarkResult]):
         print("\nNo benchmark results to display.")
         return
 
-    print(f"\n{'=' * 100}")
+    print(f"\n{'=' * 128}")
     print("BENCHMARK SUMMARY")
-    print(f"{'=' * 100}")
+    # All results in a run share the same hardware; state it once for the same-HW table.
+    gpus = sorted(set(r.gpu_name for r in results if r.gpu_name))
+    cpus = sorted(set(r.cpu_name for r in results if r.cpu_name))
+    print(f"GPU: {', '.join(gpus) if gpus else 'unknown'}")
+    print(f"CPU: {', '.join(cpus) if cpus else 'unknown'}")
+    print(f"  (TotalTime '*' = extrapolated = mean_latency x n_total_batches; SeqLen=padded/native)")
+    print(f"{'=' * 140}")
+    # All rows should share one precision after the unification fix; surface it per-row so
+    # a reviewer can confirm the table is single-precision at a glance.
+    precs = sorted(set(r.precision for r in results if r.precision))
+    print(f"Precision: {', '.join(precs) if precs else 'unknown'} "
+          f"{'(UNIFORM)' if len(precs) == 1 else '(!! MIXED -- not single-precision !!)'}")
     print(
-        f"{'Task':<25} {'Model':<20} {'Type':<10} {'Latency(ms)':<12} "
-        f"{'Throughput':<12} {'Memory(MB)':<12} {'Params':<15}"
+        f"{'Task':<20} {'Model':<12} {'Type':<8} {'Prec':<5} {'Dev':<5} {'nTest':<7} {'SeqLen':<7} {'Native':<7} {'BS':<4} "
+        f"{'Latency(ms)':<12} {'TotalTime(s)':<14} {'Memory(MB)':<12} {'Params':<13}"
     )
-    print("-" * 100)
+    print("-" * 140)
 
     # Group by task
     tasks = sorted(set(r.task_name for r in results))
     for task in tasks:
         task_results = [r for r in results if r.task_name == task]
         for r in task_results:
+            tt = f"{r.total_time_s:.3f}{'*' if r.total_time_extrapolated else ''}"
+            ntest = r.n_test if r.n_test else r.num_samples
             print(
-                f"{r.task_name:<25} {r.model_name:<20} {r.model_type:<10} "
-                f"{r.mean_latency_ms:<12.2f} {r.throughput_samples_per_sec:<12.1f} "
-                f"{r.peak_memory_mb:<12.1f} {r.num_parameters:<15,}"
+                f"{r.task_name:<20} {r.model_name:<12} {r.model_type:<8} "
+                f"{(r.precision or '?'):<5} {(r.device or 'cuda'):<5} {ntest:<7} {r.seq_length:<7} {r.native_seq_len:<7} {r.batch_size:<4} "
+                f"{r.mean_latency_ms:<12.2f} {tt:<14} "
+                f"{r.peak_memory_mb:<12.1f} {r.num_parameters:<13,}"
             )
         if task != tasks[-1]:
-            print("-" * 100)
+            print("-" * 140)
 
-    print(f"{'=' * 100}")
+    # Cross-task totals per model (sum of whole-dataset time over all benchmarked tasks).
+    print("-" * 140)
+    print("CROSS-TASK TOTALS (sum of whole-dataset TotalTime over all tasks; '*' if any extrapolated):")
+    models = sorted(set(r.model_name for r in results))
+    for m in models:
+        rs = [r for r in results if r.model_name == m]
+        tot = sum(r.total_time_s for r in rs)
+        any_ext = any(r.total_time_extrapolated for r in rs)
+        print(f"  {m:<16} {len(rs):>2} tasks   total_time = {tot:.2f} s{'*' if any_ext else ''}")
+    print(f"{'=' * 140}")
 
 
 def main(config: BenchmarkConfig):

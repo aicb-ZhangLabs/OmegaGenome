@@ -27,6 +27,15 @@ class GLMConfig:
     output_hidden_states: bool = True  # For feature extraction
     trust_remote_code: bool = True
 
+    # Teacher-specific input formatting (e.g. Carbon needs the "<dna>" tag and
+    # add_special_tokens=False). No-op defaults keep existing teachers unaffected.
+    input_prefix: str = ""
+    add_special_tokens: bool = True
+
+    # Load dtype for the teacher ("bfloat16"/"float16"/None=fp32). Large teachers (Carbon-3B) need
+    # bf16 to fit + it matches how they were fine-tuned. None keeps existing teachers at fp32.
+    torch_dtype: Optional[str] = None
+
     # LoRA-specific fields
     base_model_path: Optional[str] = None  # Base model for LoRA adapters
     is_lora: Optional[bool] = None  # Auto-detect if None
@@ -60,6 +69,8 @@ def build_glm(config: GLMConfig):
     """
     model_path = config.ckpt_path if config.ckpt_path else config.model_name_or_path
 
+    _dtype = getattr(torch, config.torch_dtype) if config.torch_dtype else None  # None = fp32
+
     if config.is_lora:
         print(f"Loading LoRA adapter from: {model_path}")
 
@@ -82,6 +93,7 @@ def build_glm(config: GLMConfig):
             num_labels=config.num_labels,
             output_hidden_states=config.output_hidden_states,
             trust_remote_code=config.trust_remote_code,
+            dtype=_dtype,
         )
 
         # Load LoRA adapter
@@ -103,15 +115,45 @@ def build_glm(config: GLMConfig):
             num_labels=config.num_labels,
             output_hidden_states=config.output_hidden_states,
             trust_remote_code=config.trust_remote_code,
+            dtype=_dtype,
         )
+        # DNABERT-2's bundled flash-attn Triton kernel calls tl.dot(..., trans_b=True), which triton>=3
+        # removed -> CompilationError at the teacher forward. bert_layers.py falls back to standard
+        # (mathematically identical) attention when its module-global flash_attn_qkvpacked_func is None,
+        # so null it out on the dynamically-loaded remote-code module. No-op for non-DNABERT-2 teachers.
+        import sys as _sys
+        for _mn, _mod in list(_sys.modules.items()):
+            if _mn.endswith(".bert_layers") and getattr(_mod, "flash_attn_qkvpacked_func", None) is not None:
+                _mod.flash_attn_qkvpacked_func = None
+                print(f"[glm] disabled DNABERT-2 triton flash-attn in {_mn} -> standard-attn fallback")
+
+    # Force the load dtype. trust_remote_code models (Carbon) can ignore from_pretrained's dtype and
+    # stay fp32 (-> 12GB weights -> OOM), so cast explicitly. No-op when _dtype is None (other teachers).
+    if _dtype is not None:
+        model = model.to(_dtype)
+
+    # Some autoregressive tokenizers (e.g. Carbon) define no pad token, which breaks batched
+    # tokenization. Use eos as pad (masked by attention_mask -> predictions unchanged).
+    if tokenizer.pad_token is None and tokenizer.eos_token is not None:
+        tokenizer.pad_token = tokenizer.eos_token
+    # Independently, the MODEL needs pad_token_id for batched sequence-classification pooling (it
+    # locates the last non-pad token). Set it whenever the model lacks one but the tokenizer has it —
+    # NOT gated on the tokenizer having just been patched (the tokenizer may already carry a pad token
+    # while the model config's pad_token_id is None, which still crashes the forward at batch > 1).
+    if getattr(model.config, "pad_token_id", None) is None and getattr(tokenizer, "pad_token_id", None) is not None:
+        model.config.pad_token_id = tokenizer.pad_token_id
 
     return tokenizer, model
 
 
 def get_best_checkpoint(parent_path: str, task_name: str, model_type: str = "default"):
-    """Find best checkpoint for a task - supports both GLM and NT directory structures"""
+    """Find best checkpoint for a task - supports Carbon-LoRA, GLM, and NT directory structures."""
     import re
 
+    # Explicit per-teacher dispatch (clearer + each layout is isolated):
+    #   NT   -> {parent}/finetuned_models/{task}_finetuned/model-best_mcc_score_X/
+    #   GLM  -> Carbon-LoRA {parent}/{task}_finetuned/ (PEFT adapter), else {parent}/{task}/checkpoint-N/
+    # (Enformer/Caduceus never reach here — find_teacher_checkpoint routes them to their own finders.)
     if "NT" in model_type or "nucleotide" in parent_path.lower():
         # NT checkpoint structure: finetuned_models/{task}_finetuned/model-best*mcc_score*
         task_dir = os.path.join(parent_path, "finetuned_models", f"{task_name}_finetuned")
@@ -132,6 +174,11 @@ def get_best_checkpoint(parent_path: str, task_name: str, model_type: str = "def
                     continue
         return best_dir, best_score
     else:
+        # GLM family. Carbon-LoRA teachers save the PEFT adapter directly under {task}_finetuned/
+        # (adapter_config.json present); the original GLM layout is {parent}/{task}/checkpoint-N/.
+        lora_dir = os.path.join(parent_path, f"{task_name}_finetuned")
+        if os.path.isfile(os.path.join(lora_dir, "adapter_config.json")):
+            return lora_dir, -1.0
         # Original GLM checkpoint structure
         return orig_get_best_checkpoint(parent_path, task_name), -1.0
 
@@ -282,6 +329,45 @@ def find_teacher_checkpoint(config, task_name):
             return teacher_ckpt, -1.0
 
 
+def _teacher_eval_cache_path(config, teacher_ckpt) -> str:
+    """Resolve the teacher_evaluation.json path EXACTLY as evaluate_and_log_teacher does.
+
+    Single source of truth for the per-checkpoint teacher-eval cache location so the
+    skip-the-load check (``teacher_eval_cache_is_valid``) and the writer
+    (``evaluate_and_log_teacher``) never drift: Enformer ckpts are .pt files (cache in
+    the parent dir); every other teacher uses the checkpoint directory itself.
+    """
+    model_type = getattr(config, "model_type", "glm")
+    if model_type == "enformer":
+        cache_dir = os.path.dirname(teacher_ckpt)
+    else:
+        cache_dir = teacher_ckpt
+    if os.path.isfile(cache_dir):
+        cache_dir = os.path.dirname(cache_dir)
+    return os.path.join(cache_dir, "teacher_evaluation.json")
+
+
+def teacher_eval_cache_is_valid(config, teacher_ckpt) -> bool:
+    """True iff a cached teacher_evaluation.json would be a HIT in evaluate_and_log_teacher.
+
+    Mirrors the cache-read guard inside ``evaluate_and_log_teacher`` byte-for-byte: the
+    file must exist, parse, carry ``teacher_test_mcc``, and record the SAME
+    ``teacher_checkpoint`` as ``teacher_ckpt``. A True result guarantees
+    ``evaluate_and_log_teacher`` returns the cached MCC WITHOUT a teacher forward, so
+    ``prepare_task`` can safely skip the 3B load when this (plus the logits/features
+    cache) holds. Any read/parse/mismatch returns False (forces a real eval+load).
+    """
+    teacher_eval_file = _teacher_eval_cache_path(config, teacher_ckpt)
+    if not os.path.exists(teacher_eval_file):
+        return False
+    try:
+        with open(teacher_eval_file, "r") as f:
+            data = json.load(f)
+    except Exception:
+        return False
+    return data.get("teacher_checkpoint") == teacher_ckpt and "teacher_test_mcc" in data
+
+
 def evaluate_and_log_teacher(
     teacher_model,
     teacher_tokenizer,
@@ -303,21 +389,10 @@ def evaluate_and_log_teacher(
     print(f"{'=' * 60}")
     # --- START: CACHE CHECK ---
     # --- START: DETERMINE CACHE DIRECTORY BASED ON MODEL TYPE ---
-    model_type = getattr(config, "model_type", "glm")
-
-    if model_type == "enformer":
-        # For Enformer: checkpoint is a .pt file, save cache in parent directory
-        cache_dir = os.path.dirname(teacher_ckpt)
-        print(f"Enformer detected: Using parent directory for cache: {cache_dir}")
-    else:
-        # For other models (NT, Caduceus, DNABERT2): checkpoint is a directory
-        cache_dir = teacher_ckpt
-        print(f"Non-Enformer model: Using checkpoint directory for cache: {cache_dir}")
-
-    if os.path.isfile(cache_dir):
-        cache_dir = os.path.dirname(cache_dir)
-
-    teacher_eval_file = os.path.join(cache_dir, "teacher_evaluation.json")
+    # Resolve via the shared helper so the skip-the-3B-load check
+    # (teacher_eval_cache_is_valid) and this reader/writer use the SAME path.
+    teacher_eval_file = _teacher_eval_cache_path(config, teacher_ckpt)
+    cache_dir = os.path.dirname(teacher_eval_file)
     # teacher_eval_file = os.path.join(teacher_ckpt, "teacher_evaluation.json")
 
     if os.path.exists(teacher_eval_file):
@@ -365,17 +440,35 @@ def evaluate_and_log_teacher(
     # Create dataset and dataloader
     test_dataset = SimpleTextDataset(X_test, y_test)
 
+    # Match the teacher's fine-tuning input format (e.g. Carbon's "<dna>" prefix + add_special_tokens
+    # =False); defaults ("" / True) are a no-op for the other teachers. Also ensure a pad token exists
+    # (autoregressive teachers ship none), else batched padding + classification pooling fail.
+    _prefix = getattr(config.teacher_config, "input_prefix", "")
+    _add_special = getattr(config.teacher_config, "add_special_tokens", True)
+    # getattr-guarded: non-HF teacher tokenizers (e.g. Enformer's char-level EnformerTokenizer) ship
+    # no pad_token/eos_token/pad_token_id attributes at all -> bare access raises AttributeError.
+    _pad = getattr(teacher_tokenizer, "pad_token", None)
+    _eos = getattr(teacher_tokenizer, "eos_token", None)
+    if _pad is None and _eos is not None:
+        teacher_tokenizer.pad_token = _eos
+    _mcfg = getattr(teacher_model, "config", None)
+    _pad_id = getattr(teacher_tokenizer, "pad_token_id", None)
+    if _mcfg is not None and getattr(_mcfg, "pad_token_id", None) is None and _pad_id is not None:
+        _mcfg.pad_token_id = _pad_id
+
     # Collate function for teacher
     def collate_fn(batch):
-        texts = [item["text"] for item in batch]
-        labels = [item["label"] for item in batch]
+        from ..trainer.utils import tokenize_teacher_inputs
 
-        encoded = teacher_tokenizer(
-            texts,
-            padding="max_length",
-            truncation=True,
-            max_length=config.trainer_config.max_len,
-            return_tensors="pt",
+        labels = [item["label"] for item in batch]
+        # Same helper as precompute: applies prefix + add_special_tokens (HF tokenizers only), so a
+        # custom-tokenizer teacher (Enformer) isn't passed an unsupported kwarg.
+        encoded = tokenize_teacher_inputs(
+            teacher_tokenizer,
+            [item["text"] for item in batch],
+            config.trainer_config.max_len,
+            input_prefix=_prefix,
+            add_special_tokens=_add_special,
         )
 
         # FIX: Handle missing attention_mask
@@ -392,11 +485,19 @@ def evaluate_and_log_teacher(
 
         return result
 
+    # Robust against a minimal trainer_config wrapper that only carries `device`
+    # (the config-driven DKD path builds such a wrapper): fall back to the JSON
+    # teacher_batch_size, then batch_size, then a safe default of 4.
+    _teacher_bs = (
+        getattr(config.trainer_config, "teacher_batch_size", None)
+        or getattr(config.trainer_config, "batch_size", None)
+        or 4
+    )
     test_loader = DataLoader(
         test_dataset,
-        batch_size=config.trainer_config.batch_size,
+        batch_size=_teacher_bs,
         shuffle=False,
-        num_workers=config.trainer_config.num_workers,
+        num_workers=getattr(config.trainer_config, "num_workers", 0),
         collate_fn=collate_fn,
     )
 

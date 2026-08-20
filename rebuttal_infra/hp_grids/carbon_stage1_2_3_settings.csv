@@ -1,0 +1,5 @@
+stage,weight_mses,n_combos_per_task,kind,note
+stage1,0.0 | 1.0,32,base,current lab default
+stage2,0.25,16,manual/extra,mse=0.25 (for me checking)
+stage3,2.0 | 5.0,32,base,"mse=2,5 (box)"
+manual,0.2 | 0.25,-,manual/extra,0.2 = single-config default; 0.25 = stage2 slice; NOT in base grid

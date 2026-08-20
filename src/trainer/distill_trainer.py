@@ -1,4 +1,12 @@
 import os
+
+# FORK-SAFETY: route `torch.cuda.is_available()` through the NVML probe (no `cuInit`) so the
+# `DistillTrainerConfig.device` field default below — evaluated at IMPORT time — does NOT
+# initialize the CUDA driver context and poison a later `fork`. Must precede `import torch`.
+# (Mirrors the same setdefault in src/train/distill.py; harmless if already set.) See that file
+# for the full rationale.
+os.environ.setdefault("PYTORCH_NVML_BASED_CUDA_CHECK", "1")
+
 import csv
 import time
 import json
@@ -64,42 +72,121 @@ def create_run_directory(parent_dir, task_name, config: DistillationModelConfig,
     return run_dir
 
 
+# Filesystem-error fragments that indicate a *transient* failure (e.g. an sshfs blip on the
+# shared galaxy SSD that makes torch.save raise "File ... cannot be opened"). These resolve in
+# seconds, so retrying recovers the run. Anything NOT matching (CUDA OOM, shape mismatch, ...)
+# is a real bug and must surface immediately, so we never retry it.
+_TRANSIENT_FS_SIGNATURES = (
+    "cannot be opened",
+    "unable to open file",
+    "Input/output error",
+    "Transport endpoint is not connected",
+    "No such file or directory",
+    "Stale file handle",
+    "Resource temporarily unavailable",
+)
+
+
+def _is_transient_fs_error(err: BaseException) -> bool:
+    """True if ``err`` looks like a recoverable filesystem hiccup (sshfs blip), not a real bug.
+
+    Any ``OSError`` qualifies; a ``RuntimeError`` qualifies only if its message matches a known
+    transient-FS signature (so a CUDA/shape ``RuntimeError`` is NOT swallowed and re-raises fast).
+    """
+    if isinstance(err, OSError):
+        return True
+    msg = str(err)
+    return any(sig in msg for sig in _TRANSIENT_FS_SIGNATURES)
+
+
+def _retry_io(fn, what: str, attempts: int = 4, base_delay: float = 3.0):
+    """Run idempotent I/O closure ``fn``, retrying ONLY transient FS errors with exponential backoff.
+
+    Recovers transient sshfs disconnects on the shared galaxy SSD (the cause of the carbon-distill
+    checkpoint-save failures) — a blip clears in seconds, so backoff 3/9/27s converts the failure
+    into a success without losing the run. Non-transient errors re-raise immediately (no masking).
+    Re-raises the last error if every attempt fails. ``what`` labels the op in the retry log.
+    """
+    last = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return fn()
+        except (RuntimeError, OSError) as e:
+            if not _is_transient_fs_error(e):
+                raise  # real bug -> surface now, don't waste retries
+            last = e
+            if attempt == attempts:
+                break
+            delay = base_delay * (3 ** (attempt - 1))
+            print(
+                f"[io-retry] {what}: attempt {attempt}/{attempts} hit transient FS error "
+                f"({type(e).__name__}: {e}); retrying in {delay:.0f}s",
+                flush=True,
+            )
+            time.sleep(delay)
+    raise last
+
+
 def save_checkpoint(model, epoch, val_mcc, run_dir, is_best=False):
     """
     Save checkpoint with systematic naming: epoch_{num}_valmcc_{score}
     Also maintains a 'best_model' directory for the best checkpoint
+
+    The whole write sequence is wrapped in ``_retry_io`` so a transient sshfs blip on the shared
+    galaxy SSD (which otherwise raises "student.pt cannot be opened" and FAILs the job) is retried
+    instead of crashing. The closure is idempotent — re-running re-creates the dir and overwrites.
     """
     # Format MCC to 4 decimal places
     mcc_str = f"{val_mcc:.4f}".replace(".", "p")  # Replace . with p for filename
     epoch_dir = os.path.join(run_dir, f"epoch_{epoch}_valmcc_{mcc_str}")
-    os.makedirs(epoch_dir, exist_ok=True)
 
-    # Save model
-    model_path = os.path.join(epoch_dir, "student.pt")
-    torch.save(model.state_dict(), model_path)
+    def _do_save():
+        os.makedirs(epoch_dir, exist_ok=True)
 
-    # Save metadata
-    metadata = {
-        "epoch": int(epoch),  # Ensure Python int
-        "val_mcc": float(val_mcc),  # Ensure Python float
-        "timestamp": datetime.now().isoformat(),
-    }
-    with open(os.path.join(epoch_dir, "metadata.json"), "w") as f:
-        json.dump(metadata, f, indent=2)
+        # Save model
+        model_path = os.path.join(epoch_dir, "student.pt")
+        torch.save(model.state_dict(), model_path)
 
-    # If this is the best model, copy to best_model directory
-    if is_best:
-        best_dir = os.path.join(run_dir, "best_model")
-        if os.path.exists(best_dir):
-            shutil.rmtree(best_dir)
-        shutil.copytree(epoch_dir, best_dir)
+        # Save metadata
+        metadata = {
+            "epoch": int(epoch),  # Ensure Python int
+            "val_mcc": float(val_mcc),  # Ensure Python float
+            "timestamp": datetime.now().isoformat(),
+        }
+        with open(os.path.join(epoch_dir, "metadata.json"), "w") as f:
+            json.dump(metadata, f, indent=2)
 
-        # Also save a reference file
-        with open(os.path.join(run_dir, "best_model_info.txt"), "w") as f:
-            f.write(f"Best model: epoch {epoch}, val_mcc {val_mcc:.4f}\n")
-            f.write(f"Location: {epoch_dir}\n")
+        # If this is the best model, copy to best_model directory
+        if is_best:
+            best_dir = os.path.join(run_dir, "best_model")
+            if os.path.exists(best_dir):
+                shutil.rmtree(best_dir)
+            shutil.copytree(epoch_dir, best_dir)
 
+            # Also save a reference file
+            with open(os.path.join(run_dir, "best_model_info.txt"), "w") as f:
+                f.write(f"Best model: epoch {epoch}, val_mcc {val_mcc:.4f}\n")
+                f.write(f"Location: {epoch_dir}\n")
+
+    _retry_io(_do_save, what=f"save_checkpoint epoch {epoch} -> {run_dir}")
     return epoch_dir
+
+
+def _early_stop_step(is_best: bool, epochs_no_improve: int, patience):
+    """One epoch of early-stop bookkeeping (pure -> unit-testable).
+
+    - ``is_best``: did this epoch set a new best val metric?
+    - ``epochs_no_improve``: consecutive non-improving epochs BEFORE this one.
+    - ``patience``: stop after this many consecutive non-improving epochs. None or <=0 -> disabled.
+
+    Returns ``(epochs_no_improve, should_stop)``. A new best resets the counter to 0 (so a late
+    improvement after a long plateau keeps training); ``should_stop`` is True only once the counter
+    REACHES ``patience``. Because the trainer reports the best-val checkpoint, stopping here yields the
+    identical reported metric with less compute.
+    """
+    epochs_no_improve = 0 if is_best else epochs_no_improve + 1
+    should_stop = bool(patience and patience > 0 and epochs_no_improve >= patience)
+    return epochs_no_improve, should_stop
 
 
 @dataclass
@@ -112,8 +199,21 @@ class DistillTrainerConfig:
     max_len: int = 1024
     log_batch_every: int = 50
     eval_every_n_epochs: int = 5
-    num_workers: int = 4
+    # SeqDataset is in-memory → DataLoader workers add only fork/IPC overhead. Default 0 (main-process
+    # indexing) is fastest and bit-identical; raise only if a dataset ever becomes IO-bound.
+    num_workers: int = 0
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    # Base dir for the precompute logits/features cache. None -> project_path (legacy /extra). Set to
+    # a fast local disk (SSD) to keep the cache off the degraded /extra NFS.
+    cache_base_dir: Optional[str] = None
+    # Batch size for the TEACHER forward (precompute + teacher eval). None -> batch_size. A large
+    # teacher (Carbon-3B) at seq~1000 needs a small batch (attention is O(seq^2)); the student trains
+    # at the larger batch_size separately.
+    teacher_batch_size: Optional[int] = None
+    # Early stopping: stop if val_mcc hasn't improved for this many epochs. None -> disabled (run all
+    # epochs). Since we report the BEST-VAL checkpoint, early-stopping yields the SAME reported MCC with
+    # less compute — used for the HP search; the final best-HP runs keep it None (full schedule).
+    early_stop_patience: Optional[int] = None
 
 
 def train_distill_task(
@@ -135,6 +235,20 @@ def train_distill_task(
     teacher_ckpt: str,  # <-- ADD THIS PARAMETER
     resume_from_checkpoint: Optional[str] = None,  # NEW parameter
     resume_from_epoch: int = 0,  # NEW parameter
+    input_prefix: str = "",  # teacher input formatting (Carbon "<dna>"); no-op default for others
+    add_special_tokens: bool = True,
+    random_state: int = 42,  # training seed (top-level config.random_state); recorded in final_summary
+    # SHARED-MEMORY (fork) fast path: when the fork-parallel parent has already loaded the teacher
+    # logits/features ONCE into shared CPU arrays (Linux COW after fork), it passes them here so
+    # this child reuses the SHARED arrays INSTEAD of re-reading the on-disk cache (which would copy
+    # the whole feature tensor per child -> N× memory). Defaults None = the original behavior:
+    # precompute_teacher_logits runs and reads the cache exactly as before (serial/SLURM are byte-
+    # identical). When provided, these MUST equal what the cache would return (the fork parent loads
+    # them via the SAME teacher_cache_is_valid-gated path), so results are unchanged. The arrays are
+    # treated read-only here (SeqDataset COPIES them into fresh tensors), so a child never mutates
+    # the shared parent arrays.
+    preloaded_teacher_logits=None,
+    preloaded_teacher_features=None,
 ):
     # move models to device
     model.to(config.device)
@@ -148,8 +262,25 @@ def train_distill_task(
     train_tlogits = None
     train_tfeatures = None
 
+    # SHARED-MEMORY fast path: reuse the parent-preloaded teacher arrays (fork COW) when present and
+    # needed, skipping the per-child disk read entirely. We only take a preloaded array for an output
+    # this config actually needs (matches the precompute gate below); a needed-but-missing preload
+    # falls through to the normal precompute (self-correcting, never silently wrong).
+    use_preloaded = (
+        (preloaded_teacher_logits is not None or preloaded_teacher_features is not None)
+        and (
+            (preloaded_teacher_logits is not None or not needs_logits)
+            and (preloaded_teacher_features is not None or not needs_features)
+        )
+    )
+    if (needs_logits or needs_features) and use_preloaded:
+        train_tlogits = preloaded_teacher_logits if needs_logits else None
+        train_tfeatures = preloaded_teacher_features if needs_features else None
+        print(
+            "Using parent-preloaded teacher outputs (shared fork memory; no per-child cache read)."
+        )
     # Only precompute if we need logits or features
-    if needs_logits or needs_features:
+    elif needs_logits or needs_features:
         if needs_logits and needs_features:
             print("Precomputing teacher logits and features...")
         elif needs_features:
@@ -159,17 +290,21 @@ def train_distill_task(
 
         from config.env import project_path
 
+        cache_base = config.cache_base_dir or project_path  # SSD when set, else legacy /extra
+        teacher_bs = config.teacher_batch_size or config.batch_size  # small batch for the 3B forward
         train_tlogits, train_tfeatures = precompute_teacher_logits(
             teacher_tokenizer,
             teacher_model,
             X_train,
-            config.batch_size,
+            teacher_bs,
             config.device,
             config.max_len,
             needs_logits=needs_logits,  # NEW: explicit logits flag
             needs_features=needs_features,
+            input_prefix=input_prefix,
+            add_special_tokens=add_special_tokens,
             # Cache parameters
-            project_path=project_path,
+            project_path=cache_base,
             teacher_parent_dir=teacher_parent_dir,
             task_name=task_name,
             teacher_ckpt=teacher_ckpt,
@@ -183,13 +318,27 @@ def train_distill_task(
     val_ds = SeqDataset(X_val, y_val, config.max_len)
     test_ds = SeqDataset(X_test, y_test, config.max_len)
 
-    # Create data loaders
-    train_loader = DataLoader(train_ds, batch_size=config.batch_size, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_ds, batch_size=config.batch_size, shuffle=False, num_workers=4)
-    test_loader = DataLoader(test_ds, batch_size=config.batch_size, shuffle=False, num_workers=4)
+    # Create data loaders.
+    # SeqDataset is FULLY in-memory: __init__ pre-encodes every sequence/label/teacher tensor, so
+    # __getitem__ is a trivial index with no IO or compute. DataLoader worker processes therefore add
+    # only fork + per-batch IPC overhead (re-spawned every epoch when persistent_workers is off), which
+    # for ~30k examples at batch_size 8 = ~3.75k tiny batches/epoch dominates the wall time — especially
+    # with many configs training concurrently. num_workers=0 (main-process indexing) is strictly faster
+    # here and bit-identical (workers never change batch content or order). We respect config.num_workers
+    # (previously hard-coded to 4, ignoring the field) and only enable persistent_workers when >0.
+    _dl_kwargs = dict(
+        num_workers=config.num_workers,
+        pin_memory=str(config.device).startswith("cuda"),
+    )
+    if config.num_workers > 0:
+        _dl_kwargs["persistent_workers"] = True
+    train_loader = DataLoader(train_ds, batch_size=config.batch_size, shuffle=True, **_dl_kwargs)
+    val_loader = DataLoader(val_ds, batch_size=config.batch_size, shuffle=False, **_dl_kwargs)
+    test_loader = DataLoader(test_ds, batch_size=config.batch_size, shuffle=False, **_dl_kwargs)
 
     best_val_mcc = -1.0
     best_epoch = 0
+    epochs_no_improve = 0
 
     global_step = 0
     start_time = time.time()
@@ -230,6 +379,9 @@ def train_distill_task(
 
         # Determine if this is the best model
         is_best = val_metrics["mcc"] > best_val_mcc
+        epochs_no_improve, should_stop = _early_stop_step(
+            is_best, epochs_no_improve, config.early_stop_patience
+        )
         if is_best:
             best_val_mcc = val_metrics["mcc"]
             best_epoch = epoch
@@ -275,6 +427,12 @@ def train_distill_task(
             f"val_mcc {val_metrics['mcc']:.4f} {'🌟 NEW BEST!' if is_best else ''}"
         )
 
+        # Early stopping (best-val checkpoint already saved -> same reported MCC, less compute).
+        if should_stop:
+            print(f"[{task_name}] EARLY STOP at epoch {epoch}: no val_mcc improvement for "
+                  f"{epochs_no_improve} epochs (best {best_val_mcc:.4f} @ epoch {best_epoch})")
+            break
+
     # Final test evaluation
     test_metrics = evaluate(model, test_loader, config.device)
     wandb.log(
@@ -314,7 +472,12 @@ def train_distill_task(
             float(best_test_metrics["mcc"]) if best_test_metrics is not None else None
         ),
         "best_test_f1": (float(best_test_metrics["f1"]) if best_test_metrics is not None else None),
-        "total_epochs": config.epochs,
+        "total_epochs": int(epoch),  # ACTUAL epochs run (< config.epochs if early-stopped)
+        "max_epochs": config.epochs,
+        "early_stopped": bool(epoch < config.epochs),
+        # Training seed — lets the 3-seed aggregator select ONLY the multi-seed runs (random_state in
+        # {0,1,2}) and exclude HP-search runs (which use the config default 42), with zero contamination.
+        "random_state": int(random_state),
         "hyperparameters": {
             "weight_ce": distillation_config.weight_ce,
             "weight_kl": distillation_config.weight_kl,

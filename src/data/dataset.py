@@ -1,4 +1,5 @@
 import os
+import glob
 import csv
 import torch
 import numpy as np
@@ -7,7 +8,7 @@ from typing import Literal
 from torch.utils.data import Dataset
 from dataclasses import dataclass
 from sklearn.model_selection import train_test_split
-from datasets import load_dataset
+from datasets import load_dataset, Dataset as HFDataset, config as hf_datasets_config
 
 CHAR2IDX = {"A": 0, "C": 1, "G": 2, "T": 3}
 
@@ -70,19 +71,39 @@ def build_data_splits(config: DatasetConfig):
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 
+def _load_full_split_datasets(dataset_name: str):
+    """Return the full (all-task) ``train`` / ``test`` splits of ``dataset_name``.
+
+    datasets==4.2.0 removed ``trust_remote_code`` / loading-script support, so the original
+    ``load_dataset(dataset_name, split=..., trust_remote_code=True)`` fails for this script-based
+    dataset. When a materialized HF arrow cache exists locally (HF_DATASETS_CACHE), we read the
+    prepared per-split arrow files directly -- same rows in the same order as ``load_dataset`` would
+    return, so the downstream task filter + stratified split are byte-identical, with no network and
+    no ``trust_remote_code``. Falls back to the original loading-script call when no cache is found
+    (so non-cached environments still work).
+    """
+    ns = dataset_name.replace("/", "___")            # HF namespaced cache dir name
+    base = dataset_name.split("/")[-1]               # prepared split arrow file prefix
+    cache = hf_datasets_config.HF_DATASETS_CACHE     # honors HF_HOME / HF_DATASETS_CACHE env
+
+    def _find(split):
+        hits = sorted(glob.glob(os.path.join(cache, ns, "*", "*", "*", f"{base}-{split}.arrow")))
+        return hits[0] if hits else None
+
+    train_arrow, test_arrow = _find("train"), _find("test")
+    if train_arrow and test_arrow:
+        return HFDataset.from_file(train_arrow), HFDataset.from_file(test_arrow)
+    return (
+        load_dataset(dataset_name, split="train", trust_remote_code=True),
+        load_dataset(dataset_name, split="test", trust_remote_code=True),
+    )
+
+
 def build_data_splits_from_huggingface(config: DatasetConfig):
     # --- Load data from HuggingFace ---
     print("Loading dataset from HuggingFace...")
-    ds_all_train = load_dataset(
-        config.dataset_name,
-        split="train",
-        trust_remote_code=True,
-    )
-    ds_all_test = load_dataset(
-        config.dataset_name,
-        split="test",
-        trust_remote_code=True,
-    )
+    # datasets==4.2.0 fix: read the local arrow cache directly (no trust_remote_code / network).
+    ds_all_train, ds_all_test = _load_full_split_datasets(config.dataset_name)
 
     # Filter to just this task
     ds_train_full = ds_all_train.filter(lambda ex: ex["task"] == config.task_name)
@@ -134,6 +155,67 @@ class SeqDataset(Dataset):
 
     def __getitem__(self, idx):
         x = self.ids[idx]
+        y = self.labels[idx]
+        if self.teacher_logits is not None and self.teacher_features is not None:
+            return x, y, self.teacher_logits[idx], self.teacher_features[idx]
+        elif self.teacher_logits is not None:
+            return x, y, self.teacher_logits[idx]
+        return x, y
+
+
+class EmbeddingSeqDataset(Dataset):
+    """SeqDataset variant for the R1.3 embedding-input student (input_mode='nt_embedding').
+
+    Identical batch contract to ``SeqDataset`` EXCEPT batch element 0 is the per-bp teacher
+    embedding ``[max_len, hidden_size]`` (float) instead of the char-index ids ``[max_len]``
+    (long). The student's ``BPNetClassifier.forward`` consumes it via its learned input adapter;
+    labels and the (pooled) teacher logits/features KD targets are unchanged, so the trainer,
+    losses and best-ckpt selection are byte-identical to the one-hot path.
+
+    ``embeddings`` is the [N, max_len, hidden_size] array from
+    ``embedding_cache.precompute_perbp_embeddings`` (may be a numpy memmap; copied to a tensor
+    lazily per item to avoid materializing the whole array on GPU).
+
+    TRUE one-hot late-fusion (front_end='latefuse_onehot'): pass ``sequences`` + ``max_len`` so the
+    REAL one-hot ids are computed (exactly like the baseline ``SeqDataset``) and APPENDED to the
+    embedding along the feature axis -> element 0 is ``[max_len, hidden_size + 4]`` (embedding ++
+    one-hot fp). Packing both into a single tensor keeps the trainer's positional batch contract
+    (``batch[0]`` is the student input, ``batch[2/3]`` stay logits/features) unchanged -- no trainer
+    edits. The student's forward splits ``[..., :D]`` (embedding) and ``[..., D:]`` (one-hot).
+    """
+
+    def __init__(self, embeddings, labels, teacher_logits=None, teacher_features=None,
+                 sequences=None, max_len=None):
+        self.embeddings = embeddings  # np.ndarray [N, L, H] (possibly mmap)
+        self.labels = torch.tensor(labels, dtype=torch.long)
+        self.teacher_logits = (
+            torch.tensor(teacher_logits, dtype=torch.float) if teacher_logits is not None else None
+        )
+        self.teacher_features = (
+            torch.tensor(teacher_features, dtype=torch.float)
+            if teacher_features is not None
+            else None
+        )
+        # Optional REAL one-hot (latefuse_onehot). Precompute the [N, L, 4] one-hot once (cheap) so
+        # __getitem__ just concatenates it onto the embedding. Built from the raw sequences exactly as
+        # the baseline SeqDataset does (encode_seq -> A/C/G/T idx -> one_hot).
+        self.onehot = None
+        if sequences is not None:
+            assert max_len is not None, "latefuse_onehot needs max_len to encode the one-hot"
+            ids = torch.tensor([encode_seq(s, max_len) for s in sequences], dtype=torch.long)
+            self.onehot = torch.nn.functional.one_hot(ids, num_classes=4).float()  # [N, L, 4]
+            assert len(self.onehot) == len(self.embeddings)
+        assert len(self.embeddings) == len(self.labels)
+        assert self.teacher_logits is None or len(self.teacher_logits) == len(self.labels)
+        assert self.teacher_features is None or len(self.teacher_features) == len(self.labels)
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        x = torch.from_numpy(np.ascontiguousarray(self.embeddings[idx])).float()  # [L, D]
+        if self.onehot is not None:
+            x = torch.cat([x, self.onehot[idx]], dim=-1)  # [L, D+4]: embedding ++ real one-hot
         y = self.labels[idx]
         if self.teacher_logits is not None and self.teacher_features is not None:
             return x, y, self.teacher_logits[idx], self.teacher_features[idx]

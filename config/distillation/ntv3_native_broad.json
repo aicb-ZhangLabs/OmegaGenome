@@ -1,0 +1,183 @@
+{
+  "species": "human",
+  "ntv3_track_subset": [
+    1538,
+    1530,
+    1533,
+    1532,
+    1543,
+    1541,
+    1534,
+    1196,
+    1204,
+    1198,
+    1200,
+    1199,
+    1206,
+    1205,
+    1201,
+    447,
+    441,
+    443,
+    439,
+    442,
+    449,
+    444
+  ],
+  "tracks": [
+    {
+      "label": "K562_H3K4me3",
+      "cell": "K562",
+      "assay": "H3K4me3",
+      "encode_acc": "ENCSR668LDD",
+      "ntv3_index": 1538
+    },
+    {
+      "label": "K562_H3K27me3",
+      "cell": "K562",
+      "assay": "H3K27me3",
+      "encode_acc": "ENCSR000EWB",
+      "ntv3_index": 1530
+    },
+    {
+      "label": "K562_H3K4me1",
+      "cell": "K562",
+      "assay": "H3K4me1",
+      "encode_acc": "ENCSR000EWC",
+      "ntv3_index": 1533
+    },
+    {
+      "label": "K562_H3K36me3",
+      "cell": "K562",
+      "assay": "H3K36me3",
+      "encode_acc": "ENCSR000DWB",
+      "ntv3_index": 1532
+    },
+    {
+      "label": "K562_H3K9me3",
+      "cell": "K562",
+      "assay": "H3K9me3",
+      "encode_acc": "ENCSR000APE",
+      "ntv3_index": 1543
+    },
+    {
+      "label": "K562_H3K9ac",
+      "cell": "K562",
+      "assay": "H3K9ac",
+      "encode_acc": "ENCSR000EVZ",
+      "ntv3_index": 1541
+    },
+    {
+      "label": "K562_H3K4me2",
+      "cell": "K562",
+      "assay": "H3K4me2",
+      "encode_acc": "ENCSR000AKT",
+      "ntv3_index": 1534
+    },
+    {
+      "label": "HepG2_DNase-seq",
+      "cell": "HepG2",
+      "assay": "DNase-seq",
+      "encode_acc": "ENCSR149XIL",
+      "ntv3_index": 1196
+    },
+    {
+      "label": "HepG2_H3K4me3",
+      "cell": "HepG2",
+      "assay": "H3K4me3",
+      "encode_acc": "ENCSR575RRX",
+      "ntv3_index": 1204
+    },
+    {
+      "label": "HepG2_H3K27me3",
+      "cell": "HepG2",
+      "assay": "H3K27me3",
+      "encode_acc": "ENCSR000DUE",
+      "ntv3_index": 1198
+    },
+    {
+      "label": "HepG2_H3K4me1",
+      "cell": "HepG2",
+      "assay": "H3K4me1",
+      "encode_acc": "ENCSR000APV",
+      "ntv3_index": 1200
+    },
+    {
+      "label": "HepG2_H3K36me3",
+      "cell": "HepG2",
+      "assay": "H3K36me3",
+      "encode_acc": "ENCSR000DUD",
+      "ntv3_index": 1199
+    },
+    {
+      "label": "HepG2_H3K9me3",
+      "cell": "HepG2",
+      "assay": "H3K9me3",
+      "encode_acc": "ENCSR000ATD",
+      "ntv3_index": 1206
+    },
+    {
+      "label": "HepG2_H3K9ac",
+      "cell": "HepG2",
+      "assay": "H3K9ac",
+      "encode_acc": "ENCSR000AMD",
+      "ntv3_index": 1205
+    },
+    {
+      "label": "HepG2_H3K4me2",
+      "cell": "HepG2",
+      "assay": "H3K4me2",
+      "encode_acc": "ENCSR000AMC",
+      "ntv3_index": 1201
+    },
+    {
+      "label": "GM12878_H3K4me3",
+      "cell": "GM12878",
+      "assay": "H3K4me3",
+      "encode_acc": "ENCSR057BWO",
+      "ntv3_index": 447
+    },
+    {
+      "label": "GM12878_H3K27me3",
+      "cell": "GM12878",
+      "assay": "H3K27me3",
+      "encode_acc": "ENCSR000DRX",
+      "ntv3_index": 441
+    },
+    {
+      "label": "GM12878_H3K4me1",
+      "cell": "GM12878",
+      "assay": "H3K4me1",
+      "encode_acc": "ENCSR000AKF",
+      "ntv3_index": 443
+    },
+    {
+      "label": "GM12878_H3K27ac",
+      "cell": "GM12878",
+      "assay": "H3K27ac",
+      "encode_acc": "ENCSR000AKC",
+      "ntv3_index": 439
+    },
+    {
+      "label": "GM12878_H3K36me3",
+      "cell": "GM12878",
+      "assay": "H3K36me3",
+      "encode_acc": "ENCSR000DRW",
+      "ntv3_index": 442
+    },
+    {
+      "label": "GM12878_H3K9ac",
+      "cell": "GM12878",
+      "assay": "H3K9ac",
+      "encode_acc": "ENCSR000AKH",
+      "ntv3_index": 449
+    },
+    {
+      "label": "GM12878_H3K4me2",
+      "cell": "GM12878",
+      "assay": "H3K4me2",
+      "encode_acc": "ENCSR000AKG",
+      "ntv3_index": 444
+    }
+  ]
+}

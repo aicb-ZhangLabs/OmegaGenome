@@ -1,0 +1,6 @@
+comparison,cosine_mean,cosine_std,cosine_median,silhouette,logit_r_class0,note,p_value_ts_vs_tb
+teacher (reference),,,,0.35868382,,Carbon-3B Teacher t-SNE silhouette,
+teacher-vs-OmegaGenome (student),0.10134868323802948,0.412311315536499,0.11988711357116699,0.47107002,0.82515949010849,OmegaGenome distilled student,2.471384643623545e-134
+teacher-vs-baseline (OmegaGenome-panel),-0.1766718477010727,0.4380699396133423,-0.26096123456954956,0.19820353,0.6097152233123779,from-scratch BPNet (no distillation),2.471384643623545e-134
+teacher-vs-DKD (student),0.10134868323802948,0.412311315536499,0.11988711357116699,0.47107002,0.82515949010849,DKD distilled student,2.471384643623545e-134
+teacher-vs-baseline (DKD-panel),-0.1766718477010727,0.4380699396133423,-0.26096123456954956,0.19820353,0.6097152233123779,from-scratch BPNet (no distillation),2.471384643623545e-134
