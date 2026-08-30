@@ -90,7 +90,7 @@ def setup_nature_style():
 TEACHER_NAME = {"enformer": "Enformer Teacher", "nt": "NT Teacher",
                 "dnabert2": "DNABERT-2 Teacher", "caduceus": "Caduceus Teacher",
                 "carbon": "Carbon-3B Teacher"}
-STUDENT_TITLE = {"omega": "Student (OmegaGenome)", "dkd": "Student (DKD)"}
+STUDENT_TITLE = {"omega": "OmegaGenome", "dkd": "DKD"}
 
 
 def create_combined_figure(teacher_emb, student_emb, bpnet_emb, labels,
@@ -138,7 +138,7 @@ def create_combined_figure(teacher_emb, student_emb, bpnet_emb, labels,
 
     _tsne_panel(axes[0, 0], teacher_tsne, teacher_label, sil_t)
     _tsne_panel(axes[0, 1], student_tsne, student_title, sil_s)
-    _tsne_panel(axes[0, 2], bpnet_tsne, "BPNet (from scratch)", sil_b)
+    _tsne_panel(axes[0, 2], bpnet_tsne, "BPNet baseline", sil_b)
 
     # ----- ROW 2: logit scatters (D,E) + cosine-similarity distribution (F) -----
     ts_corr, _ = pearsonr(teacher_logits[:, 0], student_logits[:, 0])

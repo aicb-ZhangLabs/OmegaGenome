@@ -6,7 +6,7 @@ Reconstructs the two rebuttal figures directly from the saved MCC matrix CSVs (n
   * cross_task_matrix_enformer_nature.png  — the single annotated 18x18 heatmap (Enformer distilled
     students); every compatible cell shows its MCC number, blank cell = label-incompatible head.
   * cross_task_nature_3panel.png           — 3 panels: (a) Distilled (Enformer->BPNet),
-    (b) From-scratch (pure-CE BPNet), (c) Delta = Distilled - From-scratch (diverging RdBu_r).
+    (b) Baseline (pure-CE BPNet), (c) Delta = Distilled - Baseline (diverging RdBu_r).
 
 MCC panels use seaborn's "mako" colormap (dark-navy -> blue -> teal -> pale-green: low MCC = near-black
 navy, high MCC 0.8+ = teal/pale-green) so both OOD figures read as one dark-blue/teal "nature" set; the
@@ -124,9 +124,9 @@ def three_panel():
     dcmap = plt.cm.RdBu_r.copy(); dcmap.set_bad(color="white")
 
     fig, axes = plt.subplots(1, 3, figsize=(28.0, 9.6))
-    titles = ["A  Distilled (Enformer→BPNet)", "B  From-scratch (pure-CE BPNet)",
-              "C  Δ = Distilled − From-scratch"]
-    fig.suptitle("Cross-task transfer: distillation vs from-scratch (R2.3)",
+    titles = ["A  Distilled (Enformer→BPNet)", "B  Baseline (pure-CE BPNet)",
+              "C  Δ = Distilled − Baseline"]
+    fig.suptitle("Cross-task transfer: distillation vs baseline",
                  fontsize=32, fontweight="bold", y=0.99)
 
     for k, (ax, M, title) in enumerate(zip(axes, [dist, base, delta], titles)):

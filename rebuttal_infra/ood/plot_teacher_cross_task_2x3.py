@@ -61,9 +61,7 @@ def five_panel_2x3():
     # hide the unused 6th slot (bottom-right); the colorbar is drawn into that empty area
     for k in range(len(MODELS), len(axflat)):
         axflat[k].axis("off")
-    fig.suptitle("Teacher cross-task transfer — five foundation models",
-                 fontsize=34, fontweight="bold", y=0.995)
-    fig.subplots_adjust(left=0.065, right=0.995, top=0.93, bottom=0.10, hspace=0.30, wspace=0.06)
+    fig.subplots_adjust(left=0.065, right=0.995, top=0.965, bottom=0.10, hspace=0.30, wspace=0.06)
     # Horizontal colorbar centered in the empty bottom-right (6th) block.
     cax = fig.add_axes([0.71, 0.26, 0.24, 0.028])
     cb = fig.colorbar(im, cax=cax, orientation="horizontal")
