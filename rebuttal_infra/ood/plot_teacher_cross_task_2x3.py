@@ -61,14 +61,14 @@ def five_panel_2x3():
     # hide the unused 6th slot (bottom-right); the colorbar is drawn into that empty area
     for k in range(len(MODELS), len(axflat)):
         axflat[k].axis("off")
-    fig.subplots_adjust(left=0.065, right=0.995, top=0.965, bottom=0.10, hspace=0.30, wspace=0.06)
+    fig.subplots_adjust(left=0.065, right=0.995, top=0.90, bottom=0.10, hspace=0.30, wspace=0.06)
     # Horizontal colorbar centered in the empty bottom-right (6th) block.
     cax = fig.add_axes([0.71, 0.26, 0.24, 0.028])
     cb = fig.colorbar(im, cax=cax, orientation="horizontal")
     cb.set_label("transfer MCC", fontsize=26, labelpad=8); cb.ax.tick_params(labelsize=20)
     for ext in ("png", "pdf"):
         out = os.path.join(HERE, f"teacher_cross_task_5panel_2x3_nature.{ext}")
-        fig.savefig(out, dpi=300, bbox_inches="tight")
+        fig.savefig(out, dpi=300, bbox_inches="tight", pad_inches=0.45)
         print(f"SAVED {out}")
     plt.close(fig)
 
