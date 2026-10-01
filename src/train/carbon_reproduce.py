@@ -68,8 +68,11 @@ def main():
     acc = correct / max(total, 1)
     print(f"\nSequences: {len(seqs)}  tokens scored: {total}")
     print(f"Next-token (6-mer) accuracy: {acc:.4f}  (baseline {1.0 / vocab:.4f})")
-    print("OK: weights load and predict non-trivially." if acc > 5.0 / vocab else
-          "WARNING: accuracy near random — check tokenization / weights / dna tag.")
+    print(
+        "OK: weights load and predict non-trivially."
+        if acc > 5.0 / vocab
+        else "WARNING: accuracy near random — check tokenization / weights / dna tag."
+    )
 
 
 if __name__ == "__main__":

@@ -39,12 +39,16 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"teacher={args.model} | tracks={labels} | device={device}")
     teacher = NTv3Teacher(
-        NTv3TeacherConfig(model_name_or_path=args.model, species=man["species"], track_subset=subset),
+        NTv3TeacherConfig(
+            model_name_or_path=args.model, species=man["species"], track_subset=subset
+        ),
         device=device,
     )
 
     start = 1_000_000
-    coords = tile_windows(args.eval_chrom, start, start + args.window * args.n_eval * 2, args.window, n=args.n_eval)
+    coords = tile_windows(
+        args.eval_chrom, start, start + args.window * args.n_eval * 2, args.window, n=args.n_eval
+    )
     print(f"fetching {len(coords)} x {args.window}bp held-out windows on {args.eval_chrom} ...")
     seqs = fetch_windows(coords)
     pred = build_teacher_targets(teacher, seqs, batch_size=args.batch_size)  # [N, L_out, T]
@@ -57,8 +61,10 @@ def main():
     # region at 1bp — otherwise predictions and truth are spatially misaligned (the 0.20-vs-0.75 bug).
     offset = (args.window - L_out) // 2
     crop_coords = [(c, s + offset, s + offset + L_out) for (c, s, _e) in coords]
-    print(f"NTv3 crop: L_out={L_out} = central {100*L_out/args.window:.1f}% of {args.window}bp "
-          f"(offset {offset}); ground truth read at 1bp over the crop")
+    print(
+        f"NTv3 crop: L_out={L_out} = central {100 * L_out / args.window:.1f}% of {args.window}bp "
+        f"(offset {offset}); ground truth read at 1bp over the crop"
+    )
     truth = ground_truth_targets(bw_paths, crop_coords, nbins=L_out)  # [N, L_out, T] @ 1bp
 
     # Paper eval procedure (methods): predictions unscaled to raw, then BOTH pred and truth
@@ -73,7 +79,9 @@ def main():
         "n_eval": len(coords),
         "window": args.window,
         "mean_pearson_vs_truth": float(mean_r),
-        "per_track_pearson": {labels[i]: (None if np.isnan(per[i]) else float(per[i])) for i in range(len(labels))},
+        "per_track_pearson": {
+            labels[i]: (None if np.isnan(per[i]) else float(per[i])) for i in range(len(labels))
+        },
     }
     tag = os.path.basename(args.model.rstrip("/"))
     with open(os.path.join(args.out, f"teacher_eval_{tag}.json"), "w") as f:

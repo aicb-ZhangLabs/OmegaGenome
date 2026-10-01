@@ -7,11 +7,11 @@
 # submitting as GPU slots free until the whole grid is launched. Drain-waits gate C and D on completion.
 # Usage: nohup bash slurm/run_carbon_pipeline.sh &>/tmp/carbon_pipeline.log &
 set -uo pipefail
-cd /home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+cd ${OG_ROOT:-$PWD}
 SB=/pkg/slurm/22.05.3/bin
 PV=.venv_carbon_portable/bin/python
 log(){ echo "[pipeline $(date '+%m-%d %H:%M:%S')] $*"; }
-carbon_inflight(){ "$SB/squeue" -u pengchx3 -h -t R,PD -o "%j" 2>/dev/null | grep -c carbon-distill; }
+carbon_inflight(){ "$SB/squeue" -u $USER -h -t R,PD -o "%j" 2>/dev/null | grep -c carbon-distill; }
 wait_drain(){ while [ "$(carbon_inflight)" -gt 0 ]; do sleep 180; done; }
 
 log "PHASE B: HP search (BASE grid, raw MSE, resume-aware) — starting NOW, fills slots continuously"

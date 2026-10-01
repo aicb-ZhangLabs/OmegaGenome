@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+title: "OmegaGenome: source code"
+message: "If you use this software, please cite both the software and the paper."
+type: software
+license: MIT
+repository-code: "https://github.com/aicb-ZhangLabs/OmegaGenome"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22805336
+    description: Archived snapshot of the source code
+authors:
+  - family-names: Xu
+    given-names: Pengcheng
+    affiliation: University of California, Irvine
+  - family-names: Liu
+    given-names: Junhao
+    affiliation: University of California, Irvine
+  - family-names: Dai
+    given-names: Yi
+    affiliation: University of California, Irvine
+  - family-names: Nishida
+    given-names: Kainoa Andrew
+    affiliation: University of California, Irvine
+  - family-names: Sun
+    given-names: Dongbo
+    affiliation: University of California, Irvine
+  - family-names: Lei
+    given-names: Yutong
+    affiliation: University of California, Irvine
+  - family-names: Hu
+    given-names: Yaqi
+    affiliation: University of California, Irvine
+  - family-names: Wang
+    given-names: Chaoyang
+    affiliation: University of California, Irvine
+  - family-names: Zhang
+    given-names: Jing
+    affiliation: University of California, Irvine
+    email: jingz31@uci.edu

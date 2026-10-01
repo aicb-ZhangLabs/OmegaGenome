@@ -17,7 +17,12 @@ import numpy as np
 
 _EXP = "https://www.encodeproject.org/experiments/{acc}/?format=json"
 # preferred bigWig output types, in order: ChIP has "signal p-value"; DNase does not.
-_PREF = ["signal p-value", "read-depth normalized signal", "fold change over control", "signal of unique reads"]
+_PREF = [
+    "signal p-value",
+    "read-depth normalized signal",
+    "fold change over control",
+    "signal of unique reads",
+]
 
 
 def resolve_bigwig(acc: str, assembly: str = "GRCh38") -> Tuple[str, str]:
@@ -25,8 +30,13 @@ def resolve_bigwig(acc: str, assembly: str = "GRCh38") -> Tuple[str, str]:
     req = urllib.request.Request(_EXP.format(acc=acc), headers={"Accept": "application/json"})
     files = json.load(urllib.request.urlopen(req, timeout=30)).get("files", [])
     # accept released OR archived (older DNase signal tracks are archived but still the measured signal)
-    bws = [f for f in files if f.get("file_format") == "bigWig" and f.get("status") in ("released", "archived")
-           and f.get("assembly") == assembly]
+    bws = [
+        f
+        for f in files
+        if f.get("file_format") == "bigWig"
+        and f.get("status") in ("released", "archived")
+        and f.get("assembly") == assembly
+    ]
     if not bws:
         raise ValueError(f"no released {assembly} bigWig for {acc}")
     for ot in _PREF:
@@ -63,7 +73,9 @@ def prepare_bigwigs(manifest: dict, cache_dir: str) -> List[str]:
     return paths
 
 
-def ground_truth_targets(bigwig_paths: List[str], coords, nbins: int, workers: int = 8) -> np.ndarray:
+def ground_truth_targets(
+    bigwig_paths: List[str], coords, nbins: int, workers: int = 8
+) -> np.ndarray:
     """[N, nbins, T] binned-mean measured signal over the windows for each track's bigWig.
 
     Reads are parallelized over tracks (one thread per bigWig, each with its own handle, writing a
@@ -92,7 +104,10 @@ def ground_truth_targets(bigwig_paths: List[str], coords, nbins: int, workers: i
                     out[i, :, j] = raw.reshape(nbins, -1).mean(axis=1)
                 else:  # uneven bins (rare): mean over linspace edges
                     e = np.linspace(0, raw.shape[0], nbins + 1).astype(int)
-                    out[i, :, j] = [raw[e[k]:e[k + 1]].mean() if e[k + 1] > e[k] else 0.0 for k in range(nbins)]
+                    out[i, :, j] = [
+                        raw[e[k] : e[k + 1]].mean() if e[k + 1] > e[k] else 0.0
+                        for k in range(nbins)
+                    ]
         finally:
             bw.close()
 

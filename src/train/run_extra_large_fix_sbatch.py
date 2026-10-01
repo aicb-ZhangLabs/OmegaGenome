@@ -7,26 +7,23 @@ It uses sbatch directly to submit experiments to the SLURM cluster.
 Usage:
     # Dry run (preview jobs without submitting)
     python -m src.train.run_extra_large_fix_sbatch --dry-run
-    
+
     # Submit all jobs
     python -m src.train.run_extra_large_fix_sbatch
-    
+
     # Submit to specific node
     python -m src.train.run_extra_large_fix_sbatch --node-list voyager
-    
+
     # Custom seeds
     python -m src.train.run_extra_large_fix_sbatch --seeds 42 123 456
-    
+
     # Hyperparameter search
     python -m src.train.run_extra_large_fix_sbatch --hyperparam-search
 """
 
 import os
-import sys
 import argparse
-from dataclasses import asdict
-from datetime import datetime
-from typing import List, Optional
+from typing import List
 from itertools import product
 
 from config.env import project_path, output_path
@@ -34,7 +31,6 @@ from config.best_hyperparams import get_size_hyperparams
 from src.train.sbatch_utils import (
     SbatchConfig,
     create_and_submit_experiment,
-    get_default_sbatch_config,
 )
 
 
@@ -56,7 +52,7 @@ def get_teacher_config():
     """Get NT teacher configuration."""
     from config.distillation.glm import nt_2b5
     from config.distillation.experiments.nt import NT_PARENT_PATH
-    
+
     return {
         "model_name_or_path": nt_2b5.model_name_or_path,
         "num_labels": nt_2b5.num_labels,
@@ -81,23 +77,20 @@ def build_experiment_config(
     distill_method: str = "vanilla",
 ) -> dict:
     """Build experiment configuration dictionary."""
-    
+
     teacher_config, teacher_parent_dir = get_teacher_config()
-    
+
     return {
         "task_name": task_name,
         "model_type": "nt",
         "teacher_parent_dir": teacher_parent_dir,
         "random_state": seed,
-        
         "teacher_config": teacher_config,
-        
         "student_config": {
             "num_labels": 2,  # Will be updated based on task
             "model_type": "bpnet",
             "model_size": model_size,
         },
-        
         "distillation_config": {
             "weight_ce": weight_ce,
             "weight_kl": weight_kl,
@@ -108,7 +101,6 @@ def build_experiment_config(
             "dkd_alpha": 1.0,
             "dkd_beta": 8.0,
         },
-        
         "trainer_config": {
             "output_dir": output_dir,
             "wandb_project": wandb_project,
@@ -118,7 +110,6 @@ def build_experiment_config(
             "max_len": 1000,
             "device": "cuda",
         },
-        
         "dataset_config": {
             "task_name": task_name,
             "data_path": "",
@@ -140,7 +131,7 @@ def run_standard_experiments(
     Run standard experiments with best hyperparameters for each task.
     """
     total_experiments = len(tasks) * len(seeds)
-    
+
     print(f"\n{'=' * 80}")
     print("EXTRA_LARGE_FIX STANDARD EXPERIMENTS")
     print(f"{'=' * 80}")
@@ -150,17 +141,19 @@ def run_standard_experiments(
     print(f"Total experiments: {total_experiments}")
     print(f"Dry run: {dry_run}")
     print(f"{'=' * 80}\n")
-    
+
     submitted_jobs = []
-    
+
     for task_name in tasks:
         # Get best hyperparameters for this task
         hp = get_size_hyperparams("nt", task_name, model_size)
-        
+
         print(f"\nTask: {task_name}")
-        print(f"  Hyperparams: CE={hp.weight_ce}, KL={hp.weight_kl}, "
-              f"MSE={hp.weight_mse}, T={hp.temperature}")
-        
+        print(
+            f"  Hyperparams: CE={hp.weight_ce}, KL={hp.weight_kl}, "
+            f"MSE={hp.weight_mse}, T={hp.temperature}"
+        )
+
         for seed in seeds:
             # Build output directory
             exp_output_dir = os.path.join(
@@ -170,7 +163,7 @@ def run_standard_experiments(
                 model_size,
                 task_name,
             )
-            
+
             # Build experiment config
             config = build_experiment_config(
                 task_name=task_name,
@@ -184,7 +177,7 @@ def run_standard_experiments(
                 temperature=hp.temperature,
                 distill_method=hp.distill_method,
             )
-            
+
             # Submit job
             job_id = create_and_submit_experiment(
                 sbatch_config=sbatch_config,
@@ -196,14 +189,16 @@ def run_standard_experiments(
                 output_dir=exp_output_dir,
                 dry_run=dry_run,
             )
-            
+
             if job_id:
-                submitted_jobs.append({
-                    "job_id": job_id,
-                    "task": task_name,
-                    "seed": seed,
-                })
-    
+                submitted_jobs.append(
+                    {
+                        "job_id": job_id,
+                        "task": task_name,
+                        "seed": seed,
+                    }
+                )
+
     # Summary
     print(f"\n{'=' * 80}")
     print("SUBMISSION SUMMARY")
@@ -214,7 +209,7 @@ def run_standard_experiments(
     if len(submitted_jobs) > 10:
         print(f"  ... and {len(submitted_jobs) - 10} more")
     print(f"{'=' * 80}\n")
-    
+
     return submitted_jobs
 
 
@@ -234,7 +229,7 @@ def run_hyperparam_search(
     weight_kls = HYPERPARAM_GRID["weight_kls"]
     weight_mses = HYPERPARAM_GRID["weight_mses"]
     temperatures = HYPERPARAM_GRID["temperatures"]
-    
+
     # Filter redundant combinations where weight_kl=0
     kl_combinations = []
     seen_zero_kl = False
@@ -245,16 +240,18 @@ def run_hyperparam_search(
                 seen_zero_kl = True
         else:
             kl_combinations.append((wkl, temp))
-    
-    all_combinations = list(product(
-        tasks,
-        weight_ces,
-        weight_mses,
-        kl_combinations,
-    ))
-    
+
+    all_combinations = list(
+        product(
+            tasks,
+            weight_ces,
+            weight_mses,
+            kl_combinations,
+        )
+    )
+
     total_experiments = len(all_combinations)
-    
+
     print(f"\n{'=' * 80}")
     print("EXTRA_LARGE_FIX HYPERPARAMETER SEARCH")
     print(f"{'=' * 80}")
@@ -267,13 +264,17 @@ def run_hyperparam_search(
     print(f"  Temperatures: {temperatures}")
     print(f"Dry run: {dry_run}")
     print(f"{'=' * 80}\n")
-    
+
     submitted_jobs = []
-    
-    for idx, (task_name, weight_ce, weight_mse, (weight_kl, temperature)) in enumerate(all_combinations, 1):
-        print(f"\n[{idx}/{total_experiments}] Task: {task_name}, "
-              f"CE={weight_ce}, KL={weight_kl}, MSE={weight_mse}, T={temperature}")
-        
+
+    for idx, (task_name, weight_ce, weight_mse, (weight_kl, temperature)) in enumerate(
+        all_combinations, 1
+    ):
+        print(
+            f"\n[{idx}/{total_experiments}] Task: {task_name}, "
+            f"CE={weight_ce}, KL={weight_kl}, MSE={weight_mse}, T={temperature}"
+        )
+
         # Build output directory
         exp_output_dir = os.path.join(
             base_output_dir,
@@ -283,7 +284,7 @@ def run_hyperparam_search(
             "hyperparam",
             task_name,
         )
-        
+
         # Build experiment config (use fixed seed for hyperparam search)
         seed = 42
         config = build_experiment_config(
@@ -297,7 +298,7 @@ def run_hyperparam_search(
             weight_mse=weight_mse,
             temperature=temperature,
         )
-        
+
         # Submit job
         job_id = create_and_submit_experiment(
             sbatch_config=sbatch_config,
@@ -309,24 +310,26 @@ def run_hyperparam_search(
             output_dir=exp_output_dir,
             dry_run=dry_run,
         )
-        
+
         if job_id:
-            submitted_jobs.append({
-                "job_id": job_id,
-                "task": task_name,
-                "weight_ce": weight_ce,
-                "weight_kl": weight_kl,
-                "weight_mse": weight_mse,
-                "temperature": temperature,
-            })
-    
+            submitted_jobs.append(
+                {
+                    "job_id": job_id,
+                    "task": task_name,
+                    "weight_ce": weight_ce,
+                    "weight_kl": weight_kl,
+                    "weight_mse": weight_mse,
+                    "temperature": temperature,
+                }
+            )
+
     # Summary
     print(f"\n{'=' * 80}")
     print("HYPERPARAMETER SEARCH SUBMISSION SUMMARY")
     print(f"{'=' * 80}")
     print(f"Total jobs submitted: {len(submitted_jobs)}")
     print(f"{'=' * 80}\n")
-    
+
     return submitted_jobs
 
 
@@ -334,14 +337,14 @@ def main():
     parser = argparse.ArgumentParser(
         description="Run extra_large_fix experiments with sbatch submission."
     )
-    
+
     # Experiment type
     parser.add_argument(
         "--hyperparam-search",
         action="store_true",
         help="Run hyperparameter search instead of standard experiments",
     )
-    
+
     # Tasks and seeds
     parser.add_argument(
         "--tasks",
@@ -361,7 +364,7 @@ def main():
         default=DEFAULT_MODEL_SIZE,
         help=f"Model size (default: {DEFAULT_MODEL_SIZE})",
     )
-    
+
     # SLURM options
     parser.add_argument(
         "--node-list",
@@ -378,7 +381,7 @@ def main():
         default=None,
         help="Email for job notifications",
     )
-    
+
     # Output options
     parser.add_argument(
         "--output-dir",
@@ -390,16 +393,16 @@ def main():
         default="OmegaGenome-ExtraLarge-Fix",
         help="WandB project name",
     )
-    
+
     # Execution options
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print commands without executing",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Build sbatch config
     sbatch_config = SbatchConfig(
         job_name="og-xl-fix",
@@ -411,7 +414,7 @@ def main():
         time="7-00:00:00",
         mail_user=args.mail_user,
     )
-    
+
     # Run experiments
     if args.hyperparam_search:
         run_hyperparam_search(

@@ -9,17 +9,17 @@
 #SBATCH --mem=48G
 #SBATCH --partition=zhanglab.p
 #SBATCH --time=1-00:00:00
-#SBATCH --output=slurm/slurm-nttokprobe-%j.out
+#SBATCH --output=logs/slurm-nttokprobe-%j.out
 
 set -uo pipefail
-REPO="${REPO:-/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon}"
+REPO="${REPO:-${OG_ROOT:-$PWD}}"
 cd "$REPO"
 PY="$REPO/.venv_carbon_portable/bin/python"
 
-if   [ -d /srv/disk00/sshfs/pengchx3 ];      then SSD=/srv/disk00/sshfs/pengchx3
-elif [ -d /tmp/galaxy_srv_disk00/pengchx3 ]; then SSD=/tmp/galaxy_srv_disk00/pengchx3
+if   [ -d ${OG_SCRATCH:-$PWD/output} ];      then SSD=${OG_SCRATCH:-$PWD/output}
+elif [ -d ${OG_SCRATCH:-$PWD/output} ]; then SSD=${OG_SCRATCH:-$PWD/output}
 fi
-RNT="$SSD/rebuttal_nt"
+RNT="$SSD/nt_runs"
 export PYTHONUNBUFFERED=1
 export HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 HF_DATASETS_TRUST_REMOTE_CODE=1
 export HF_HOME="$RNT/hf_cache" HF_HUB_CACHE="$RNT/hf_cache/hub" HUGGINGFACE_HUB_CACHE="$RNT/hf_cache/hub"

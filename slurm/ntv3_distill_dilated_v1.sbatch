@@ -20,18 +20,18 @@
 #SBATCH --time=06:00:00
 #SBATCH --output=slurm-%x-%j.out
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
 PY="$REPO/.venv_carbon_portable/bin/python"
-[ -x "$PY" ] || PY=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
+[ -x "$PY" ] || PY=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
 
 # HF cache on home (model load); no gated download needed for the local teacher
-HOME_HF=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.hf_cache
+HOME_HF=${OG_ROOT:-$PWD}/.hf_cache
 export HF_HOME="$HOME_HF" TOKENIZERS_PARALLELISM=false
 
 # node-aware: teacher + outputs on the galaxy SSD if mounted here, else /extra + home
-for _b in /tmp/galaxy_srv_disk00/pengchx3 /srv/disk00/sshfs/pengchx3; do [ -d "$_b/ntv3_local/100m_post" ] && { SSD="$_b"; break; }; done
-MODEL="${MODEL:-${SSD:+$SSD/ntv3_local/100m_post}}"; MODEL="${MODEL:-/extra/zhanglab0/INDV/pengchx3/ntv3_local/100m_post}"
+for _b in ${OG_SCRATCH:-$PWD/output} ${OG_SCRATCH:-$PWD/output}; do [ -d "$_b/ntv3_local/100m_post" ] && { SSD="$_b"; break; }; done
+MODEL="${MODEL:-${SSD:+$SSD/ntv3_local/100m_post}}"; MODEL="${MODEL:-${OG_STORE:-$PWD/data}/ntv3_local/100m_post}"
 OUTBASE="${SSD:+$SSD/ntv3_targets}"; OUTBASE="${OUTBASE:-$REPO/.ntv3_run}"
 TAG="${TAG:-dilated8M}"; OUT="$OUTBASE/$TAG"; mkdir -p "$OUT"
 

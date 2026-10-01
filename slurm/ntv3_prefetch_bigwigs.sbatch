@@ -12,10 +12,10 @@
 #SBATCH --time=3:00:00
 #SBATCH --output=slurm-%x-%j.out
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3; cd "$REPO"
-PV=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
-SSD=/tmp/galaxy_srv_disk00/pengchx3
-mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3
+REPO=${OG_NTV3_ROOT:-$PWD}; cd "$REPO"
+PV=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
+SSD=${OG_SCRATCH:-$PWD/output}
+mountpoint -q "$SSD" 2>/dev/null || SSD=${OG_SCRATCH:-$PWD/output}
 MANIFEST="${1:-config/distillation/ntv3_native_broad.json}"
 CUDA_VISIBLE_DEVICES="" "$PV" -c "
 import json,sys; from src.data.ground_truth import prepare_bigwigs

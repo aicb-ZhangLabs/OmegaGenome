@@ -122,10 +122,16 @@ def build_glm(config: GLMConfig):
         # (mathematically identical) attention when its module-global flash_attn_qkvpacked_func is None,
         # so null it out on the dynamically-loaded remote-code module. No-op for non-DNABERT-2 teachers.
         import sys as _sys
+
         for _mn, _mod in list(_sys.modules.items()):
-            if _mn.endswith(".bert_layers") and getattr(_mod, "flash_attn_qkvpacked_func", None) is not None:
+            if (
+                _mn.endswith(".bert_layers")
+                and getattr(_mod, "flash_attn_qkvpacked_func", None) is not None
+            ):
                 _mod.flash_attn_qkvpacked_func = None
-                print(f"[glm] disabled DNABERT-2 triton flash-attn in {_mn} -> standard-attn fallback")
+                print(
+                    f"[glm] disabled DNABERT-2 triton flash-attn in {_mn} -> standard-attn fallback"
+                )
 
     # Force the load dtype. trust_remote_code models (Carbon) can ignore from_pretrained's dtype and
     # stay fp32 (-> 12GB weights -> OOM), so cast explicitly. No-op when _dtype is None (other teachers).
@@ -140,7 +146,10 @@ def build_glm(config: GLMConfig):
     # locates the last non-pad token). Set it whenever the model lacks one but the tokenizer has it —
     # NOT gated on the tokenizer having just been patched (the tokenizer may already carry a pad token
     # while the model config's pad_token_id is None, which still crashes the forward at batch > 1).
-    if getattr(model.config, "pad_token_id", None) is None and getattr(tokenizer, "pad_token_id", None) is not None:
+    if (
+        getattr(model.config, "pad_token_id", None) is None
+        and getattr(tokenizer, "pad_token_id", None) is not None
+    ):
         model.config.pad_token_id = tokenizer.pad_token_id
 
     return tokenizer, model
@@ -392,7 +401,6 @@ def evaluate_and_log_teacher(
     # Resolve via the shared helper so the skip-the-3B-load check
     # (teacher_eval_cache_is_valid) and this reader/writer use the SAME path.
     teacher_eval_file = _teacher_eval_cache_path(config, teacher_ckpt)
-    cache_dir = os.path.dirname(teacher_eval_file)
     # teacher_eval_file = os.path.join(teacher_ckpt, "teacher_evaluation.json")
 
     if os.path.exists(teacher_eval_file):

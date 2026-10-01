@@ -22,11 +22,24 @@ from ..slurm import basic_distillation_slurm
 
 # The full NT-revised benchmark (the 18 tasks evaluated in the paper).
 ALL_18_TASKS: List[str] = [
-    "H2AFZ", "H3K27ac", "H3K27me3", "H3K36me3", "H3K4me1", "H3K4me2",
-    "H3K4me3", "H3K9ac", "H3K9me3", "H4K20me1",
-    "promoter_all", "promoter_tata", "promoter_no_tata",
-    "enhancers", "enhancers_types",
-    "splice_sites_all", "splice_sites_acceptors", "splice_sites_donors",
+    "H2AFZ",
+    "H3K27ac",
+    "H3K27me3",
+    "H3K36me3",
+    "H3K4me1",
+    "H3K4me2",
+    "H3K4me3",
+    "H3K9ac",
+    "H3K9me3",
+    "H4K20me1",
+    "promoter_all",
+    "promoter_tata",
+    "promoter_no_tata",
+    "enhancers",
+    "enhancers_types",
+    "splice_sites_all",
+    "splice_sites_acceptors",
+    "splice_sites_donors",
 ]
 
 
@@ -117,8 +130,8 @@ carbon_3b_fullft = replace(
     output_dir=f"{output_path}/teacher_finetune/carbon_3b_fullft",
     use_lora=False,
     batch_size=2,
-    grad_accum=8,        # effective batch 16, matches the LoRA runs
-    lr=2e-5,             # full-FT uses a lower LR than LoRA's 1e-4
+    grad_accum=8,  # effective batch 16, matches the LoRA runs
+    lr=2e-5,  # full-FT uses a lower LR than LoRA's 1e-4
     optim="adamw_torch",
 )
 

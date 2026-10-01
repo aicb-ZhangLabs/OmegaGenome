@@ -45,7 +45,7 @@
 # `windows: train N` — N MUST be the per-track KD arm's 63707.
 #   sbatch --export=ALL,NTV3_DRY_RUN=1 --array=0 --time=02:00:00 slurm/ntv3_size_sweep_pertrack_t12_nokd.sbatch
 #
-# /tmp POLICY (HARD): the ONLY "/tmp" path used is the galaxy SSD mount /tmp/galaxy_srv_disk00/pengchx3.
+# /tmp POLICY (HARD): the ONLY "/tmp" path used is the galaxy SSD mount ${OG_SCRATCH:-$PWD/output}.
 # NO node-local /tmp data staging: bigWigs are read DIRECTLY off the SSD via pyBigWig/pyfaidx indexed
 # file-handle reads (NOT numpy memmap -> the sshfs memmap-hang mode does not apply) with the hardened
 # per-window sshfs-retry loader + num_workers 8. Only meta.pt (~1MB) is opened from the cache (never
@@ -66,7 +66,7 @@
 #SBATCH --time=30-00:00:00
 #SBATCH --output=slurm-%x-%A_%a.out
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
 # MOUNT GUARD (see slurm/_mount_guard.sh): sourced FIRST because resolve_ssd_mount picks the SSD root.
 source "$REPO/slurm/_mount_guard.sh"
@@ -99,14 +99,14 @@ trap 'hang_watchdog_stop; rm -rf "$TMPDIR"' EXIT
 HOME_HF="$SSD/hf_cache_archive_from_code_carbon"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF" TRANSFORMERS_CACHE="$HOME_HF"
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # TRITON cache -> SSD mount (NEVER node-local /tmp).
 export TRITON_CACHE_DIR="$SSD/triton_cache_${USER}_$(hostname -s)"
 mkdir -p "$TRITON_CACHE_DIR"
 export WANDB_MODE=offline WANDB_DIR="$SSD/wandb_logs" WANDB_CACHE_DIR="$SSD/wandb_cache"
 mkdir -p "$WANDB_DIR" "$WANDB_CACHE_DIR"
-PV=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
+PV=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
 
 SIZES=(ntv3-4m ntv3-8m ntv3-30m ntv3-100m ntv3-300m)
 SIZE="${SIZES[${SLURM_ARRAY_TASK_ID:-0}]}"

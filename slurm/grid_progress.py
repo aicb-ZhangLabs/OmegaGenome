@@ -7,9 +7,13 @@ A run dir looks like:
 so (task, kl, mse, T, variant) come straight from the string — no I/O beyond the directory walk.
 Usage: python slurm/grid_progress.py [--base <dir>] [--total 1440]
 """
-import argparse, glob, os, re
 
-DEF_BASE = "/tmp/galaxy_srv_disk00/pengchx3/carbon_distillation"
+import os
+import argparse
+import glob
+import re
+
+DEF_BASE = os.environ.get("OG_SCRATCH", "output") + "/carbon_distillation"
 
 
 def main():
@@ -21,7 +25,7 @@ def main():
     raw, l2 = set(), set()
     n = 0
     for f in glob.iglob(os.path.join(args.base, "**", "final_summary.json"), recursive=True):
-        d = os.path.basename(os.path.dirname(f))            # the hyperparam-string dir
+        d = os.path.basename(os.path.dirname(f))  # the hyperparam-string dir
         m_task = re.search(r"deploy_120k/([^/]+)/", f)
         m_kl = re.search(r"weight_kl([0-9.]+)", d)
         m_mse = re.search(r"weight_mse([0-9.]+)", d)
@@ -33,7 +37,7 @@ def main():
         (l2 if "mse_normalizeTrue" in d else raw).add(key)
 
     print(f"scanned {n} final_summary paths")
-    print(f"RAW grid combos done: {len(raw)} / {args.total} ({100*len(raw)/args.total:.0f}%)")
+    print(f"RAW grid combos done: {len(raw)} / {args.total} ({100 * len(raw) / args.total:.0f}%)")
     print(f"  (l2norm combos seen: {len(l2)})")
 
 

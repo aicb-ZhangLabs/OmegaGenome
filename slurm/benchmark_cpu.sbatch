@@ -1,6 +1,6 @@
 #!/bin/bash
-# CPU inference latency + memory (RSS) benchmark for the deployment claim (reviewer R1.11:
-# "inference may take minutes"). On CPU the ~0.12M BPNet student runs in ms/sample while
+# CPU inference latency + memory (RSS) benchmark for the deployment claim ("inference may
+# take minutes"). On CPU the ~0.12M BPNet student runs in ms/sample while
 # NT-2.5B is orders of magnitude slower -> exactly the deployment argument.
 #
 # Two phases share the SAME CPU (same-hardware), recorded via cpu_name + device=cpu:
@@ -22,18 +22,18 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 
 HOME_HF="$REPO/.hf_cache"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
 export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false
 export WANDB_MODE=offline
 export HF_HUB_DISABLE_XET=1
 export HF_XET_CACHE="$REPO/.hf_cache/xet"
-export OUTPUT_PATH=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/rebuttal_infra/benchmark_runs_cpu
+export OUTPUT_PATH=${OG_WORKSPACE:-$PWD/..}/analysis/benchmark_runs_cpu
 # Hide GPUs so torch picks CPU even though galaxy has a 3090.
 export CUDA_VISIBLE_DEVICES=""
 

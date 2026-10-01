@@ -63,10 +63,14 @@ def main():
     ap.add_argument("--student", choices=["bpnet", "dilated"], default="bpnet")
     ap.add_argument("--loss", choices=["mse", "poisson", "pearson", "mse+pearson"], default="mse")
     ap.add_argument("--hidden", type=int, default=256, help="dilated student channels")
-    ap.add_argument("--n_blocks", type=int, default=14, help="dilated student blocks (sets receptive field)")
+    ap.add_argument(
+        "--n_blocks", type=int, default=14, help="dilated student blocks (sets receptive field)"
+    )
     args = ap.parse_args()
     if args.loss == "poisson" and not args.no_normalize:
-        raise SystemExit("poisson needs raw (non-negative) targets; pass --no-normalize with --loss poisson")
+        raise SystemExit(
+            "poisson needs raw (non-negative) targets; pass --no-normalize with --loss poisson"
+        )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tr_seqs, tr_tgt, labels, window = _load_raw(os.path.join(args.data, "train.pt"))
@@ -84,10 +88,14 @@ def main():
         student = DilatedTrackNet(
             DilatedTrackNetConfig(num_tracks=T, hidden=args.hidden, n_blocks=args.n_blocks)
         ).to(device)
-        print(f"student=dilated hidden={args.hidden} blocks={args.n_blocks} "
-              f"receptive_field={student.receptive_field} (window={window})")
+        print(
+            f"student=dilated hidden={args.hidden} blocks={args.n_blocks} "
+            f"receptive_field={student.receptive_field} (window={window})"
+        )
     else:
-        student = BPNetRegressor(BPNetRegressorConfig(num_tracks=T, model_size=args.model_size)).to(device)
+        student = BPNetRegressor(BPNetRegressorConfig(num_tracks=T, model_size=args.model_size)).to(
+            device
+        )
     opt = torch.optim.Adam(student.parameters(), lr=args.lr)
     loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True)
 
@@ -117,7 +125,9 @@ def main():
         "labels": labels,
         "best_test_mean_pearson": best,
         "final_test_mean_pearson": float(mean_r),
-        "per_track_pearson": {labels[i]: (None if np.isnan(per[i]) else float(per[i])) for i in range(T)},
+        "per_track_pearson": {
+            labels[i]: (None if np.isnan(per[i]) else float(per[i])) for i in range(T)
+        },
         "student_params": sum(p.numel() for p in student.parameters()),
     }
     with open(os.path.join(args.out, "track_distill_result.json"), "w") as f:

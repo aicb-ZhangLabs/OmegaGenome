@@ -1,17 +1,17 @@
 #!/bin/bash
-# R1.3 nt_base (BASE-foundation-model embedding) TASK-ORDERED throttle loop.
+# nt_base (BASE-foundation-model embedding) TASK-ORDERED throttle loop.
 #
 # One SLURM job per task = all 4 arms {onehot, replace4_ntbase, replaceK_ntbase, latefuse_onehot_ntbase}
-# run SEQUENTIALLY (via run_r13_matched.sh) into ONE per-task CSV (r13_ntbase_<task>.csv). That IS the
+# run SEQUENTIALLY (via run_matched_capacity.sh) into ONE per-task CSV (ntbase_matched_<task>.csv). That IS the
 # "each task's variations, then the next task" ordering the coordinator asked for.
 #
 # PHASE 1 (from-scratch, CE-only): BEST_HP=best_hp_nt_fromscratch.yaml, CACHE_BASE=run_fromscratch_ntbase.
 # PHASE 2 (distilled, KD): BEST_HP=best_hp_nt.yaml, CACHE_BASE=run_distilled_ntbase.
 # Phase 2 is submitted ONLY after ALL 18 Phase-1 task CSVs are complete (4 arm rows each).
 #
-# CAPS (MY r13nb jobs only, counted by job name -> robust to PENDING): galaxy<=4 (FIRST), laniakea<=4.
+# CAPS (MY ntbase jobs only, counted by job name -> robust to PENDING): galaxy<=4 (FIRST), laniakea<=4.
 # voyager is AVOIDED (not in NODES). Never scancels. squeue errors are NOT suppressed (HARD lab rule):
-# a squeue failure SKIPS the pass (never submits blind). Node is encoded in the job name r13nb_<node>_<task>
+# a squeue failure SKIPS the pass (never submits blind). Node is encoded in the job name ntbase_<node>_<task>
 # so cap counting needs no `squeue -w` (which can miss PENDING --nodelist jobs).
 #
 # Launch (after the GPU smoke passes):
@@ -19,13 +19,13 @@
 # DRYRUN=1 -> classify Phase-1 work and exit (no submits).
 set -uo pipefail
 SB=/pkg/slurm/22.05.3/bin
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
-RUN="$REPO/slurm/run_r13_matched.sh"
-BEST_HP_DIR=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/rebuttal_infra/best_hp
+REPO=${OG_ROOT:-$PWD}
+RUN="$REPO/slurm/run_matched_capacity.sh"
+BEST_HP_DIR=${OG_WORKSPACE:-$PWD/..}/analysis/best_hp
 FS_YAML="$BEST_HP_DIR/best_hp_nt_fromscratch.yaml"
 KD_YAML="$BEST_HP_DIR/best_hp_nt.yaml"
-SSD=/srv/disk00/sshfs/pengchx3            # login node = galaxy mount (row/CSV checks)
-RNT="$SSD/rebuttal_nt"
+SSD=${OG_SCRATCH:-$PWD/output}            # login node = galaxy mount (row/CSV checks)
+RNT="$SSD/nt_runs"
 FS_SUB="run_fromscratch_ntbase"; KD_SUB="run_distilled_ntbase"
 FS_DIR="$RNT/$FS_SUB"; KD_DIR="$RNT/$KD_SUB"   # login (galaxy) paths for classify / task_done reads
 LOG="$REPO/slurm/ntbase_grid_loop.log"
@@ -45,31 +45,31 @@ SNAP=""
 log(){ echo "[$(date '+%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
 # One squeue snapshot per pass (job names of my RUNNING+PENDING jobs). rc!=0 -> caller skips the pass.
-pass_snapshot(){ local out rc; out=$($SB/squeue -h -u pengchx3 -t RUNNING,PENDING -o '%j'); rc=$?
+pass_snapshot(){ local out rc; out=$($SB/squeue -h -u $USER -t RUNNING,PENDING -o '%j'); rc=$?
   if [ "$rc" -ne 0 ]; then log "WARN squeue rc=$rc -> skip pass (no blind submit)"; return 1; fi
   SNAP="$out"; return 0; }
-node_count(){ printf '%s\n' "$SNAP" | grep -c "^r13nb_${1}_" || true; }         # my r13nb jobs targeting node $1
-in_queue(){ printf '%s\n' "$SNAP" | grep -qE "^r13nb_[a-z]+_${1}$"; }           # task already queued (any node)
-inflight_total(){ printf '%s\n' "$SNAP" | grep -c '^r13nb_' || true; }
+node_count(){ printf '%s\n' "$SNAP" | grep -c "^ntbase_${1}_" || true; }         # my ntbase jobs targeting node $1
+in_queue(){ printf '%s\n' "$SNAP" | grep -qE "^ntbase_[a-z]+_${1}$"; }           # task already queued (any node)
+inflight_total(){ printf '%s\n' "$SNAP" | grep -c '^ntbase_' || true; }
 pick_node(){ local n c; for n in $NODES; do c=$(node_count "$n"); [ "${c:-0}" -lt "${CAP[$n]:-0}" ] && { echo "$n"; return 0; }; done; echo ""; }
 
-csv_for(){ echo "$1/results/r13_ntbase_$2.csv"; }                                # folder task
+csv_for(){ echo "$1/results/ntbase_matched_$2.csv"; }                                # folder task
 task_done(){ # folder task -> all 4 arm rows present (onehot + 3 nt_base fusions)
   local f; f=$(csv_for "$1" "$2"); [ -f "$f" ] || return 1
   local oh nb; oh=$(grep -c ',onehot,' "$f" 2>/dev/null || echo 0); nb=$(grep -c ',nt_base,mid,' "$f" 2>/dev/null || echo 0)
   [ "${oh:-0}" -ge 1 ] && [ "${nb:-0}" -ge 3 ]; }
 
 # SSD mount prefix per node (SAME shared disk, different mount point): galaxy vs laniakea/voyager.
-node_ssd_prefix(){ case "$1" in galaxy) echo /srv/disk00/sshfs/pengchx3 ;; *) echo /tmp/galaxy_srv_disk00/pengchx3 ;; esac; }
+node_ssd_prefix(){ case "$1" in galaxy) echo ${OG_SCRATCH:-$PWD/output} ;; *) echo ${OG_SCRATCH:-$PWD/output} ;; esac; }
 submit_task(){ # node task subdir yaml -> echoes jid.
   # Builds CACHE_BASE/RESULTS_CSV on the TARGET NODE's SSD mount (galaxy=/srv/disk00/sshfs,
   # laniakea/voyager=/tmp/galaxy_srv_disk00) -- the login-node prefix is NOT writable on the other
   # nodes. Same shared disk, so the login loop still READS these CSVs via its galaxy prefix (task_done
   # uses csv_for with the login folder).
   local node="$1" task="$2" subdir="$3" yaml="$4" pfx folder csv
-  pfx=$(node_ssd_prefix "$node"); folder="$pfx/rebuttal_nt/$subdir"; csv="$folder/results/r13_ntbase_$task.csv"
-  $SB/sbatch --parsable --nodelist="$node" --job-name="r13nb_${node}_${task}" \
-    --output="$REPO/slurm/slurm-r13nb-${task}-%j.out" \
+  pfx=$(node_ssd_prefix "$node"); folder="$pfx/nt_runs/$subdir"; csv="$folder/results/ntbase_matched_$task.csv"
+  $SB/sbatch --parsable --nodelist="$node" --job-name="ntbase_${node}_${task}" \
+    --output="$REPO/slurm/slurm-ntbase-${task}-%j.out" \
     --export="ALL,TASK=$task,ARMS=$ARMS,BEST_HP=$yaml,CACHE_BASE=$folder,RESULTS_CSV=$csv,PARAM_MATCHED=1" \
     "$RUN" 2>>"$LOG"; }
 

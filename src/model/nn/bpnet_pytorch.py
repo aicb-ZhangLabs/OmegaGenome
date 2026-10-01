@@ -49,7 +49,7 @@ class BPNet(nn.Module):
 
 
 class BPNetWidth(BPNet):
-    """Width-parametrized BPNet (R1.3 param-match): IDENTICAL architecture to BPNet but with a
+    """Width-parametrized BPNet (param-match): IDENTICAL architecture to BPNet but with a
     configurable channel width ``C`` (BPNet hard-codes C=64).
 
     Why a *subclass*: the embedding front-ends in BPNetClassifier (latefuse_onehot / replaceK) gate on
@@ -65,7 +65,9 @@ class BPNetWidth(BPNet):
     """
 
     def __init__(self, channels: int = 61):
-        nn.Module.__init__(self)  # bypass BPNet.__init__ (which hard-codes C=64); rebuild at width C
+        nn.Module.__init__(
+            self
+        )  # bypass BPNet.__init__ (which hard-codes C=64); rebuild at width C
         C = channels
         self.channels = C
         self.stem = nn.Sequential(

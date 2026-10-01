@@ -2,7 +2,7 @@
 # Wait for the carbon-raw auto-submitter to finish submitting all its tasks, then launch the
 # carbon-l2norm campaign (same 18 tasks). Sequential = one submitter at a time (no cap double-count);
 # l2norm hits raw's now-cached teacher precomputes (atomic cache -> any overlap is safe).
-cd /home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+cd ${OG_ROOT:-$PWD}
 echo "[chain $(date +%H:%M:%S)] waiting for carbon-raw submitter to finish..."
 while pgrep -f "auto_submit_carbon.sh carbon-raw" >/dev/null 2>&1; do sleep 120; done
 echo "[chain $(date +%H:%M:%S)] raw submitter done -> launching carbon-l2norm"

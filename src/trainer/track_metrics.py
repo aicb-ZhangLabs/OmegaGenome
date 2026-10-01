@@ -62,8 +62,10 @@ class TracksMetrics:
 
     def update(self, predictions: "torch.Tensor", targets: "torch.Tensor", loss: float = None):
         """Accumulate one batch. predictions/targets: (..., num_tracks)."""
-        self.pearson.update(predictions.detach().reshape(-1, self.num_tracks).to(torch.float64),
-                            targets.detach().reshape(-1, self.num_tracks).to(torch.float64))
+        self.pearson.update(
+            predictions.detach().reshape(-1, self.num_tracks).to(torch.float64),
+            targets.detach().reshape(-1, self.num_tracks).to(torch.float64),
+        )
         if loss is not None:
             self.losses.append(loss)
 

@@ -3,8 +3,8 @@
 #   sbatch slurm/carbon_finetune.sbatch                      # carbon_3b_debug (1 task, 1 epoch)
 #   sbatch slurm/carbon_finetune.sbatch carbon_3b            # full 18-task run, one job
 #   sbatch slurm/carbon_finetune.sbatch carbon_3b H3K4me3    # single task (used by the fan-out)
-# Confirm with Jing before submitting (lab policy).
-# GPU: laniakea=A6000 48G (default), voyager=H100 80G (ask Jing; cap 3), galaxy=3090 24G.
+# Confirm with the lab before submitting (GPU-sharing policy).
+# GPU: laniakea=A6000 48G (default), voyager=H100 80G (limited availability), galaxy=3090 24G.
 #SBATCH --job-name=carbon_finetune
 #SBATCH --nodes=1
 #SBATCH --nodelist=laniakea
@@ -17,7 +17,7 @@
 
 set -euo pipefail
 EXP="${1:-carbon_3b_debug}"   # experiment name from config/distillation/teacher_finetune.py
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 source slurm/env_setup.sh
 export OMEGA_FINETUNE_LOCAL=1  # run inline on this GPU instead of re-submitting per task

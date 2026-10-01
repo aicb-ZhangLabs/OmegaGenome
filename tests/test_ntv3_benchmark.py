@@ -11,7 +11,11 @@ import tempfile
 import numpy as np
 
 from src.data.ntv3_benchmark import (
-    BenchmarkData, load_splits, load_track_meta, sample_windows, stage_to_local,
+    BenchmarkData,
+    load_splits,
+    load_track_meta,
+    sample_windows,
+    stage_to_local,
 )
 
 _n = 0
@@ -44,8 +48,14 @@ def test_splits_and_windows():
     with tempfile.TemporaryDirectory() as d:
         _fixture(d)
         sp = load_splits(f"{d}/splits.bed")
-        ok(sp["train"] == [("chr1", 0, 1000)] and sp["test"] == [("chr1", 1000, 2000)], "splits parsed")
-        ok(sample_windows(sp["train"], 500) == [("chr1", 0, 500), ("chr1", 500, 1000)], "tile default")
+        ok(
+            sp["train"] == [("chr1", 0, 1000)] and sp["test"] == [("chr1", 1000, 2000)],
+            "splits parsed",
+        )
+        ok(
+            sample_windows(sp["train"], 500) == [("chr1", 0, 500), ("chr1", 500, 1000)],
+            "tile default",
+        )
         ok(len(sample_windows(sp["train"], 300, stride=100)) == 8, "tile stride")
         ok(len(sample_windows(sp["train"], 300, n=2)) == 2, "tile cap n")
         ok(sample_windows(sp["train"], 5000) == [], "window > interval -> empty")
@@ -55,14 +65,19 @@ def test_meta_and_data():
     with tempfile.TemporaryDirectory() as d:
         _fixture(d)
         meta = load_track_meta(f"{d}/meta.tsv", species="human")
-        ok(len(meta) == 1 and meta[0].assay == "ATAC-seq" and meta[0].mean == 1.0, "meta human-only + fields")
+        ok(
+            len(meta) == 1 and meta[0].assay == "ATAC-seq" and meta[0].mean == 1.0,
+            "meta human-only + fields",
+        )
         bd = BenchmarkData(f"{d}/genome.fasta", f"{d}/tracks", meta)
         ok(bd.labels == ["T1"], "labels")
         ok(bd.sequences([("chr1", 0, 8)]) == ["ACGTACGT"], "fasta sequence read")
         tgt = bd.targets([("chr1", 0, 2000)], nbins=2, log1p=True)
         ok(tgt.shape == (1, 2, 1), "targets shape")
-        ok(abs(tgt[0, 0, 0] - np.log1p(3.0)) < 1e-3 and abs(tgt[0, 1, 0] - np.log1p(7.0)) < 1e-3,
-           "targets log1p of [3,7]")
+        ok(
+            abs(tgt[0, 0, 0] - np.log1p(3.0)) < 1e-3 and abs(tgt[0, 1, 0] - np.log1p(7.0)) < 1e-3,
+            "targets log1p of [3,7]",
+        )
         raw = bd.targets([("chr1", 0, 2000)], nbins=2, log1p=False)
         ok(abs(raw[0, 0, 0] - 3.0) < 1e-3, "targets raw (no log1p)")
 
@@ -96,11 +111,19 @@ def test_stage_to_local():
         ok(os.path.exists(f"{dst}/benchmark_metadata.tsv"), "metadata staged")
         m1 = os.path.getmtime(f"{dst}/human/functional_tracks/T1.bigwig")
         stage_to_local(src, dst, "human")  # idempotent: same-size files not recopied
-        ok(os.path.getmtime(f"{dst}/human/functional_tracks/T1.bigwig") == m1, "idempotent (no recopy)")
+        ok(
+            os.path.getmtime(f"{dst}/human/functional_tracks/T1.bigwig") == m1,
+            "idempotent (no recopy)",
+        )
 
 
 if __name__ == "__main__":
-    tests = [test_splits_and_windows, test_meta_and_data, test_missing_bigwig_guard, test_stage_to_local]
+    tests = [
+        test_splits_and_windows,
+        test_meta_and_data,
+        test_missing_bigwig_guard,
+        test_stage_to_local,
+    ]
     failed = 0
     for fn in tests:
         try:

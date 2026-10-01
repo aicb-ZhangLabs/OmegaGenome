@@ -6,6 +6,7 @@ max validation MCC over that task's rows in the CSV (rounded); (3) the recorded 
 comes from that SAME best-val row (not the global max test). Reports any task with a missing
 test MCC or other anomaly instead of silently dropping it.
 """
+
 import csv
 import os
 import sys
@@ -13,7 +14,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from make_best_hp import resolve_map, get_task, VAL_COL, TEST_COL
 
-SRC = "/extra/zhanglab0/INDV/pengchx3/OmegaGenome_different_version/OmegaGenome_11_1_fix_ckpt/OmegaGenome"
+SRC = (
+    os.environ.get("OG_STORE", "data")
+    + "/OmegaGenome_different_version/OmegaGenome_11_1_fix_ckpt/OmegaGenome"
+)
 CSVS = {
     "nt": f"{SRC}/nt_hyperparam_flat_clean.csv",
     "dnabert2": f"{SRC}/dnabert2_hyperparam_flat_clean.csv",
@@ -72,7 +76,7 @@ def main():
                 problems.append(f"{task}: missing in YAML")
                 continue
             if abs(round(rec[0], 4) - float(yv["val"])) > 1e-6:
-                problems.append(f"{task}: val {yv['val']} != csv-max {round(rec[0],4)}")
+                problems.append(f"{task}: val {yv['val']} != csv-max {round(rec[0], 4)}")
             exp_test = "null" if rec[1] is None else str(round(rec[1], 4))
             if yv["test"] != exp_test:
                 problems.append(f"{task}: test {yv['test']} != best-val-row test {exp_test}")

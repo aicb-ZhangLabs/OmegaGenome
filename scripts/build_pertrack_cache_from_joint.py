@@ -15,6 +15,7 @@ Safety: the joint logits.npy is read SEQUENTIALLY in row-blocks (C-contiguous [N
 mm[i:j] is one contiguous read), NOT a strided full-array mmap fancy-index — sshfs-safe and light on
 I/O so the running joint sweep is not starved.
 """
+
 import argparse
 import os
 import sys
@@ -30,8 +31,12 @@ from src.trainer.teacher_cache import cache_record  # noqa: E402
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--joint_cache", required=True, help="dir with logits.npy + meta.pt (joint-34)")
-    ap.add_argument("--track_idx", type=int, required=True, help="dataset channel to slice (e.g. 12)")
-    ap.add_argument("--expect_track_id", required=True, help="assert meta track_ids[track_idx]==this")
+    ap.add_argument(
+        "--track_idx", type=int, required=True, help="dataset channel to slice (e.g. 12)"
+    )
+    ap.add_argument(
+        "--expect_track_id", required=True, help="assert meta track_ids[track_idx]==this"
+    )
     ap.add_argument("--out", required=True, help="output .pt path (e.g. .../gen/t12.pt)")
     ap.add_argument("--chunk_rows", type=int, default=2000, help="rows per sequential read block")
     args = ap.parse_args()
@@ -46,24 +51,34 @@ def main():
     tids = meta["track_ids"]
     C = len(tids)
     if ts is not None and list(ts) != list(range(C)):
-        raise SystemExit(f"FATAL: joint cache track_subset={ts} is not a full native ordering; "
-                         f"channel {args.track_idx} would not equal dataset track {args.track_idx}.")
+        raise SystemExit(
+            f"FATAL: joint cache track_subset={ts} is not a full native ordering; "
+            f"channel {args.track_idx} would not equal dataset track {args.track_idx}."
+        )
     if tids[args.track_idx] != args.expect_track_id:
-        raise SystemExit(f"FATAL: meta track_ids[{args.track_idx}]={tids[args.track_idx]!r} != "
-                         f"expected {args.expect_track_id!r}. Refusing to build a mis-targeted cache.")
-    print(f"channel identity OK: joint track_subset covers 0..{C-1}; "
-          f"track_ids[{args.track_idx}]={tids[args.track_idx]!r} == {args.expect_track_id!r}", flush=True)
+        raise SystemExit(
+            f"FATAL: meta track_ids[{args.track_idx}]={tids[args.track_idx]!r} != "
+            f"expected {args.expect_track_id!r}. Refusing to build a mis-targeted cache."
+        )
+    print(
+        f"channel identity OK: joint track_subset covers 0..{C - 1}; "
+        f"track_ids[{args.track_idx}]={tids[args.track_idx]!r} == {args.expect_track_id!r}",
+        flush=True,
+    )
 
     mm = np.load(logits_path, mmap_mode="r")  # [N, L, C] fp16, C-contiguous
     N, L, Cc = mm.shape
     assert Cc == C, f"logits C {Cc} != meta track_ids {C}"
-    print(f"joint logits: shape={mm.shape} dtype={mm.dtype}; slicing channel {args.track_idx} "
-          f"in row-blocks of {args.chunk_rows}", flush=True)
+    print(
+        f"joint logits: shape={mm.shape} dtype={mm.dtype}; slicing channel {args.track_idx} "
+        f"in row-blocks of {args.chunk_rows}",
+        flush=True,
+    )
 
     out = np.empty((N, L, 1), dtype=np.float16)
     for i in range(0, N, args.chunk_rows):
         j = min(i + args.chunk_rows, N)
-        block = np.asarray(mm[i:j])                 # contiguous sequential read of full rows
+        block = np.asarray(mm[i:j])  # contiguous sequential read of full rows
         out[i:j, :, 0] = block[:, :, args.track_idx]
         if (i // args.chunk_rows) % 5 == 0:
             print(f"  {j}/{N} rows", flush=True)
@@ -90,9 +105,11 @@ def main():
     tmp = args.out + ".tmp"
     torch.save(rec, tmp)
     os.replace(tmp, args.out)
-    print(f"WROTE {args.out}  logits {tuple(rec['logits'].shape)} track_subset={rec['track_subset']} "
-          f"n_windows={rec['limit_num_samples']} overlap={rec['overlap']} teacher={rec['teacher']}",
-          flush=True)
+    print(
+        f"WROTE {args.out}  logits {tuple(rec['logits'].shape)} track_subset={rec['track_subset']} "
+        f"n_windows={rec['limit_num_samples']} overlap={rec['overlap']} teacher={rec['teacher']}",
+        flush=True,
+    )
 
     # --- VERIFY: reload the written file and spot-check values against the joint memmap channel ---
     chk = torch.load(args.out, map_location="cpu")
@@ -112,10 +129,15 @@ def main():
             bad += 1
     del mm2
     if bad:
-        raise SystemExit(f"FATAL: {bad} sampled windows disagree with joint channel — cache is WRONG.")
-    print(f"VERIFY OK: reload shape {tuple(lg.shape)}, track_subset {chk['track_subset']}, "
-          f"track_ids {chk['track_ids']}; 5 sampled windows BYTE-IDENTICAL to joint channel "
-          f"{args.track_idx}.", flush=True)
+        raise SystemExit(
+            f"FATAL: {bad} sampled windows disagree with joint channel — cache is WRONG."
+        )
+    print(
+        f"VERIFY OK: reload shape {tuple(lg.shape)}, track_subset {chk['track_subset']}, "
+        f"track_ids {chk['track_ids']}; 5 sampled windows BYTE-IDENTICAL to joint channel "
+        f"{args.track_idx}.",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

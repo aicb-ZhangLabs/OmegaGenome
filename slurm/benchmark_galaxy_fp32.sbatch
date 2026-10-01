@@ -20,18 +20,18 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 
 HOME_HF="$REPO/.hf_cache"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
 export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false
 export WANDB_MODE=offline
 export HF_HUB_DISABLE_XET=1
 export HF_XET_CACHE="$REPO/.hf_cache/xet"
-export OUTPUT_PATH=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/rebuttal_infra/benchmark_runs_galaxy
+export OUTPUT_PATH=${OG_WORKSPACE:-$PWD/..}/analysis/benchmark_runs_galaxy
 
 PY="$REPO/.venv_carbon_portable/bin/python"
 

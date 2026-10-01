@@ -9,14 +9,14 @@
 # Re-runs are now robust because save_checkpoint retries transient FS errors (_retry_io). Bounded by
 # MAX_CYCLES so a genuinely-broken combo can't spin forever. Usage: bash slurm/reconcile_hp.sh [PID]
 set -uo pipefail
-cd /home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+cd ${OG_ROOT:-$PWD}
 SB=/pkg/slurm/22.05.3/bin
 PY=.venv_carbon_portable/bin/python
 EXISTING="${1:-}"
 MAX_CYCLES=6
 SPECS=hp_specs_reconcile.txt
 
-qcount(){ "$SB/squeue" -u pengchx3 -h -o "%j" 2>/dev/null | grep -c carbon-distill; }
+qcount(){ "$SB/squeue" -u $USER -h -o "%j" 2>/dev/null | grep -c carbon-distill; }
 drain(){ while [ "$(qcount)" -gt 0 ]; do sleep 300; done; }
 
 echo "[reconcile $(date +%F_%H:%M:%S)] start; waiting for primary submitter PID=${EXISTING:-none} + queue drain"

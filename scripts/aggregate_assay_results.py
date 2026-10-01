@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Aggregate the R1.1c per-assay KD-vs-baseline runs into the distilled−baseline Pearson delta tables.
+"""Aggregate the per-assay KD-vs-baseline runs into the distilled−baseline Pearson delta tables.
 
 Scans ``<root>/<assay>/8m_<mode>_s<seed>/ntv3_finetune_result.json`` (mode in {kd, base}); a per-seed
 "pair" exists when BOTH modes are present for the same (assay, seed). For each pair it computes the
@@ -11,8 +11,9 @@ mean±std) plus, for each assay, a per-track Δ table. Prints only what has actu
 still-missing (assay, seed, mode) cells so partial results are never mistaken for complete. Read-only.
 
 Usage:  python scripts/aggregate_assay_results.py \
-          --root /tmp/galaxy_srv_disk00/pengchx3/ntv3_targets/assay_experiment
+          --root ${OG_SCRATCH}/ntv3_targets/assay_experiment
 """
+
 import argparse
 import csv
 import json
@@ -24,16 +25,25 @@ SEEDS = [0, 1, 2]
 
 # display name + track count per assay (for the publication-ready LaTeX table)
 ASSAY_META = {
-    "atac": ("ATAC-seq", 5), "histone": ("Histone ChIP-seq", 4),
-    "rnaseq": ("RNA-seq", 5), "procap": ("PRO-cap", 10), "eclip": ("eCLIP", 10),
+    "atac": ("ATAC-seq", 5),
+    "histone": ("Histone ChIP-seq", 4),
+    "rnaseq": ("RNA-seq", 5),
+    "procap": ("PRO-cap", 10),
+    "eclip": ("eCLIP", 10),
 }
 
 # NTv3-650M teacher per-track results (34-track 3-seed) -> per-assay teacher ceiling
-TEACHER_CSV = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                           "results", "ntv3_650m_per_track_3seed.csv")
+TEACHER_CSV = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "results",
+    "ntv3_650m_per_track_3seed.csv",
+)
 _ASSAY_CSV_NAMES = {
-    "atac": {"ATAC-seq"}, "histone": {"Histone ChIP-seq"}, "procap": {"PRO-cap"},
-    "eclip": {"eCLIP"}, "rnaseq": {"polyA plus RNA-seq", "total RNA-seq", "RNA-seq"},
+    "atac": {"ATAC-seq"},
+    "histone": {"Histone ChIP-seq"},
+    "procap": {"PRO-cap"},
+    "eclip": {"eCLIP"},
+    "rnaseq": {"polyA plus RNA-seq", "total RNA-seq", "RNA-seq"},
 }
 
 
@@ -61,7 +71,7 @@ def _tex_val(vals):
 
 
 def emit_tex(root, out_path):
-    """Write a staged rebuttal/paper-ready LaTeX table body (\\ogtable style, mean$\\pm$s.d. over seeds).
+    """Write a paper-ready LaTeX table body (\\ogtable style, mean$\\pm$s.d. over seeds).
 
     Reuses the same per-seed pairing as the markdown path. Includes every assay with >=1 complete seed
     pair; assays with >=2 pairs carry a s.d. Not wired into any docx/paper build — a staged fragment only.
@@ -82,23 +92,31 @@ def emit_tex(root, out_path):
         name, ntrk = ASSAY_META[assay]
         seen_seed_counts.append(len(delta_means))
         tval = f"{tea[assay]:.3f}" if assay in tea else "\\textemdash{}"
-        pct = f"{100*mean(kd_means)/tea[assay]:.0f}\\%" if assay in tea and tea[assay] else "\\textemdash{}"
-        rows.append(f"{name} & {ntrk} & {tval} & {_tex_val(kd_means)} & {_tex_val(base_means)} & "
-                    f"\\best{{+{_tex_val(delta_means)}}} & {pct} & {len(delta_means)}\\\\")
+        pct = (
+            f"{100 * mean(kd_means) / tea[assay]:.0f}\\%"
+            if assay in tea and tea[assay]
+            else "\\textemdash{}"
+        )
+        rows.append(
+            f"{name} & {ntrk} & {tval} & {_tex_val(kd_means)} & {_tex_val(base_means)} & "
+            f"\\best{{+{_tex_val(delta_means)}}} & {pct} & {len(delta_means)}\\\\"
+        )
     smax = max(seen_seed_counts) if seen_seed_counts else 0
     body = (
         "\\ogtable{%\n\\small\n\\begin{tabular}{l c c c c c c c}\n\\toprule\n"
-        "\\bannertitle{8}{R1.1c \\textemdash{} Per-assay specialist (8\\,M student): distillation vs.\\ "
+        "\\bannertitle{8}{Per-assay specialist (8\\,M student): distillation vs.\\ "
         "from-scratch, with the NTv3-650M teacher ceiling}\n"
         "\\hdr{Assay} & \\hdr{Tracks} & \\hdr{Teacher} & \\hdr{Distilled} & \\hdr{From-scratch} & "
         "\\hdr{$\\Delta$} & \\hdr{\\% teacher} & \\hdr{Seeds}\\\\\n\\midrule\n"
-        + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}%\n}{%\n"
+        + "\n".join(rows)
+        + "\n\\bottomrule\n\\end{tabular}%\n}{%\n"
         "Per-assay multi-track specialist: one 8\\,M NTv3 student trained on all tracks of an assay family, "
         "distilled from the NTv3-650M teacher vs.\\ from-scratch under a data-matched schedule (identical "
         "63{,}707-window stream; only the teacher term differs). Columns: mean test Pearson for the teacher, "
         "the distilled student, and the from-scratch student; $\\Delta$ = distilled $-$ from-scratch; "
         "\\% teacher = distilled/teacher. mean$\\pm$s.d.\\ over "
-        f"up to {smax} seed(s). Distillation improves every assay on every track.%\n}}\n")
+        f"up to {smax} seed(s). Distillation improves every assay on every track.%\n}}\n"
+    )
     with open(out_path, "w") as fh:
         fh.write(body)
     return len(rows), smax
@@ -125,8 +143,9 @@ def _fmt(vals):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True, help="assay_experiment dir")
-    ap.add_argument("--emit_tex", default=None,
-                    help="also write a staged rebuttal/paper-ready LaTeX table body to this path")
+    ap.add_argument(
+        "--emit_tex", default=None, help="also write a paper-ready LaTeX table body to this path"
+    )
     args = ap.parse_args()
 
     if args.emit_tex:
@@ -158,14 +177,31 @@ def main():
             summary_rows.append(f"| {assay} | (no complete seed pair yet) | | | {len(SEEDS)} |")
             continue
         summary_rows.append(
-            f"| {assay} | {_fmt(kd_means)} | {_fmt(base_means)} | **{_fmt(delta_means)}** | {n_pairs} |")
-        lines = [f"\n**{assay}** — per-track distilled−baseline Δ (mean over {n_pairs} seed pair(s)):",
-                 "", "| track | Δ Pearson | distilled | baseline |", "|---|---|---|---|"]
+            f"| {assay} | {_fmt(kd_means)} | {_fmt(base_means)} | **{_fmt(delta_means)}** | {n_pairs} |"
+        )
+        lines = [
+            f"\n**{assay}** — per-track distilled−baseline Δ (mean over {n_pairs} seed pair(s)):",
+            "",
+            "| track | Δ Pearson | distilled | baseline |",
+            "|---|---|---|---|",
+        ]
         # reload seed-0 (or the first available pair) to show absolute levels alongside the Δ
-        kd0 = next((_load(args.root, assay, "kd", s) for s in SEEDS
-                    if _load(args.root, assay, "kd", s) and _load(args.root, assay, "base", s)), None)
-        base0 = next((_load(args.root, assay, "base", s) for s in SEEDS
-                      if _load(args.root, assay, "kd", s) and _load(args.root, assay, "base", s)), None)
+        kd0 = next(
+            (
+                _load(args.root, assay, "kd", s)
+                for s in SEEDS
+                if _load(args.root, assay, "kd", s) and _load(args.root, assay, "base", s)
+            ),
+            None,
+        )
+        base0 = next(
+            (
+                _load(args.root, assay, "base", s)
+                for s in SEEDS
+                if _load(args.root, assay, "kd", s) and _load(args.root, assay, "base", s)
+            ),
+            None,
+        )
         for t in track_order:
             d = _fmt(track_deltas[t])
             kv = f"{kd0['per_track_pearson'][t]:.4f}" if kd0 else "—"
@@ -175,12 +211,18 @@ def main():
         per_track_blocks.append("\n".join(lines))
 
     print("## Results — per-assay distilled vs from-scratch (8M student)\n")
-    print("| assay | distilled (mean Pearson) | from-scratch | Δ (distilled−baseline) | seed pairs |")
+    print(
+        "| assay | distilled (mean Pearson) | from-scratch | Δ (distilled−baseline) | seed pairs |"
+    )
     print("|---|---|---|---|---|")
     print("\n".join(summary_rows))
     print("\n".join(per_track_blocks))
     if missing:
-        print(f"\n_Still running / not yet paired ({len(missing)}): " + ", ".join(sorted(missing)) + "_")
+        print(
+            f"\n_Still running / not yet paired ({len(missing)}): "
+            + ", ".join(sorted(missing))
+            + "_"
+        )
 
 
 if __name__ == "__main__":

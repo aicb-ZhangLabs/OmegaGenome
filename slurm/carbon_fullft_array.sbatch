@@ -23,7 +23,7 @@
 #SBATCH --output=slurm-%x-%a-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 source slurm/env_setup.sh
 export OMEGA_FINETUNE_LOCAL=1

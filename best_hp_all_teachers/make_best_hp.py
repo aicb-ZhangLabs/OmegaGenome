@@ -22,6 +22,7 @@ Outputs (per teacher) under ``--out-dir``:
 Usage:
   python make_best_hp.py --csv <path> --teacher <nt|dnabert2|caduceus|enformer> --out-dir <dir>
 """
+
 import argparse
 import csv
 import os
@@ -29,11 +30,24 @@ import os
 # Canonical NT-classification task list (18). Ordered specific-prefix-first so that
 # name-prefix matching disambiguates e.g. enhancers_types before enhancers.
 KNOWN_TASKS = [
-    "H2AFZ", "H3K27ac", "H3K27me3", "H3K36me3", "H3K4me1", "H3K4me2", "H3K4me3",
-    "H3K9ac", "H3K9me3", "H4K20me1",
-    "enhancers_types", "enhancers",
-    "promoter_no_tata", "promoter_tata", "promoter_all",
-    "splice_sites_acceptors", "splice_sites_donors", "splice_sites_all",
+    "H2AFZ",
+    "H3K27ac",
+    "H3K27me3",
+    "H3K36me3",
+    "H3K4me1",
+    "H3K4me2",
+    "H3K4me3",
+    "H3K9ac",
+    "H3K9me3",
+    "H4K20me1",
+    "enhancers_types",
+    "enhancers",
+    "promoter_no_tata",
+    "promoter_tata",
+    "promoter_all",
+    "splice_sites_acceptors",
+    "splice_sites_donors",
+    "splice_sites_all",
 ]
 _TASKS_BY_LEN = sorted(KNOWN_TASKS, key=len, reverse=True)  # longest prefix first
 
@@ -83,9 +97,19 @@ TEST_COL = "summary.best_test/mcc"
 EPOCH_COL = "summary.epoch"
 
 # Hyperparameter fields (in display order) emitted into the YAML "hyperparameters" block.
-HP_FIELDS = ["weight_ce", "weight_kl", "weight_mse", "temperature",
-             "distill_method", "kl_method", "dkd_alpha", "dkd_beta",
-             "lr", "batch_size", "epochs"]
+HP_FIELDS = [
+    "weight_ce",
+    "weight_kl",
+    "weight_mse",
+    "temperature",
+    "distill_method",
+    "kl_method",
+    "dkd_alpha",
+    "dkd_beta",
+    "lr",
+    "batch_size",
+    "epochs",
+]
 # Extra metadata fields emitted alongside hyperparameters.
 META_FIELDS = ["seed", "model_size", "hidden_dim"]
 
@@ -179,6 +203,7 @@ def round_or_none(x, n=4):
 
 def write_yaml(best, counts, out_path):
     """Write a nested {task: {hyperparameters, metadata, best_val/test_mcc}} YAML, no PyYAML dep."""
+
     def fmt(v):
         if v is None:
             return "null"
@@ -207,8 +232,12 @@ def write_yaml(best, counts, out_path):
 
 def write_table(best, counts, csv_path, md_path):
     """Write a tidy 18-row CSV plus a markdown rendering of the same per-task best-HP table."""
-    cols = (["task"] + HP_FIELDS + META_FIELDS
-            + ["best_val_mcc", "best_test_mcc", "best_epoch", "n_candidates"])
+    cols = (
+        ["task"]
+        + HP_FIELDS
+        + META_FIELDS
+        + ["best_val_mcc", "best_test_mcc", "best_epoch", "n_candidates"]
+    )
     rows = []
     for task in sorted(best):
         r = best[task]
@@ -253,7 +282,7 @@ def main():
         r = best[task]
         hp = f"{r['weight_ce']}/{r['weight_kl']}/{r['weight_mse']}/{r['temperature']}"
         tv = "NA" if r["best_test_mcc"] is None else f"{r['best_test_mcc']:.4f}"
-        print(f"{task:<24}{r['best_val_mcc']:>8.4f}{tv:>8}{counts.get(task,1):>5}  {hp}")
+        print(f"{task:<24}{r['best_val_mcc']:>8.4f}{tv:>8}{counts.get(task, 1):>5}  {hp}")
 
 
 if __name__ == "__main__":

@@ -1,223 +1,233 @@
 # OmegaGenome
 
+Distilling large genomic language models (gLMs) into sub-million-parameter task experts.
+
+OmegaGenome fine-tunes a large gLM on a downstream genomic task and then compresses that
+task-specific knowledge into a compact student that keeps most of the teacher's accuracy at a
+fraction of the inference cost. This repository holds the training, evaluation and analysis code for
+the accompanying paper.
+
+An archived snapshot of this code is deposited at Zenodo:
+**[10.5281/zenodo.22805336](https://doi.org/10.5281/zenodo.22805336)**.
+
+## Method
+
+Two stages:
+
+1. **Teacher fine-tuning** — a pre-trained gLM (NT-2.5B, DNABERT-2, Enformer, Caduceus or
+   Carbon-3B) is fine-tuned per task, fully or with LoRA for the billion-parameter teachers.
+2. **Distillation** — a compact student (a ~0.12 M-parameter BPNet for classification, a dilated
+   track network for base-resolution regression) is trained with a supervised task loss, an
+   output-matching loss against the teacher, and a feature-alignment loss.
+
+Evaluation covers the 18 classification tasks of the revised Nucleotide Transformer benchmark and a
+base-resolution, multi-track regression benchmark.
+
+## Repository layout
+
+| Path | Contents |
+|---|---|
+| `src/model/` | teacher wrappers (gLMs, NTv3) and student architectures (BPNet, dilated track net) |
+| `src/train/` | entry points: teacher fine-tuning, distillation, hyperparameter search, benchmarking |
+| `src/trainer/` | training loops, distillation losses, teacher caching, metrics |
+| `src/data/` | dataset loading and preprocessing |
+| `src/eval/` | evaluation helpers |
+| `config/` | experiment configurations (tyro dataclasses) for teachers and distillation |
+| `slurm/` | cluster submission scripts, grid generation and result aggregation |
+| `scripts/` | standalone entry points; `scripts/experiments/` holds campaign driver scripts |
+| `analysis/` | analysis code: cross-task transfer, feature-space comparison, KD-method comparison |
+| `best_hp_all_teachers/`, `best_hyperparams.json` | selected hyperparameters per teacher and task |
+| `results/` | collated result tables |
+| `docs/` | dataset and design documentation |
+| `tests/` | unit tests |
+
 ## Installation
 
-### Environment
-
-- Install `uv`.
-- Set up the `env.toml` file. A template is provided in `env_sample.toml`.
-
-Now, we have the following virtual enviroments:
-
-**default**
-
-This enviroment supports `DNA BERT v2`, `NT`.
-
-To switch into this env, run
-```bash
-uv sync --extra default
-```
-
-**aido_dna**
-
-This enviroment supports `AIDO.DNA`.
-
-To switch into this env, run
-```bash
-UV_PROJECT_ENVIRONMENT=.venv_aido_dna uv sync --extra aido_dna
-```
-
-**caduceus**
-
-This enviroment supports `caduceus`.
-
-To switch into this env, run
-```bash
-UV_PROJECT_ENVIRONMENT=.venv_caduceus uv sync --extra caduceus
-```
-
-To install or uninstall a package in a specific enviroment, please make sure you activate the enviroment first
+Requires Python 3.11 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-#  e.g. this is important when you are running the code as well
-source .venv_aido_dna/bin/activate
+git clone https://github.com/aicb-ZhangLabs/OmegaGenome.git
+cd OmegaGenome
+cp env_sample.toml env.toml     # then edit the project path and SLURM defaults inside
 ```
 
-then you should run `uv add [package_name] --optional [enviroment_name] --active`. For example, `uv add modelgenerator --optional aido_dna --active`.
-
-### Data Folder and Output Folder Setup
-
-Replace `[YOUR_USER_NAME]` with your real username on clusters.
+The teachers need mutually incompatible dependency sets, so each lives in its own environment:
 
 ```bash
-# create data folder and output folder on our storage disk
-mkdir -p /extra/zhanglab0/INDV/[YOUR_USER_NAME]/OmegaGenome/data
-mkdir -p /extra/zhanglab0/INDV/[YOUR_USER_NAME]/OmegaGenome/output
-
-# use soft links to add them into the project folder
-ln -s /extra/zhanglab0/INDV/[YOUR_USER_NAME]/OmegaGenome/data data
-ln -s /extra/zhanglab0/INDV/[YOUR_USER_NAME]/OmegaGenome/output output
-```
-Example for linking NT finetuned models:
-```
-ln -s \
-/extra/zhanglab0/INDV/pengchx3/NT/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2 \
-./data/finetuned_models/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch10-3-22-revised-r32-fix-num-label-v2
-```
-```
-ln -sfnT /extra/zhanglab0/INDV/pengchx3/NT/2b5-multi-species_nucleotide-transformer-finetune-results-lora-ep
-och20-10-17-revised-r32-fix-num-label  ./data/finetuned_models/2b5-multi-species_nucleotide-transformer-finetu
-ne-results-lora-epoch20-10-17-revised-r32-fix-num-label
-```
-Example for linking dnabert-2 finetuned models:
-```
-ln -sfn /extra/zhanglab0/INDV/pengchx3/dnabert2_output_shared ./data/finetuned_models/dnabert2_output_shared
+uv sync --extra default                                             # NT-2.5B, DNABERT-2, Enformer, Carbon-3B
+UV_PROJECT_ENVIRONMENT=.venv_caduceus uv sync --extra caduceus      # Caduceus
+UV_PROJECT_ENVIRONMENT=.venv_aido_dna uv sync --extra aido_dna      # AIDO.DNA
 ```
 
-Example for linking enformer finetuned models:
-```
-mkdir -p ./data/finetuned_models/enformer_finetune_results/
-ln -sfn /extra/zhanglab0/INDV/pengchx3/enformer_finetune_results  ./data/finetuned_models/enformer_finetune_results/
-```
-Example for linking caduceus finetuned models
-```
-mkdir -p "/extra/zhanglab0/INDV/pengchx3/OmegaGenome_different_version/OmegaGenome/data/finetuned_model" \
-&& ln -sfnT "/extra/zhanglab0/INDV/pengchx3/caduceus/checkpoints-8-7-bz8" \
-            "./data/finetuned_models/caduceus_finetune_results"
-```
-## Training
+Activate an environment before adding packages to it:
 
-### Finetuning (Stage 1 — teacher LoRA fine-tune)
+```bash
+source .venv_caduceus/bin/activate
+uv add <package> --optional caduceus --active
+```
 
-Fine-tune a teacher gLM on the 18 NT-benchmark tasks; the resulting **per-task adapters are the
-teachers** that the distillation step (below) distills from. Entry point
-`src.train.finetune_teacher <config> [task] [overrides]` (same tyro + `@slurm_fn` style as `distill`).
-Configs in `config/distillation/teacher_finetune.py`:
+The SLURM scripts source `slurm/env_setup.sh` and run a node-portable interpreter at
+`.venv_carbon_portable/bin/python`, created with
+`UV_PROJECT_ENVIRONMENT=.venv_carbon_portable uv sync --extra default`.
+
+## Data
+
+All datasets are public; this study generated none of them.
+
+- **Classification** — the revised Nucleotide Transformer benchmark,
+  [`InstaDeepAI/nucleotide_transformer_downstream_tasks_revised`](https://huggingface.co/datasets/InstaDeepAI/nucleotide_transformer_downstream_tasks_revised).
+- **Regression** — tracks derived from [ENCODE](https://www.encodeproject.org) and
+  [GENCODE](https://www.gencodegenes.org); see [docs/ntv3-dataset.md](docs/ntv3-dataset.md).
+
+Keep large files outside the repository and link them in:
+
+```bash
+ln -s /path/to/storage/OmegaGenome/data   data
+ln -s /path/to/storage/OmegaGenome/output output
+```
+
+## Configuration
+
+Machine-specific locations are read from the environment, so no path is hardcoded. The defaults
+assume the commands run from the repository root.
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `OG_ROOT` | this repository checkout | current directory |
+| `OG_SCRATCH` | fast local disk for run outputs and caches | `./output` |
+| `OG_STORE` | long-term storage for teacher checkpoints and HF caches | `./data` |
+| `OG_WORKSPACE` | parent directory holding this repo and the figure repo | parent of the current directory |
+| `CARBON_TEACHER_DIR` | parent of the 18 `{task}_finetuned/` Carbon-3B LoRA adapters | `$OG_STORE/finetuned_models` |
+| `NT_TEACHER_DIR` | parent of the NT-2.5B LoRA adapters | `data/finetuned_models/` |
+| `NTV3_100M_DIR` | local copy of the post-trained NTv3-100M weights | `$OG_SCRATCH/ntv3_local/100m_post` |
+| `HF_TOKEN_FILE` | file holding a HuggingFace token, for gated datasets | unset |
+
+`config/distillation/paths.py` is the single place these defaults are resolved; `env.toml` (copied
+from `env_sample.toml`) holds the project path and the SLURM submission defaults.
+
+## Usage
+
+### Stage 1 — fine-tune a teacher
+
+`src.train.finetune_teacher <config> [task] [overrides]`, with the configs in
+`config/distillation/teacher_finetune.py`:
 
 | config | meaning |
 |---|---|
-| `carbon_3b` | full 18-task **LoRA** fine-tune of Carbon-3B (defaults: 10 ep, lr 1e-4, cosine, LoRA r16/α32/dropout0.1 on all-linear, early-stop patience 3) |
-| `carbon_3b_debug` | 1-task / 1-epoch smoke |
-| `carbon_3b_fullft` | full fine-tune (no LoRA) |
-| `carbon_8b` | Carbon-8B variant |
+| `carbon_3b` | 18-task LoRA fine-tune of Carbon-3B (10 epochs, lr 1e-4, cosine, LoRA r16/α32/dropout 0.1 on all linear projections, early-stop patience 3) |
+| `carbon_3b_debug` | one task, one epoch — smoke test |
+| `carbon_3b_fullft` | full fine-tune, no LoRA |
+| `carbon_8b_finetune` | Carbon-8B variant |
 
 ```bash
-# (a) SLURM — whole 18-task run, one job:
-sbatch slurm/carbon_finetune.sbatch carbon_3b
-# (b) SLURM — single task (the per-task fan-out form):
-sbatch slurm/carbon_finetune.sbatch carbon_3b H3K4me3
-# (c) smoke (1 task, 1 epoch):
-sbatch slurm/carbon_finetune.sbatch                    # defaults to carbon_3b_debug
-# (d) direct + override anything (tyro): fewer tasks / epochs, or full fine-tune:
-python -m src.train.finetune_teacher carbon_3b --config.epochs 5 --config.task-names H3K4me3 enhancers
-python -m src.train.finetune_teacher carbon_3b --config.use-lora False     # full FT instead of LoRA
-# full help:  python -m src.train.finetune_teacher -h
-```
-The best checkpoint per task (by validation MCC) is saved to `<output_dir>/<task>_finetuned/`
-(`output_dir = $OUTPUT_PATH/teacher_finetune/carbon_3b`). Those adapters are exactly what the
-distillation configs (`carbon-raw`, `carbon-base-raw`, …) load as the teacher in Stage 2 below.
-
-### Distillation
-
-See help message
-
-```bash
-python -m src.train.distill -h
+sbatch slurm/carbon_finetune.sbatch carbon_3b                 # whole 18-task run, one job
+sbatch slurm/carbon_finetune.sbatch carbon_3b H3K4me3         # single task
+sbatch slurm/carbon_finetune.sbatch                           # defaults to carbon_3b_debug
+python -m src.train.finetune_teacher carbon_3b --config.epochs 5 --config.task-names H3K4me3
+python -m src.train.finetune_teacher carbon_3b --config.use-lora False
+python -m src.train.finetune_teacher -h                       # all overrides
 ```
 
-Example of doing hyperparameter search
+The best checkpoint per task (by validation MCC) is written to `<output_dir>/<task>_finetuned/`,
+which is exactly what Stage 2 loads as the teacher.
 
-```bash
-python -m src.train.distill_hyperparam dna_bert_v2 --task-names H3K27ac H3K4me2 H3K4me3 H3K27me3 H3K36me3 H3K9me3 H4K20me1 enhancers enhancers_types promoter_tata promoter_no_tata
-```
+### Stage 2 — distil into a student
 
-
-
-## Carbon-3B → BPNet distillation: run, HP grid search, and results table
-
-End-to-end recipe for the Carbon-3B-teacher → 0.12M-BPNet-student distillation campaign (18
-NT-benchmark tasks). All commands run from this repo root with the portable venv
-(`.venv_carbon_portable/bin/python`, set `PYTHONPATH=.` for direct runs).
-
-### 1. Run the distillation (one task or a config)
-
-Entry point is `src.train.distill <config> [overrides]`. Configs (see `config/distillation/experiments/carbon.py`):
+`src.train.distill <config> [overrides]`, with the configs in
+`config/distillation/experiments/`:
 
 | config | meaning |
 |---|---|
-| `carbon-raw` | 18-task vanilla distill, **raw** MSE (ce0.5/kl0.5/mse0.2) |
-| `carbon-l2norm` | same, **L2-normalized** MSE |
-| `carbon-base-raw` | the **HP-sweep** grid def (raw): kl{0,.25,.5,1} × mse{0,1,2,5} × T{.5,1,1.5,2,4} |
+| `carbon-raw` | 18-task distillation, raw feature MSE (ce 0.5 / kl 0.5 / mse 0.2) |
+| `carbon-l2norm` | the same, with L2-normalised feature MSE |
+| `carbon-base-raw` | the hyperparameter grid: kl {0, .25, .5, 1} × mse {0, 1, 2, 5} × T {.5, 1, 1.5, 2, 4} |
 | `carbon-smoke` | tiny inline smoke test |
 
 ```bash
-# (a) GPU job via SLURM — one task, runs inline on the allocated GPU:
-sbatch slurm/carbon_distill.sbatch carbon-raw --task-names H3K27me3 --slurm-config.mode run
-
-# (b) override any hyperparameter (this is how the grid sweeps a point):
-sbatch slurm/carbon_distill.sbatch carbon-raw --task-names H3K27me3 \
-  --distillation-config.weight-ce 0.5 --distillation-config.weight-kl 0.5 \
-  --distillation-config.weight-mse 2 --distillation-config.temperature 4.0 \
-  --trainer-config.early-stop-patience 100 --slurm-config.mode run
-
-# (c) direct (no SLURM, e.g. CPU smoke):  PYTHONPATH=. .venv_carbon_portable/bin/python -m src.train.distill carbon-smoke
-# (d) full help / all overrides:          python -m src.train.distill -h
+sbatch slurm/carbon_distill.sbatch carbon-smoke                  # inline on the allocated GPU
+python -m src.train.distill carbon-raw                           # mode="slurm": fans out one job per task
+python -m src.train.distill carbon-raw --task-names H3K27me3 \
+  --distillation-config.weight-kl 0.5 --distillation-config.weight-mse 2 \
+  --distillation-config.temperature 4.0
+python -m src.train.distill -h
 ```
-Each run writes `final_summary.json` + `summary.csv` (+ best/epoch checkpoints) under
-`$CARBON_OUTPUT_BASE/deploy_120k/<task>/<ts>/<uuid>/<hp_str>/`. The training **seed** is
-`--random-state` (default **42**); the HP search leaves it at 42 (fixed-seed search), the final
-phase re-runs the best HP at seeds 0/1/2 for significance.
 
-### 2. Hyperparameter grid search (1440 raw combos = 80/task × 18)
+Each run writes `final_summary.json` and `summary.csv` next to its checkpoints under
+`$CARBON_OUTPUT_BASE/deploy_120k/<task>/<timestamp>/<uuid>/<hyperparameters>/`. The training seed is
+`--random-state` (default 42); the hyperparameter search keeps it fixed at 42 and the final phase
+re-runs the selected configuration at seeds 0, 1 and 2.
+
+### Base-resolution regression
+
+The regression pipeline fine-tunes NTv3 on the benchmark's bigWig tracks and distils it into a
+compact per-base-pair student:
 
 ```bash
-# generate ONLY the not-yet-done combos (resume-aware: skips any with a final_summary.json):
-PYTHONPATH=. .venv_carbon_portable/bin/python slurm/gen_hp_specs.py --out hp_specs.txt
-
-# cap-aware auto-submitter (one job/combo, fills per-node slots as they free); nohup for long runs:
-nohup bash slurm/auto_submit_specs.sh hp_specs.txt > carbon_pipeline.log 2>&1 &
-
-# per-node caps are LIVE — edit this file and the running submitter picks it up next loop (no restart):
-#   slurm/submit_caps.env   ->   LAN_CAP / VOY_CAP / GAL_CAP   (clamped to the node's GPU count)
-
-# self-healing: after the one-pass submitter drains, this re-runs any FAILED holes until 0 remain:
-nohup bash slurm/reconcile_hp.sh <submitter_pid> > reconcile_hp.log 2>&1 &
+sbatch slurm/ntv3_finetune.sbatch                     # faithful 650 M teacher fine-tune
+sbatch slurm/ntv3_finetune.sbatch --use_lora          # cheaper LoRA variant
+python -m src.train.ntv3_gen_targets --out <dir>      # cache the teacher's per-bp targets
+python -m src.train.distill_tracks --data <dir> --out <dir> --model_size medium
+python -m src.eval.per_track_csv --result <result.json> --meta <metadata.tsv> --out <csv>
 ```
 
-**Monitor grid progress (fast — runs the dir-walk ON galaxy-local disk, ~5 s):**
-```bash
-PYTHONPATH=. .venv_carbon_portable/bin/python slurm/grid_progress.py        # -> RAW grid: N/1440
-```
+`slurm/ntv3_precompute_joint34.sbatch` caches the 34-track teacher logits in one pass so the student
+size sweep (`slurm/ntv3_size_sweep_*.sbatch`) trains teacher-free, and
+`slurm/ntv3_assay_experiment.sbatch` runs the per-assay distilled-versus-from-scratch comparison.
 
-### 3. Get the results tables
+### Hyperparameter search and multi-seed runs
 
 ```bash
-# (A) FULL per-run table: one row per (task × hyperparameters × seed) -> val/test MCC, best_epoch, etc.
-#     stdlib-only -> run ON galaxy (local /srv/disk00 = fast) and redirect the CSV here:
-ssh galaxy '/home/pengchx3/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/bin/python3.11 \
-  '"$PWD"'/slurm/collate_runs.py --base /srv/disk00/sshfs/pengchx3/carbon_distillation' \
-  > results/carbon_grid_results.csv
-# columns: variant,task,weight_ce,weight_kl,weight_mse,temperature,lr,batch_size,random_state,
-#          best_val_mcc,best_test_mcc,final_test_mcc,best_test_f1,best_epoch,total_epochs,early_stopped,path
-
-# (B) BEST hyperparameters per task (selected on VALIDATION MCC, never test):
-PYTHONPATH=. .venv_carbon_portable/bin/python slurm/extract_best_hyperparams.py --out best_hyperparams.json
+python slurm/gen_hp_specs.py --out hp_specs.txt            # enumerate the grid; skips finished runs
+bash slurm/auto_submit_specs.sh hp_specs.txt               # submit, filling free per-node slots
+python slurm/extract_best_hyperparams.py --out best_hyperparams.json       # select on validation MCC
+python slurm/gen_3seed_best_specs.py --best best_hyperparams.json --seeds 0 1 2 --out seeds.txt
+python slurm/aggregate_3seed.py --seeds 0 1 2 --best best_hyperparams.json # per-task mean ± s.d.
 ```
 
-### 4. Final phase — 3-seed on the best HP (significance)
+Hyperparameters are always selected on validation MCC, never on test. Per-node job caps live in
+`slurm/submit_caps.env` and are re-read on every loop of the submitter, so they can be changed
+without restarting it.
+
+### Tests and linting
 
 ```bash
-PYTHONPATH=. .venv_carbon_portable/bin/python slurm/gen_3seed_best_specs.py \
-  --best best_hyperparams.json --seeds 0 1 2 --out best_3seed_specs.txt   # 18 tasks × 3 = 54 jobs
-nohup bash slurm/auto_submit_specs.sh best_3seed_specs.txt > seed3.log 2>&1 &
-# per-task mean ± std (reads final_summary.json, selects ONLY random_state in {0,1,2}):
-PYTHONPATH=. .venv_carbon_portable/bin/python slurm/aggregate_3seed.py --best best_hyperparams.json
+python -m pytest tests/
+ruff format . && ruff check .
 ```
 
-See `EXPERIMENTS_carbon_distill.md` for recorded results and the failure post-mortem.
+## Documentation
 
-# ruff fix
+- [docs/carbon-teacher.md](docs/carbon-teacher.md) — the stage-1 teacher fine-tuning path and the
+  per-teacher environments.
+- [docs/ntv3-dataset.md](docs/ntv3-dataset.md) — the base-resolution multi-track dataset.
+- [docs/assay-experiment.md](docs/assay-experiment.md) — the per-assay distillation versus
+  from-scratch comparison.
+
+## Branches
+
+- `main` — the full pipeline: teacher fine-tuning, distillation, evaluation and analysis for both
+  the 18-task classification benchmark and the base-resolution multi-track regression benchmark,
+  including the NTv3 student size sweep.
+- `ntv3-size-ladder` — the development branch for the size-ladder work: reference notebooks and
+  in-progress variants of the regression scripts.
+
+## Citation
+
+Please cite the paper and, if you use this code directly, the archived snapshot:
+
+```bibtex
+@software{omegagenome_code,
+  title  = {OmegaGenome: source code},
+  author = {Xu, Pengcheng and Liu, Junhao and Dai, Yi and Nishida, Kainoa Andrew and
+            Sun, Dongbo and Lei, Yutong and Hu, Yaqi and Wang, Chaoyang and Zhang, Jing},
+  year   = {2026},
+  doi    = {10.5281/zenodo.22805336},
+  url    = {https://doi.org/10.5281/zenodo.22805336}
+}
 ```
-ruff format . && ruff check . --fix
-ruff format --check --diff
-```
+
+## License
+
+MIT — see [LICENSE](LICENSE). The teacher models and datasets are distributed by their original
+providers under their own licences; the Nucleotide Transformer weights, for example, are
+CC BY-NC-SA 4.0.

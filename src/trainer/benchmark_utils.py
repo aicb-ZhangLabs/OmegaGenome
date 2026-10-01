@@ -22,7 +22,7 @@ def _fp16_autocast_ctx(device: str, dtype: torch.dtype):
     positional/embedding buffers) in float32 even after ``model.half()``, which raises a
     "expected scalar type Half but found Float" mismatch. ``torch.autocast`` runs the
     matmul/conv ops in fp16 while transparently promoting those mixed bias/LN ops, so EVERY
-    teacher runs under the SAME fp16 path (single-precision latency/memory table, R1.11).
+    teacher runs under the SAME fp16 path (single-precision latency/memory table).
     Returns a nullcontext when dtype is fp32 or the device is CPU (CUDA-only fp16 autocast).
     """
     if dtype == torch.float16 and torch.cuda.is_available() and "cuda" in device:
@@ -58,22 +58,22 @@ class BenchmarkResult:
     num_parameters: int
     # Whole-dataset wall-clock inference time (seconds). If total_time_extrapolated is True,
     # this is mean_per_batch_latency * n_total_batches (timed only a subset; the big teachers
-    # are too slow to run the full test set), else it is the measured sum over all batches (R2.2).
+    # are too slow to run the full test set), else it is the measured sum over all batches.
     total_time_s: float = 0.0
     total_time_extrapolated: bool = False
     # Exact test-set size for this task (n samples). num_samples = samples actually timed.
     n_test: int = 0
     # Native (pre-padding) median sequence length in bp for this task; seq_length = padded length fed to model.
     native_seq_len: int = 0
-    # GPU hardware the benchmark ran on (same-hardware comparison for the rebuttal table).
+    # GPU hardware the benchmark ran on (same-hardware comparison).
     gpu_name: str = ""
-    # CPU model name (recorded for the CPU-latency sub-table, R1.11 deployment claim).
+    # CPU model name (recorded for the CPU-latency sub-table, deployment claim).
     cpu_name: str = ""
     # Compute device actually used for this row ("cuda" or "cpu").
     device: str = ""
     # Numeric precision the forward ran at ("fp16" or "fp32"). With the precision-unification
     # fix every (teacher AND student) row in a sweep shares one value -> the latency/memory
-    # table is single-precision (R1.11; no apples-to-oranges fp16-vs-fp32 split).
+    # table is single-precision (no apples-to-oranges fp16-vs-fp32 split).
     precision: str = ""
     timestamp: str = ""
 
@@ -81,9 +81,7 @@ class BenchmarkResult:
         if not self.timestamp:
             self.timestamp = datetime.now().isoformat()
         if not self.gpu_name:
-            self.gpu_name = (
-                torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
-            )
+            self.gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
         if not self.cpu_name:
             self.cpu_name = _get_cpu_name()
 
@@ -158,7 +156,7 @@ def get_memory_stats(device: str = "cuda") -> Dict[str, float]:
     """Get current memory statistics in MB.
 
     On CUDA: GPU allocator stats. On CPU: process RSS (psutil) as peak/allocated,
-    so CPU runs still report a meaningful memory footprint for the rebuttal table.
+    so CPU runs still report a meaningful memory footprint for the table.
     """
     if torch.cuda.is_available() and "cuda" in device:
         torch.cuda.synchronize()
@@ -201,7 +199,7 @@ def benchmark_model_inference(
 
     Args:
         dtype: forward precision. fp16 runs the forward under a CUDA fp16 autocast so the
-            BPNet student matches the teachers' precision column (R1.11 single-precision
+            BPNet student matches the teachers' precision column (single-precision
             table). The student is NOT ``model.half()``-cast because its forward one-hot
             encodes the long ``input_ids`` into float32 internally (half weights would break
             the index op); autocast gives fp16 compute without that. fp32 = no autocast.
@@ -227,9 +225,7 @@ def benchmark_model_inference(
     if torch.cuda.is_available():
         torch.cuda.synchronize()
 
-    model_memory = (
-        torch.cuda.memory_allocated() / 1024 / 1024 if torch.cuda.is_available() else 0
-    )
+    model_memory = torch.cuda.memory_allocated() / 1024 / 1024 if torch.cuda.is_available() else 0
     model_size_calc = get_model_size_mb(model)
     print(
         f"  Model memory on GPU: {model_memory:.2f} MB (calculated size: {model_size_calc:.2f} MB)"
@@ -429,9 +425,7 @@ def benchmark_teacher_inference(
     if torch.cuda.is_available():
         torch.cuda.synchronize()
 
-    model_memory = (
-        torch.cuda.memory_allocated() / 1024 / 1024 if torch.cuda.is_available() else 0
-    )
+    model_memory = torch.cuda.memory_allocated() / 1024 / 1024 if torch.cuda.is_available() else 0
     model_size_calc = get_model_size_mb(model)
     print(
         f"  Model memory on GPU: {model_memory:.2f} MB (calculated size: {model_size_calc:.2f} MB)"
@@ -439,9 +433,7 @@ def benchmark_teacher_inference(
 
     # Create batches
     num_sequences = len(sequences)
-    batches = [
-        sequences[i : i + batch_size] for i in range(0, num_sequences, batch_size)
-    ]
+    batches = [sequences[i : i + batch_size] for i in range(0, num_sequences, batch_size)]
     max_batches = num_batches if num_batches else len(batches)
 
     # ============================================================
@@ -463,9 +455,7 @@ def benchmark_teacher_inference(
 
         if isinstance(tok, dict):
             input_ids = tok["input_ids"].to(device)
-            attention_mask = tok.get("attention_mask", torch.ones_like(input_ids)).to(
-                device
-            )
+            attention_mask = tok.get("attention_mask", torch.ones_like(input_ids)).to(device)
         else:
             input_ids = tok.input_ids.to(device)
             attention_mask = (
@@ -504,9 +494,7 @@ def benchmark_teacher_inference(
 
         if isinstance(tok, dict):
             input_ids = tok["input_ids"].to(device)
-            attention_mask = tok.get("attention_mask", torch.ones_like(input_ids)).to(
-                device
-            )
+            attention_mask = tok.get("attention_mask", torch.ones_like(input_ids)).to(device)
         else:
             input_ids = tok.input_ids.to(device)
             attention_mask = (

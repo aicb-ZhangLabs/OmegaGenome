@@ -4,14 +4,21 @@ for slurm/auto_submit_specs.sh. The grid is read from carbon_hp_raw_focused_conf
 truth). RESUME-AWARE: skips any (task, weight_ce, weight_kl, weight_mse, temperature) combo that already
 has a matching raw final_summary.json. Usage: python slurm/gen_hp_specs.py [--out hp_specs.txt]
 """
-import argparse, glob, json, os, sys
+
+import os
+import argparse
+import glob
+import json
+import sys
+
 sys.path.insert(0, ".")
 from itertools import product
+
 # Use the BASE config's full grid for the HP search (kl[0,.25,.5,1] x mse[0,1,2,5] x T[.5,1,1.5,2,4]
 # = 80 combos x 18 tasks = 1440). carbon_hp_raw_focused_config remains available as the focused option.
 from config.distillation.experiments.carbon import carbon_base_hyperparam_raw_config as C
 
-BASE = "/tmp/galaxy_srv_disk00/pengchx3/carbon_distillation"
+BASE = os.environ.get("OG_SCRATCH", "output") + "/carbon_distillation"
 
 
 def done_combos(scope_leaf=""):
@@ -28,9 +35,17 @@ def done_combos(scope_leaf=""):
         if "mse_normalizeTrue" in f:  # l2norm runs don't count for the raw search
             continue
         try:
-            s = json.load(open(f)); hp = s["hyperparameters"]
-            done.add((s["task"], float(hp["weight_ce"]), float(hp["weight_kl"]),
-                      float(hp["weight_mse"]), float(hp["temperature"])))
+            s = json.load(open(f))
+            hp = s["hyperparameters"]
+            done.add(
+                (
+                    s["task"],
+                    float(hp["weight_ce"]),
+                    float(hp["weight_kl"]),
+                    float(hp["weight_mse"]),
+                    float(hp["temperature"]),
+                )
+            )
         except Exception:
             continue
     return done
@@ -60,12 +75,20 @@ def main():
     # is auto-derived so resume can't mix a different-student re-search (e.g. carbon-raw-original, which
     # writes under .../original) with the old deploy_120k grid. Stage the mse search by editing the
     # config's weight_mses and rerunning (the 3 stages: [0,1] -> [0.25] -> [2,5]).
-    ap.add_argument("--cfg", default="carbon-raw",
-                    help="Experiment config name emitted per line (carbon-raw | carbon-raw-original).")
-    ap.add_argument("--patience", type=int, default=100,
-                    help="early-stop patience for the search (lower = faster, best-val ckpt still reported).")
+    ap.add_argument(
+        "--cfg",
+        default="carbon-raw",
+        help="Experiment config name emitted per line (carbon-raw | carbon-raw-original).",
+    )
+    ap.add_argument(
+        "--patience",
+        type=int,
+        default=100,
+        help="early-stop patience for the search (lower = faster, best-val ckpt still reported).",
+    )
     args = ap.parse_args()
     from config.distillation.experiments.carbon import experiment_configs
+
     scope_leaf = os.path.basename(experiment_configs[args.cfg][1].trainer_config.output_dir)
     done = done_combos(scope_leaf)
     lines, skipped, total = [], 0, 0
@@ -83,11 +106,19 @@ def main():
         )
     with open(args.out, "w") as f:
         f.write("\n".join(lines) + ("\n" if lines else ""))
-    full = len(C.task_names) * len(C.weight_ces) * len(C.weight_kls) * len(C.weight_mses) * len(C.temperatures)
-    print(f"cfg={args.cfg} scope={scope_leaf} mse={C.weight_mses}\n"
-          f"grid: {len(C.weight_kls)}kl x {len(C.weight_mses)}mse x {len(C.temperatures)}T x "
-          f"{len(C.task_names)}tasks = {full} naive; {total} canonical (kl=0 collapses T, saves {full-total}); "
-          f"{skipped} already done; wrote {len(lines)} specs -> {args.out}")
+    full = (
+        len(C.task_names)
+        * len(C.weight_ces)
+        * len(C.weight_kls)
+        * len(C.weight_mses)
+        * len(C.temperatures)
+    )
+    print(
+        f"cfg={args.cfg} scope={scope_leaf} mse={C.weight_mses}\n"
+        f"grid: {len(C.weight_kls)}kl x {len(C.weight_mses)}mse x {len(C.temperatures)}T x "
+        f"{len(C.task_names)}tasks = {full} naive; {total} canonical (kl=0 collapses T, saves {full - total}); "
+        f"{skipped} already done; wrote {len(lines)} specs -> {args.out}"
+    )
 
 
 if __name__ == "__main__":

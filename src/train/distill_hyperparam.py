@@ -52,9 +52,7 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
 
     # ===== CHECK COMPLETED EXPERIMENTS =====
     if resume:
-        incomplete, completed, summary = tracker.generate_experiment_plan(
-            all_experiments
-        )
+        incomplete, completed, summary = tracker.generate_experiment_plan(all_experiments)
         tracker.print_summary_report(incomplete, completed, summary, save_to_file=True)
 
         if not incomplete:
@@ -67,9 +65,7 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
         experiments_to_run = incomplete
     else:
         print(f"\n{'=' * 80}")
-        print(
-            f"FULL MODE: Running all {len(all_experiments)} experiments (ignoring completed)"
-        )
+        print(f"FULL MODE: Running all {len(all_experiments)} experiments (ignoring completed)")
         print(f"{'=' * 80}\n")
         experiments_to_run = all_experiments
 
@@ -112,7 +108,9 @@ def main(config: DistillationHyperparamExperimentConfig, resume: bool = True):
         zscore = hyperparam_config["zscore"]
 
         # Display string
-        display_params = f"CE={weight_ce}, KL={weight_kl}, MSE={weight_mse}, T={temperature}, zscore={zscore}"
+        display_params = (
+            f"CE={weight_ce}, KL={weight_kl}, MSE={weight_mse}, T={temperature}, zscore={zscore}"
+        )
 
         # Add method-specific parameters
         if distill_method == "dkd":
@@ -190,15 +188,11 @@ if __name__ == "__main__":
     if "--no-resume" in sys.argv:
         sys.argv.remove("--no-resume")
         resume_mode = False
-        print(
-            "⚠️  RESUME MODE DISABLED: Will run all experiments, ignoring completed ones\n"
-        )
+        print("⚠️  RESUME MODE DISABLED: Will run all experiments, ignoring completed ones\n")
     else:
         print("✓ RESUME MODE ENABLED: Will skip completed experiments\n")
         print("  (Use --no-resume flag to run all experiments)\n")
 
     # Use tyro to select from available hyperparam configs
-    config = tyro.extras.overridable_config_cli(
-        hyperparam_configs, sort_subcommands=True
-    )
+    config = tyro.extras.overridable_config_cli(hyperparam_configs, sort_subcommands=True)
     main(config, resume=resume_mode)

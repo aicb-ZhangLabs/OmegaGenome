@@ -82,9 +82,9 @@ def _load_full_split_datasets(dataset_name: str):
     no ``trust_remote_code``. Falls back to the original loading-script call when no cache is found
     (so non-cached environments still work).
     """
-    ns = dataset_name.replace("/", "___")            # HF namespaced cache dir name
-    base = dataset_name.split("/")[-1]               # prepared split arrow file prefix
-    cache = hf_datasets_config.HF_DATASETS_CACHE     # honors HF_HOME / HF_DATASETS_CACHE env
+    ns = dataset_name.replace("/", "___")  # HF namespaced cache dir name
+    base = dataset_name.split("/")[-1]  # prepared split arrow file prefix
+    cache = hf_datasets_config.HF_DATASETS_CACHE  # honors HF_HOME / HF_DATASETS_CACHE env
 
     def _find(split):
         hits = sorted(glob.glob(os.path.join(cache, ns, "*", "*", "*", f"{base}-{split}.arrow")))
@@ -164,7 +164,7 @@ class SeqDataset(Dataset):
 
 
 class EmbeddingSeqDataset(Dataset):
-    """SeqDataset variant for the R1.3 embedding-input student (input_mode='nt_embedding').
+    """SeqDataset variant for the embedding-input student (input_mode='nt_embedding').
 
     Identical batch contract to ``SeqDataset`` EXCEPT batch element 0 is the per-bp teacher
     embedding ``[max_len, hidden_size]`` (float) instead of the char-index ids ``[max_len]``
@@ -184,8 +184,15 @@ class EmbeddingSeqDataset(Dataset):
     edits. The student's forward splits ``[..., :D]`` (embedding) and ``[..., D:]`` (one-hot).
     """
 
-    def __init__(self, embeddings, labels, teacher_logits=None, teacher_features=None,
-                 sequences=None, max_len=None):
+    def __init__(
+        self,
+        embeddings,
+        labels,
+        teacher_logits=None,
+        teacher_features=None,
+        sequences=None,
+        max_len=None,
+    ):
         self.embeddings = embeddings  # np.ndarray [N, L, H] (possibly mmap)
         self.labels = torch.tensor(labels, dtype=torch.long)
         self.teacher_logits = (

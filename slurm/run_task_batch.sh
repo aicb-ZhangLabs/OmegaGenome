@@ -23,7 +23,7 @@
 
 set -euo pipefail
 # Derive REPO from this script's own location (slurm/<this>) so the launcher is portable:
-# works from the lab repo (/home/.../code_carbon) AND the non-SLURM vast.ai box
+# works from the lab repo (/home/.../code_carbon) AND a non-SLURM single-box machine
 # (/root/omega_carbon) without editing the path.
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$_SCRIPT_DIR/.." && pwd)"
@@ -34,14 +34,14 @@ CONFIG_LIST="${2:-hp_original_stage1.txt}"
 BASE_EXPERIMENT="${3:-carbon-raw-original}"
 
 # Reuse the shared SLURM env (HF cache, OUTPUT_PATH, wandb, portable venv) if present.
-# On the vast.ai box this file is absent -> skipped, which is fine.
+# On a single-box machine this file is absent -> skipped, which is fine.
 if [ -f slurm/env_setup.sh ]; then
   source slurm/env_setup.sh
 fi
 # Node-aware SSD HF override (mirrors carbon_distill.sbatch) ONLY when a galaxy SSD mount
-# exists. On the vast.ai box neither path exists, so we leave HF cache at its default
+# exists. On a single-box machine neither path exists, so we leave HF cache at its default
 # (public Carbon-3B needs no special cache location).
-for _b in /tmp/galaxy_srv_disk00/pengchx3 /srv/disk00/sshfs/pengchx3; do
+for _b in ${OG_SCRATCH:-$PWD/output} ${OG_SCRATCH:-$PWD/output}; do
   [ -d "$_b" ] && { _SSD="$_b"; break; }
 done
 if [ -n "${_SSD:-}" ]; then
@@ -53,14 +53,14 @@ if [ -n "${_SSD:-}" ]; then
 fi
 # Lab HF token (gated artifacts) ONLY if present. The public Carbon-3B teacher needs no
 # token, so on the box (no token file) we simply run unauthenticated.
-for _tok in /home/pengchx3/text-dna/huggingface-token-0616.txt "$REPO/.hf_token"; do
+for _tok in ${HF_TOKEN_FILE} "$REPO/.hf_token"; do
   [ -f "$_tok" ] && { export HF_TOKEN="$(cat "$_tok")"; break; }
 done
 export WANDB_INIT_TIMEOUT=300
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # Prefer the repo's portable venv if present; else fall back to whatever python is on PATH
-# (the vast.ai box may use a system/conda python instead of .venv_carbon_portable).
+# (a single-box machine may use a system/conda python instead of .venv_carbon_portable).
 if [ -x "$REPO/.venv_carbon_portable/bin/python" ]; then
   PY="$REPO/.venv_carbon_portable/bin/python"
 else

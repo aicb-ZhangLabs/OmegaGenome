@@ -40,11 +40,12 @@ def crop_center(x, keep_target_center_fraction: float = 0.375):
     seq_len = x.shape[-2]
     target_offset = int(seq_len * (1 - keep_target_center_fraction) // 2)
     target_length = seq_len - 2 * target_offset
-    return x[..., target_offset:target_offset + target_length, :]
+    return x[..., target_offset : target_offset + target_length, :]
 
 
-def sample_regions_for_total_length(regions: List[Region], total_length_needed: int,
-                                    seed: int = 0) -> List[Region]:
+def sample_regions_for_total_length(
+    regions: List[Region], total_length_needed: int, seed: int = 0
+) -> List[Region]:
     """Accumulate regions (whole, or a random sub-window of the last one) until ``total_length_needed``
     base pairs are covered. Used to cap the validation set to a fixed token budget. Seeded."""
     sampled: List[Region] = []
@@ -94,8 +95,7 @@ _BW_RETRY_BASE_DELAY = 0.5  # seconds; backoff 0.5,1,2,4,8,16,32,32 (capped at _
 _BW_RETRY_MAX_DELAY = 32.0
 
 
-def _retry_sshfs(fn: Callable[[], Any], what: str, path: str,
-                 on_retry: Callable[[], None] = None):
+def _retry_sshfs(fn: Callable[[], Any], what: str, path: str, on_retry: Callable[[], None] = None):
     """Run an sshfs-backed bigWig I/O op ``fn`` with bounded exponential-backoff retries.
 
     Retries ``fn`` up to ``_BW_RETRY_ATTEMPTS`` times with exponential backoff (0.5s doubling, capped at
@@ -112,10 +112,13 @@ def _retry_sshfs(fn: Callable[[], Any], what: str, path: str,
         except Exception as e:  # transient sshfs open/read error (or, on last try, a real failure)
             if attempt == _BW_RETRY_ATTEMPTS:
                 raise RuntimeError(
-                    f"bigWig {what} failed after {_BW_RETRY_ATTEMPTS} attempts: {path}") from e
-            print(f"[ntv3_ft_data] WARN transient bigWig {what} failed "
-                  f"(attempt {attempt}/{_BW_RETRY_ATTEMPTS}): {e!r} :: {path}; retry in {delay:.1f}s",
-                  flush=True)
+                    f"bigWig {what} failed after {_BW_RETRY_ATTEMPTS} attempts: {path}"
+                ) from e
+            print(
+                f"[ntv3_ft_data] WARN transient bigWig {what} failed "
+                f"(attempt {attempt}/{_BW_RETRY_ATTEMPTS}): {e!r} :: {path}; retry in {delay:.1f}s",
+                flush=True,
+            )
             if on_retry is not None:
                 on_retry()
             time.sleep(delay)
@@ -154,7 +157,10 @@ def _read_bigwig_window(bigwig_path: str, chrom: str, start: int, end: int):
     key = (os.getpid(), abs_path)
     return _retry_sshfs(
         lambda: _get_bigwig_handle(abs_path).values(chrom, start, end, numpy=True),
-        "read", abs_path, on_retry=lambda: _bigwig_cache.pop(key, None))
+        "read",
+        abs_path,
+        on_retry=lambda: _bigwig_cache.pop(key, None),
+    )
 
 
 class GenomeBigWigDataset(Dataset):
@@ -166,10 +172,18 @@ class GenomeBigWigDataset(Dataset):
     Faithful port of the official notebook's dataset.
     """
 
-    def __init__(self, fasta_path: str, bigwig_path_list: List[str], regions: List[Region],
-                 sequence_length: int, tokenizer, transform_fn: Callable[[torch.Tensor], torch.Tensor],
-                 overlap: float = 0.0, keep_target_center_fraction: float = 1.0,
-                 limit_num_samples: int = None):
+    def __init__(
+        self,
+        fasta_path: str,
+        bigwig_path_list: List[str],
+        regions: List[Region],
+        sequence_length: int,
+        tokenizer,
+        transform_fn: Callable[[torch.Tensor], torch.Tensor],
+        overlap: float = 0.0,
+        keep_target_center_fraction: float = 1.0,
+        limit_num_samples: int = None,
+    ):
         super().__init__()
         self.fasta_path = fasta_path
         self.bigwig_path_list = bigwig_path_list
@@ -188,9 +202,15 @@ class GenomeBigWigDataset(Dataset):
         region_info, cumulative_starts, total = [], [], 0
         for chr_name, region_s, region_e in regions:
             region_length = region_e - region_s
-            n = (region_length - self.sequence_length) // self.stride + 1 if region_length >= self.sequence_length else 0
+            n = (
+                (region_length - self.sequence_length) // self.stride + 1
+                if region_length >= self.sequence_length
+                else 0
+            )
             if n > 0:
-                region_info.append({"chr_name": chr_name, "region_start_offset": region_s, "num_samples": n})
+                region_info.append(
+                    {"chr_name": chr_name, "region_start_offset": region_s, "num_samples": n}
+                )
                 cumulative_starts.append(total)
                 total += n
         return region_info, cumulative_starts, int(total)
@@ -206,11 +226,17 @@ class GenomeBigWigDataset(Dataset):
         end = start + self.sequence_length
 
         seq = self._get_seq(chrom, start, end)
-        tokens = self.tokenizer(seq, padding="max_length", truncation=True,
-                                max_length=self.sequence_length, return_tensors="pt")["input_ids"][0]
+        tokens = self.tokenizer(
+            seq,
+            padding="max_length",
+            truncation=True,
+            max_length=self.sequence_length,
+            return_tensors="pt",
+        )["input_ids"][0]
 
-        targets = np.array([_read_bigwig_window(p, chrom, start, end)
-                            for p in self.bigwig_path_list]).T  # (seq_len, num_tracks)
+        targets = np.array(
+            [_read_bigwig_window(p, chrom, start, end) for p in self.bigwig_path_list]
+        ).T  # (seq_len, num_tracks)
         targets = torch.nan_to_num(torch.tensor(targets, dtype=torch.float32), nan=0.0)
         if self.keep_target_center_fraction < 1.0:
             targets = crop_center(targets, self.keep_target_center_fraction)
@@ -229,24 +255,39 @@ class GenomeBigWigDataset(Dataset):
 # (so a CSV "row 18" is NOT ``--track_subset 18``). This list pins the human order so any data reshuffle
 # fails loudly instead of silently retargeting every specialist experiment. (idx -> (file_id, assay).)
 NTV3_HUMAN_TRACKS = [
-    ("ENCSR046BCI_M", "PRO-cap"), ("ENCSR046BCI_P", "PRO-cap"),
-    ("ENCSR100LIJ_M", "PRO-cap"), ("ENCSR100LIJ_P", "PRO-cap"),
-    ("ENCSR114HGS_M", "PRO-cap"), ("ENCSR114HGS_P", "PRO-cap"),
-    ("ENCSR154HRN_M", "eCLIP"), ("ENCSR154HRN_P", "eCLIP"),
-    ("ENCSR249ROI_M", "eCLIP"), ("ENCSR249ROI_P", "eCLIP"),
-    ("ENCSR321PWZ_M", "eCLIP"), ("ENCSR321PWZ_P", "eCLIP"),
-    ("ENCSR325NFE", "ATAC-seq"), ("ENCSR410DWV", "ATAC-seq"),
-    ("ENCSR484LTQ_M", "eCLIP"), ("ENCSR484LTQ_P", "eCLIP"),
+    ("ENCSR046BCI_M", "PRO-cap"),
+    ("ENCSR046BCI_P", "PRO-cap"),
+    ("ENCSR100LIJ_M", "PRO-cap"),
+    ("ENCSR100LIJ_P", "PRO-cap"),
+    ("ENCSR114HGS_M", "PRO-cap"),
+    ("ENCSR114HGS_P", "PRO-cap"),
+    ("ENCSR154HRN_M", "eCLIP"),
+    ("ENCSR154HRN_P", "eCLIP"),
+    ("ENCSR249ROI_M", "eCLIP"),
+    ("ENCSR249ROI_P", "eCLIP"),
+    ("ENCSR321PWZ_M", "eCLIP"),
+    ("ENCSR321PWZ_P", "eCLIP"),
+    ("ENCSR325NFE", "ATAC-seq"),
+    ("ENCSR410DWV", "ATAC-seq"),
+    ("ENCSR484LTQ_M", "eCLIP"),
+    ("ENCSR484LTQ_P", "eCLIP"),
     ("ENCSR487QSB", "ATAC-seq"),
-    ("ENCSR527JGN_M", "polyA plus RNA-seq"), ("ENCSR527JGN_P", "polyA plus RNA-seq"),
-    ("ENCSR619DQO_M", "total RNA-seq"), ("ENCSR619DQO_P", "total RNA-seq"),
-    ("ENCSR628PLS", "ATAC-seq"), ("ENCSR682BFG", "Histone ChIP-seq"),
-    ("ENCSR701YIC", "total RNA-seq"), ("ENCSR754DRC", "Histone ChIP-seq"),
-    ("ENCSR799DGV_M", "PRO-cap"), ("ENCSR799DGV_P", "PRO-cap"),
+    ("ENCSR527JGN_M", "polyA plus RNA-seq"),
+    ("ENCSR527JGN_P", "polyA plus RNA-seq"),
+    ("ENCSR619DQO_M", "total RNA-seq"),
+    ("ENCSR619DQO_P", "total RNA-seq"),
+    ("ENCSR628PLS", "ATAC-seq"),
+    ("ENCSR682BFG", "Histone ChIP-seq"),
+    ("ENCSR701YIC", "total RNA-seq"),
+    ("ENCSR754DRC", "Histone ChIP-seq"),
+    ("ENCSR799DGV_M", "PRO-cap"),
+    ("ENCSR799DGV_P", "PRO-cap"),
     ("ENCSR814RGG", "ATAC-seq"),
-    ("ENCSR862QCH_M", "eCLIP"), ("ENCSR862QCH_P", "eCLIP"),
+    ("ENCSR862QCH_M", "eCLIP"),
+    ("ENCSR862QCH_P", "eCLIP"),
     ("ENCSR863PSM", "Histone ChIP-seq"),
-    ("ENCSR935RNW_M", "PRO-cap"), ("ENCSR935RNW_P", "PRO-cap"),
+    ("ENCSR935RNW_M", "PRO-cap"),
+    ("ENCSR935RNW_P", "PRO-cap"),
     ("ENCSR962OTG", "Histone ChIP-seq"),
 ]
 NTV3_HUMAN_TRACK_IDS = [t[0] for t in NTV3_HUMAN_TRACKS]
@@ -275,18 +316,28 @@ def load_benchmark_frames(data_dir: str, species: str = "human"):
         raise RuntimeError(
             f"human bigWig order does not match the canonical NTV3_HUMAN_TRACK_IDS "
             f"({len(bigwig_ids)} ids); --track_subset indices would be wrong. "
-            f"first mismatch: idx {next((i for i,(a,b) in enumerate(zip(bigwig_ids, NTV3_HUMAN_TRACK_IDS)) if a!=b), 'len-differs')}")
+            f"first mismatch: idx {next((i for i, (a, b) in enumerate(zip(bigwig_ids, NTV3_HUMAN_TRACK_IDS)) if a != b), 'len-differs')}"
+        )
 
-    splits_df = pd.read_csv(root / species / "splits.bed", sep="\t", header=None,
-                            names=["chr_name", "start", "end", "split"],
-                            dtype={"chr_name": str, "start": int, "end": int, "split": str})
+    splits_df = pd.read_csv(
+        root / species / "splits.bed",
+        sep="\t",
+        header=None,
+        names=["chr_name", "start", "end", "split"],
+        dtype={"chr_name": str, "start": int, "end": int, "split": str},
+    )
     regions_by_split = {
         s: [(r.chr_name, int(r.start), int(r.end)) for r in g.itertuples()]
         for s, g in splits_df.groupby("split")
     }
 
     meta = pd.read_csv(root / "benchmark_metadata.tsv", sep="\t")
-    meta = meta[meta["species_common_name"] == species].set_index("file_id").loc[bigwig_ids].reset_index()
+    meta = (
+        meta[meta["species_common_name"] == species]
+        .set_index("file_id")
+        .loc[bigwig_ids]
+        .reset_index()
+    )
     track_means = meta["mean"].to_numpy()
     track_assays = meta["assay"].tolist()
     return fasta_path, bigwig_paths, bigwig_ids, regions_by_split, track_means, track_assays
@@ -313,12 +364,16 @@ def validate_subset_bigwigs(idx: List[int], bw_ids: List[str], bw_paths: List[st
         if _sz <= 0:
             raise FileNotFoundError(
                 f"--track_subset {_i} ({_bid}): bigWig is empty/missing ({_sz} bytes): {_p}\n"
-                f"  -> this is an UNFILLED PLACEHOLDER. Transfer/stage the REAL bigWig for track {_i}.")
+                f"  -> this is an UNFILLED PLACEHOLDER. Transfer/stage the REAL bigWig for track {_i}."
+            )
         try:
-            _h = _pbw.open(_p); _chroms = _h.chroms(); _h.close()
+            _h = _pbw.open(_p)
+            _chroms = _h.chroms()
+            _h.close()
         except Exception as _e:  # truncated/corrupt header, mid-transfer file, wrong format, ...
             raise RuntimeError(
                 f"--track_subset {_i} ({_bid}): bigWig unreadable/corrupt ({_sz} bytes): {_p}\n"
-                f"  pyBigWig: {_e}. Re-stage/re-transfer this track's bigWig (clear /tmp stage dir).") from _e
+                f"  pyBigWig: {_e}. Re-stage/re-transfer this track's bigWig (clear /tmp stage dir)."
+            ) from _e
         if not _chroms:
             raise RuntimeError(f"--track_subset {_i} ({_bid}): bigWig has no chromosomes: {_p}")

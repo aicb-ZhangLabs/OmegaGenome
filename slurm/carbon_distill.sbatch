@@ -22,14 +22,14 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 source slurm/env_setup.sh
 # Node-aware SSD root: the galaxy SSD is an sshfs mount (/tmp/galaxy_srv_disk00) on laniakea/voyager but
 # a LOCAL disk (/srv/disk00/sshfs) on galaxy itself — same physical disk, different path. Pin HF_OVERRIDE
 # to whichever exists so galaxy jobs also find the shared HF cache (no-op on laniakea/voyager where the
 # sshfs path resolves first). CARBON_OUTPUT_BASE (cache+ckpts) is already node-aware via _default_output_base.
-for _b in /tmp/galaxy_srv_disk00/pengchx3 /srv/disk00/sshfs/pengchx3; do [ -d "$_b" ] && { _SSD="$_b"; break; }; done
+for _b in ${OG_SCRATCH:-$PWD/output} ${OG_SCRATCH:-$PWD/output}; do [ -d "$_b" ] && { _SSD="$_b"; break; }; done
 [ -n "${_SSD:-}" ] && export HF_OVERRIDE="$_SSD/hf_cache_shared"
 # Optional HF-cache override (big base-model downloads -> SSD, not the tight /home quota).
 if [ -n "${HF_OVERRIDE:-}" ]; then
@@ -38,7 +38,7 @@ if [ -n "${HF_OVERRIDE:-}" ]; then
   mkdir -p "$HF_OVERRIDE/hub" "$HF_OVERRIDE/datasets" "$HF_OVERRIDE/assets"
   echo "HF cache overridden -> $HF_OVERRIDE"
 fi
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export WANDB_INIT_TIMEOUT=300
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True  # reduce fragmentation OOM
 PY="$REPO/.venv_carbon_portable/bin/python"

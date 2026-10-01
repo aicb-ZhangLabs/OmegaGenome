@@ -7,7 +7,7 @@
 #   - benchmark data: read DIRECTLY from the SSD mount (pyBigWig/pyfaidx indexed file-handle reads, NOT
 #     numpy memmap -> the memmap-hang failure mode does not apply); NO --stage_dir, no /tmp copy.
 #   - TRITON cache -> SSD, never node-local /tmp.
-# The ONLY /tmp path used is the SSD mount /tmp/galaxy_srv_disk00/pengchx3. Full sweep idx 0-4
+# The ONLY /tmp path used is the SSD mount ${OG_SCRATCH:-$PWD/output}. Full sweep idx 0-4
 # (4m/8m/30m/100m/300m). After the 2026-07-20 sshfs saturation (two jobs' cache-load->read transitions
 # storming sshfs at once crashed 4m), THREE mitigations: (a) per-window bigWig reads retry transient sshfs
 # errors with a widened ~63s window (src/data/ntv3_ft_data.py _retry_sshfs, 8 attempts); (b) --num_workers 8
@@ -32,7 +32,7 @@
 #SBATCH --time=30-00:00:00
 #SBATCH --output=slurm-%x-%A_%a.out
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
 # MOUNT GUARD (see slurm/_mount_guard.sh): sourced FIRST because resolve_ssd_mount picks the SSD root.
 source "$REPO/slurm/_mount_guard.sh"
@@ -64,14 +64,14 @@ trap 'hang_watchdog_stop; rm -rf "$TMPDIR"' EXIT
 HOME_HF="$SSD/hf_cache_archive_from_code_carbon"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF" TRANSFORMERS_CACHE="$HOME_HF"
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # TRITON cache -> SSD mount (NEVER node-local /tmp).
 export TRITON_CACHE_DIR="$SSD/triton_cache_${USER}_$(hostname -s)"
 mkdir -p "$TRITON_CACHE_DIR"
 export WANDB_MODE=offline WANDB_DIR="$SSD/wandb_logs" WANDB_CACHE_DIR="$SSD/wandb_cache"
 mkdir -p "$WANDB_DIR" "$WANDB_CACHE_DIR"
-PV=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
+PV=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
 
 SIZES=(ntv3-4m ntv3-8m ntv3-30m ntv3-100m ntv3-300m)
 SIZE="${SIZES[${SLURM_ARRAY_TASK_ID:-0}]}"

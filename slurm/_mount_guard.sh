@@ -3,7 +3,7 @@
 #
 # WHY THIS EXISTS
 #   On 2026-07-23 a transient sshfs outage on laniakea made every path under
-#   /tmp/galaxy_srv_disk00/pengchx3 return `PermissionError: [Errno 1] Operation not permitted`.
+#   ${OG_SCRATCH:-$PWD/output} return `PermissionError: [Errno 1] Operation not permitted`.
 #   It surfaced as `pyfaidx.FastaNotFoundError` inside DataLoader workers (and as an EPERM on the
 #   HF tokenizer module for a job still in startup) and killed 7 runs at once, exit 1:0 — one of
 #   them at step 19500/19932 (98%).

@@ -1,0 +1,9 @@
+{
+  "task": "promoter_tata",
+  "kind": "full_ft",
+  "model_dir": "${OG_STORE}/NT/2b5-multi-species_nucleotide-transformer-finetune-results-NO-LORA-MULTI-GPU-epoch10-3-22-revised-deepspeed/finetuned_models/promoter_tata_finetuned/final_model",
+  "dataset": "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised",
+  "n_test": 212,
+  "test_mcc": 0.8773975354689549,
+  "timestamp": "2026-06-29T10:33:00.518191"
+}

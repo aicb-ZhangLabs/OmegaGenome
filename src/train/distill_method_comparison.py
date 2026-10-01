@@ -21,10 +21,10 @@ from dataclasses import dataclass, field, replace
 from typing import List, Literal
 from itertools import product
 
-from config.env import project_path, output_path
+from config.env import output_path
 from config.slurm_manager import get_gpu_manager
 from config.slurm import basic_distillation_slurm
-from config.best_hyperparams import get_method_hyperparams, DistillHyperparams
+from config.best_hyperparams import get_method_hyperparams
 from .distill import distill
 
 
@@ -157,9 +157,7 @@ def create_experiment_config(
     )
 
     # Create dataset config
-    dataset_config = replace(
-        nucletide_transformer_revised_benchmark, task_name=task_name
-    )
+    dataset_config = replace(nucletide_transformer_revised_benchmark, task_name=task_name)
 
     # Create SLURM config
     slurm_config = replace(basic_distillation_slurm, node_list=config.node_list)
@@ -202,14 +200,12 @@ def main(config: MethodComparisonConfig):
     print(f"Total experiments: {total_experiments}")
 
     # Print task-specific hyperparameters
-    print(f"\nTask-specific best hyperparameters:")
+    print("\nTask-specific best hyperparameters:")
     for task in tasks[:3]:  # Show first 3 tasks as example
         print(f"  {task}:")
         for method in config.methods:
             hp = get_method_hyperparams(config.model_type, task, method)
-            print(
-                f"    {method}: CE={hp.weight_ce}, KL={hp.weight_kl}, T={hp.temperature}"
-            )
+            print(f"    {method}: CE={hp.weight_ce}, KL={hp.weight_kl}, T={hp.temperature}")
     if len(tasks) > 3:
         print(f"  ... and {len(tasks) - 3} more tasks")
     print(f"{'=' * 80}\n")
@@ -243,7 +239,7 @@ def main(config: MethodComparisonConfig):
         )
 
         if available_node is None:
-            print(f"⚠️ Skipping - no available GPU")
+            print("⚠️ Skipping - no available GPU")
             continue
 
         print(f"🚀 Submitting to node: {available_node}")
@@ -331,7 +327,5 @@ experiment_configs = {
 
 
 if __name__ == "__main__":
-    config = tyro.extras.overridable_config_cli(
-        experiment_configs, sort_subcommands=True
-    )
+    config = tyro.extras.overridable_config_cli(experiment_configs, sort_subcommands=True)
     main(config)

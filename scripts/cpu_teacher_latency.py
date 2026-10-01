@@ -1,9 +1,9 @@
 """
 CPU inference-latency benchmark for the FOUR teacher models (Enformer, DNABERT-2,
-Caduceus, Carbon-3B) for the OmegaGenome rebuttal CPU-latency table (T18 / R1.11).
+Caduceus, Carbon-3B) for the OmegaGenome revision CPU-latency table.
 
 Reuses the EXACT GPU-measurement path (get_teacher_model + benchmark_teacher_inference,
-the same code that produced the T15 GPU numbers) so CPU numbers are apples-to-apples:
+the same code that produced the GPU numbers) so CPU numbers are apples-to-apples:
 same batch_size=16, same max_length=1000, same forward. On CPU we force fp32 (no autocast;
 _fp16_autocast_ctx is a no-op off CUDA) and pin torch threads to the box/node core count.
 
@@ -14,6 +14,7 @@ by the caller from mean_ms (ceil(3000/16)=188 and ceil(38822/16)=2427 batches).
 Usage (single teacher, few batches, on the CPU node/login shell):
     python scripts/cpu_teacher_latency.py --teacher enformer --num-batches 5 --warmup 2
 """
+
 import argparse
 import gc
 import json
@@ -42,16 +43,20 @@ def _cpu_name():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--teacher", required=True,
-                    choices=["enformer", "dnabert2", "caduceus", "carbon3b", "nt", "bpnet"],
-                    help="teacher model, or 'bpnet' for the BPNet student (re-measured in the same job)")
+    ap.add_argument(
+        "--teacher",
+        required=True,
+        choices=["enformer", "dnabert2", "caduceus", "carbon3b", "nt", "bpnet"],
+        help="teacher model, or 'bpnet' for the BPNet student (re-measured in the same job)",
+    )
     ap.add_argument("--task", default="splice_sites_all")
     ap.add_argument("--batch-size", type=int, default=16)
     ap.add_argument("--max-length", type=int, default=1000)
     ap.add_argument("--warmup", type=int, default=2)
     ap.add_argument("--num-batches", type=int, default=5)
-    ap.add_argument("--threads", type=int, default=None,
-                    help="torch.set_num_threads (default: os.cpu_count())")
+    ap.add_argument(
+        "--threads", type=int, default=None, help="torch.set_num_threads (default: os.cpu_count())"
+    )
     ap.add_argument("--out-jsonl", default=None)
     args = ap.parse_args()
 
@@ -66,22 +71,29 @@ def main():
 
     from config.distillation.data import nucletide_transformer_revised_benchmark
     from src.data.dataset import (
-        get_num_labels, build_data_splits_from_huggingface, SeqDataset,
+        get_num_labels,
+        build_data_splits_from_huggingface,
+        SeqDataset,
     )
     from src.model.glm import find_teacher_checkpoint, get_teacher_model
     from src.trainer.benchmark_utils import (
-        benchmark_teacher_inference, benchmark_model_inference,
+        benchmark_teacher_inference,
+        benchmark_model_inference,
     )
     from src.train.benchmark_inference import (
-        get_teacher_config_and_path, _disable_dnabert2_flash_attn,
+        get_teacher_config_and_path,
+        _disable_dnabert2_flash_attn,
     )
 
     device = "cpu"
     task_name = args.task
 
-    print(f"[cfg] model={args.teacher} task={task_name} bs={args.batch_size} "
-          f"maxlen={args.max_length} warmup={args.warmup} num_batches={args.num_batches} "
-          f"threads={threads} omp={os.environ['OMP_NUM_THREADS']} cpu={_cpu_name()}", flush=True)
+    print(
+        f"[cfg] model={args.teacher} task={task_name} bs={args.batch_size} "
+        f"maxlen={args.max_length} warmup={args.warmup} num_batches={args.num_batches} "
+        f"threads={threads} omp={os.environ['OMP_NUM_THREADS']} cpu={_cpu_name()}",
+        flush=True,
+    )
 
     # --- data ---
     dataset_config = replace(nucletide_transformer_revised_benchmark, task_name=task_name)
@@ -90,36 +102,57 @@ def main():
 
     n_task = 3000
     n_all = 38822
-    bpt_task = math.ceil(n_task / args.batch_size)   # 188
-    bpt_all = math.ceil(n_all / args.batch_size)     # 2427
+    bpt_task = math.ceil(n_task / args.batch_size)  # 188
+    bpt_all = math.ceil(n_all / args.batch_size)  # 2427
 
     # --- BPNet student: re-measured in the SAME job (SeqDataset + DataLoader + benchmark_model_inference,
     # the exact student path from benchmark_inference.py) so its row shares hardware/threads with the teachers. ---
     if args.teacher == "bpnet":
         from torch.utils.data import DataLoader
         from src.model.bpnet_classifier import BPNetClassifier, BPNetClassifierConfig
+
         num_labels = get_num_labels(task_name)
         test_ds = SeqDataset(X_test, y_test, args.max_length)
         test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False, num_workers=0)
-        model = BPNetClassifier(BPNetClassifierConfig(
-            num_labels=num_labels, model_type="bpnet", model_size="original"))
+        model = BPNetClassifier(
+            BPNetClassifierConfig(num_labels=num_labels, model_type="bpnet", model_size="original")
+        )
         result = benchmark_model_inference(
-            model=model, dataloader=test_loader, device=device,
-            model_name="bpnet_original", model_type="student", task_name=task_name,
-            warmup_batches=args.warmup, num_batches=args.num_batches, dtype=torch.float32,
+            model=model,
+            dataloader=test_loader,
+            device=device,
+            model_name="bpnet_original",
+            model_type="student",
+            task_name=task_name,
+            warmup_batches=args.warmup,
+            num_batches=args.num_batches,
+            dtype=torch.float32,
         )
         whole_task_s = result.mean_latency_ms / 1000.0 * bpt_task
         all18_s = result.mean_latency_ms / 1000.0 * bpt_all
         rec = {
-            "teacher": "bpnet", "task": task_name, "device": "cpu", "precision": "fp32",
-            "threads": threads, "omp_threads": int(os.environ["OMP_NUM_THREADS"]), "cpu": _cpu_name(),
-            "batch_size": args.batch_size, "max_length": args.max_length,
-            "n_batches_timed": result.num_samples // args.batch_size, "warmup": args.warmup,
-            "mean_ms_per_batch": result.mean_latency_ms, "median_ms_per_batch": result.median_latency_ms,
-            "std_ms": result.std_latency_ms, "min_ms": result.min_latency_ms, "max_ms": result.max_latency_ms,
-            "peak_rss_mb": result.peak_memory_mb, "num_parameters": result.num_parameters,
-            "whole_task_s_N3000": whole_task_s, "batches_per_task": bpt_task,
-            "all18task_s": all18_s, "batches_all18": bpt_all,
+            "teacher": "bpnet",
+            "task": task_name,
+            "device": "cpu",
+            "precision": "fp32",
+            "threads": threads,
+            "omp_threads": int(os.environ["OMP_NUM_THREADS"]),
+            "cpu": _cpu_name(),
+            "batch_size": args.batch_size,
+            "max_length": args.max_length,
+            "n_batches_timed": result.num_samples // args.batch_size,
+            "warmup": args.warmup,
+            "mean_ms_per_batch": result.mean_latency_ms,
+            "median_ms_per_batch": result.median_latency_ms,
+            "std_ms": result.std_latency_ms,
+            "min_ms": result.min_latency_ms,
+            "max_ms": result.max_latency_ms,
+            "peak_rss_mb": result.peak_memory_mb,
+            "num_parameters": result.num_parameters,
+            "whole_task_s_N3000": whole_task_s,
+            "batches_per_task": bpt_task,
+            "all18task_s": all18_s,
+            "batches_all18": bpt_all,
         }
         print("[RESULT] " + json.dumps(rec), flush=True)
         if args.out_jsonl:
@@ -156,7 +189,9 @@ def main():
     num_labels = get_num_labels(task_name)
     full = FullConfig(
         replace(teacher_config, num_labels=num_labels),
-        teacher_parent_dir, model_type, TrainerConfig(device=device),
+        teacher_parent_dir,
+        model_type,
+        TrainerConfig(device=device),
     )
 
     if args.teacher in ("dnabert2", "caduceus"):
@@ -168,6 +203,7 @@ def main():
         # selective_scan). Neutralise the decorator to a pass-through so the import succeeds
         # without touching a GPU; the forward runs on the CPU reference path.
         import triton
+
         triton.autotune = lambda *a, **k: (lambda fn: fn)  # no-op decorator (kernel unused on CPU)
 
     if args.teacher == "caduceus":
@@ -180,9 +216,17 @@ def main():
         import torch.nn.functional as F
         from mamba_ssm.ops.triton import layer_norm as _mln
 
-        def _torch_norm(x, weight, bias, residual=None, eps=1e-6,
-                        prenorm=False, residual_in_fp32=False, is_rms_norm=False,
-                        **kwargs):
+        def _torch_norm(
+            x,
+            weight,
+            bias,
+            residual=None,
+            eps=1e-6,
+            prenorm=False,
+            residual_in_fp32=False,
+            is_rms_norm=False,
+            **kwargs,
+        ):
             in_dtype = x.dtype
             x = x.float()
             if residual is not None:
@@ -201,25 +245,63 @@ def main():
                 return out, residual_out.to(in_dtype)
             return out
 
-        def _rms_norm_fn(x, weight, bias, residual=None, prenorm=False,
-                         residual_in_fp32=False, eps=1e-6, **kwargs):
-            return _torch_norm(x, weight, bias, residual=residual, eps=eps,
-                               prenorm=prenorm, residual_in_fp32=residual_in_fp32,
-                               is_rms_norm=True)
+        def _rms_norm_fn(
+            x,
+            weight,
+            bias,
+            residual=None,
+            prenorm=False,
+            residual_in_fp32=False,
+            eps=1e-6,
+            **kwargs,
+        ):
+            return _torch_norm(
+                x,
+                weight,
+                bias,
+                residual=residual,
+                eps=eps,
+                prenorm=prenorm,
+                residual_in_fp32=residual_in_fp32,
+                is_rms_norm=True,
+            )
 
-        def _layer_norm_fn(x, weight, bias, residual=None, prenorm=False,
-                           residual_in_fp32=False, eps=1e-6, is_rms_norm=False, **kwargs):
-            return _torch_norm(x, weight, bias, residual=residual, eps=eps,
-                               prenorm=prenorm, residual_in_fp32=residual_in_fp32,
-                               is_rms_norm=is_rms_norm)
+        def _layer_norm_fn(
+            x,
+            weight,
+            bias,
+            residual=None,
+            prenorm=False,
+            residual_in_fp32=False,
+            eps=1e-6,
+            is_rms_norm=False,
+            **kwargs,
+        ):
+            return _torch_norm(
+                x,
+                weight,
+                bias,
+                residual=residual,
+                eps=eps,
+                prenorm=prenorm,
+                residual_in_fp32=residual_in_fp32,
+                is_rms_norm=is_rms_norm,
+            )
 
         _mln.rms_norm_fn = _rms_norm_fn
         _mln.layer_norm_fn = _layer_norm_fn
 
         def _rmsnorm_forward(self, x, residual=None, prenorm=False, residual_in_fp32=False):
-            return _rms_norm_fn(x, self.weight, getattr(self, "bias", None),
-                                residual=residual, prenorm=prenorm,
-                                residual_in_fp32=residual_in_fp32, eps=self.eps)
+            return _rms_norm_fn(
+                x,
+                self.weight,
+                getattr(self, "bias", None),
+                residual=residual,
+                prenorm=prenorm,
+                residual_in_fp32=residual_in_fp32,
+                eps=self.eps,
+            )
+
         _mln.RMSNorm.forward = _rmsnorm_forward
 
         # Force mamba_simple onto its CPU reference path: the fused CUDA kernels
@@ -229,6 +311,7 @@ def main():
         # Same math, CPU-runnable; the SSM scan/convs still dominate the timed latency.
         from mamba_ssm.modules import mamba_simple as _ms
         from mamba_ssm.ops.selective_scan_interface import selective_scan_ref as _ssr
+
         _ms.causal_conv1d_fn = None
         _ms.causal_conv1d_update = None
         _ms.selective_scan_fn = _ssr
@@ -236,7 +319,7 @@ def main():
 
     t_load = time.perf_counter()
     tokenizer, teacher_model, _ = get_teacher_model(full, task_name, teacher_ckpt)
-    print(f"[load] model loaded in {time.perf_counter()-t_load:.1f}s", flush=True)
+    print(f"[load] model loaded in {time.perf_counter() - t_load:.1f}s", flush=True)
 
     if args.teacher == "dnabert2":
         n = _disable_dnabert2_flash_attn()
@@ -262,18 +345,28 @@ def main():
     all18_s = result.mean_latency_ms / 1000.0 * bpt_all
 
     rec = {
-        "teacher": args.teacher, "task": task_name, "device": "cpu", "precision": "fp32",
-        "threads": threads, "omp_threads": int(os.environ["OMP_NUM_THREADS"]), "cpu": _cpu_name(),
-        "batch_size": args.batch_size, "max_length": args.max_length,
-        "n_batches_timed": args.num_batches, "warmup": args.warmup,
+        "teacher": args.teacher,
+        "task": task_name,
+        "device": "cpu",
+        "precision": "fp32",
+        "threads": threads,
+        "omp_threads": int(os.environ["OMP_NUM_THREADS"]),
+        "cpu": _cpu_name(),
+        "batch_size": args.batch_size,
+        "max_length": args.max_length,
+        "n_batches_timed": args.num_batches,
+        "warmup": args.warmup,
         "mean_ms_per_batch": result.mean_latency_ms,
         "median_ms_per_batch": result.median_latency_ms,
         "std_ms": result.std_latency_ms,
-        "min_ms": result.min_latency_ms, "max_ms": result.max_latency_ms,
+        "min_ms": result.min_latency_ms,
+        "max_ms": result.max_latency_ms,
         "peak_rss_mb": result.peak_memory_mb,
         "num_parameters": result.num_parameters,
-        "whole_task_s_N3000": whole_task_s, "batches_per_task": bpt_task,
-        "all18task_s": all18_s, "batches_all18": bpt_all,
+        "whole_task_s_N3000": whole_task_s,
+        "batches_per_task": bpt_task,
+        "all18task_s": all18_s,
+        "batches_all18": bpt_all,
     }
     print("[RESULT] " + json.dumps(rec), flush=True)
     if args.out_jsonl:

@@ -60,7 +60,7 @@ class DilatedTrackNet(nn.Module):
         self.config = config
         c = config.hidden
         self.stem = nn.Conv1d(4, c, config.stem_kernel, padding=config.stem_kernel // 2)
-        self.dilations = [min(2 ** i, config.max_dilation) for i in range(config.n_blocks)]
+        self.dilations = [min(2**i, config.max_dilation) for i in range(config.n_blocks)]
         self.blocks = nn.ModuleList(
             [_DilatedResBlock(c, config.kernel, d, config.dropout) for d in self.dilations]
         )

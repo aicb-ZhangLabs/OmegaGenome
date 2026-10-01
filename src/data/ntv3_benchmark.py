@@ -33,7 +33,9 @@ def load_splits(path: str) -> Dict[str, List[Coord]]:
     return out
 
 
-def sample_windows(intervals: List[Coord], window: int, stride: int = None, n: int = None) -> List[Coord]:
+def sample_windows(
+    intervals: List[Coord], window: int, stride: int = None, n: int = None
+) -> List[Coord]:
     """Tile ``intervals`` into ``window``-bp windows (default non-overlapping). Optional cap ``n``.
 
     NOTE: this is the zero-shot teacher-eval data path. The benchmark *fine-tuning* path uses the
@@ -60,11 +62,19 @@ def stage_to_local(data_dir: str, stage_dir: str, species: str = "human") -> str
     """
     import shutil
 
-    rels = [f"{species}/genome.fasta", f"{species}/genome.fasta.fai", f"{species}/splits.bed",
-            "benchmark_metadata.tsv"]
+    rels = [
+        f"{species}/genome.fasta",
+        f"{species}/genome.fasta.fai",
+        f"{species}/splits.bed",
+        "benchmark_metadata.tsv",
+    ]
     ft = os.path.join(data_dir, species, "functional_tracks")
     if os.path.isdir(ft):
-        rels += [f"{species}/functional_tracks/{f}" for f in sorted(os.listdir(ft)) if f.endswith(".bigwig")]
+        rels += [
+            f"{species}/functional_tracks/{f}"
+            for f in sorted(os.listdir(ft))
+            if f.endswith(".bigwig")
+        ]
     for rel in rels:
         src, dst = os.path.join(data_dir, rel), os.path.join(stage_dir, rel)
         if not os.path.exists(src):

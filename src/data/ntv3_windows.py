@@ -21,7 +21,12 @@ def fetch_sequence(chrom: str, start: int, end: int, assembly: str = "hg38") -> 
 
 
 def tile_windows(
-    chrom: str, start: int, end: int, window: int, stride: Optional[int] = None, n: Optional[int] = None
+    chrom: str,
+    start: int,
+    end: int,
+    window: int,
+    stride: Optional[int] = None,
+    n: Optional[int] = None,
 ) -> List[Tuple[str, int, int]]:
     """Tile [start, end) into ``window``-bp windows (default non-overlapping). Optional cap ``n``."""
     stride = stride or window

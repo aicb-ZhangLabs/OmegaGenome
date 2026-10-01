@@ -181,9 +181,7 @@ def main():
 
     overrides = load_config_list(args.config_list, args.task)
     if not overrides:
-        raise SystemExit(
-            f"No config lines for task={args.task!r} found in {args.config_list}"
-        )
+        raise SystemExit(f"No config lines for task={args.task!r} found in {args.config_list}")
     print(f"[distill_task] task={args.task}: {len(overrides)} configs from {args.config_list}")
 
     distill_task_batch(

@@ -23,9 +23,7 @@ from .nt import NT_PARENT_PATH
 
 # Base configuration
 base_config = DistillationExperimentConfig(
-    task_names=[
-        "splice_sites_all"
-    ],  # "promoter_all", "promoter_tata", "H3K4me3", "H3K9ac"
+    task_names=["splice_sites_all"],  # "promoter_all", "promoter_tata", "H3K4me3", "H3K9ac"
     teacher_config=nt_2b5,
     teacher_parent_dir=NT_PARENT_PATH,
     model_type="nt",

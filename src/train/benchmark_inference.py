@@ -22,12 +22,12 @@ import tyro
 import wandb
 import torch
 from dataclasses import dataclass, field, replace
-from typing import List, Literal, Optional, Union
+from typing import List, Literal, Optional
 from datetime import datetime
 
 from torch.utils.data import DataLoader
 
-from config.env import project_path, output_path
+from config.env import output_path
 
 from ..data.dataset import (
     get_num_labels,
@@ -98,7 +98,7 @@ class BenchmarkConfig:
     num_batches: Optional[int] = 100  # None = use all test data
 
     # Precision for ALL benchmarked models (teachers AND the BPNet student), so the
-    # latency/memory table is SINGLE-precision (R1.11; no apples-to-oranges fp16-vs-fp32
+    # latency/memory table is SINGLE-precision (no apples-to-oranges fp16-vs-fp32
     # split). "fp16": teacher weights cast to half AND the forward wrapped in a CUDA fp16
     # autocast (autocast promotes the few stray fp32 bias/LayerNorm tensors in Enformer /
     # DNABERT-2, which previously forced them onto a separate fp32 leg); the BPNet student
@@ -166,9 +166,7 @@ def _disable_dnabert2_flash_attn() -> int:
     return patched
 
 
-def benchmark_teachers_on_task(
-    config: BenchmarkConfig, task_name: str
-) -> List[BenchmarkResult]:
+def benchmark_teachers_on_task(config: BenchmarkConfig, task_name: str) -> List[BenchmarkResult]:
     """Benchmark all specified teacher models on a single task."""
     from config.distillation.data import nucletide_transformer_revised_benchmark
 
@@ -176,9 +174,7 @@ def benchmark_teachers_on_task(
     errors = []
 
     # Load test data
-    dataset_config = replace(
-        nucletide_transformer_revised_benchmark, task_name=task_name
-    )
+    dataset_config = replace(nucletide_transformer_revised_benchmark, task_name=task_name)
     _, _, _, _, X_test, y_test = build_data_splits_from_huggingface(dataset_config)
 
     print(f"\n--- Benchmarking Teachers on: {task_name} ---")
@@ -216,9 +212,7 @@ def benchmark_teachers_on_task(
             teacher_ckpt, score = find_teacher_checkpoint(mini_config, task_name)
 
             if teacher_ckpt is None:
-                print(
-                    f"  No checkpoint found for {teacher_type} on {task_name}, skipping"
-                )
+                print(f"  No checkpoint found for {teacher_type} on {task_name}, skipping")
                 continue
 
             # Create trainer config for get_teacher_model
@@ -242,13 +236,9 @@ def benchmark_teachers_on_task(
 
             # Load teacher
             num_labels = get_num_labels(task_name)
-            full_config.teacher_config = replace(
-                full_config.teacher_config, num_labels=num_labels
-            )
+            full_config.teacher_config = replace(full_config.teacher_config, num_labels=num_labels)
 
-            tokenizer, teacher_model, _ = get_teacher_model(
-                full_config, task_name, teacher_ckpt
-            )
+            tokenizer, teacher_model, _ = get_teacher_model(full_config, task_name, teacher_ckpt)
 
             # DNABERT-2 bundles a Triton flash-attention kernel (flash_attn_triton.py)
             # that calls tl.dot(..., trans_b=True); newer Triton (>=3) dropped trans_b,
@@ -288,9 +278,7 @@ def benchmark_teachers_on_task(
             log_benchmark_to_wandb(result)
 
             print(f"    ✓ Mean latency: {result.mean_latency_ms:.2f} ms")
-            print(
-                f"    ✓ Throughput: {result.throughput_samples_per_sec:.1f} samples/s"
-            )
+            print(f"    ✓ Throughput: {result.throughput_samples_per_sec:.1f} samples/s")
             print(f"    ✓ Peak memory: {result.peak_memory_mb:.1f} MB")
             print(f"    ✓ Parameters: {result.num_parameters:,}")
 
@@ -305,9 +293,7 @@ def benchmark_teachers_on_task(
             # Provide more helpful error messages for known issues
             if "triton" in error_msg.lower() or "trans_b" in error_msg:
                 print(f"  ✗ Error: Triton compatibility issue with {teacher_type}")
-                print(
-                    f"    This is a known issue with flash attention in newer Triton versions."
-                )
+                print("    This is a known issue with flash attention in newer Triton versions.")
                 print(f"    Consider excluding {teacher_type} from the benchmark.")
             else:
                 print(f"  ✗ Error benchmarking {teacher_type}: {error_msg[:200]}")
@@ -329,9 +315,7 @@ def benchmark_teachers_on_task(
     return results
 
 
-def benchmark_students_on_task(
-    config: BenchmarkConfig, task_name: str
-) -> List[BenchmarkResult]:
+def benchmark_students_on_task(config: BenchmarkConfig, task_name: str) -> List[BenchmarkResult]:
     """Benchmark BPNet student models on a single task."""
     from config.distillation.data import nucletide_transformer_revised_benchmark
 
@@ -339,18 +323,14 @@ def benchmark_students_on_task(
     errors = []
 
     # Load test data
-    dataset_config = replace(
-        nucletide_transformer_revised_benchmark, task_name=task_name
-    )
+    dataset_config = replace(nucletide_transformer_revised_benchmark, task_name=task_name)
     _, _, _, _, X_test, y_test = build_data_splits_from_huggingface(dataset_config)
 
     num_labels = get_num_labels(task_name)
 
     # Create test dataset
     test_ds = SeqDataset(X_test, y_test, config.max_length)
-    test_loader = DataLoader(
-        test_ds, batch_size=config.batch_size, shuffle=False, num_workers=4
-    )
+    test_loader = DataLoader(test_ds, batch_size=config.batch_size, shuffle=False, num_workers=4)
 
     print(f"\n--- Benchmarking Students on: {task_name} ---")
     print(f"Test samples: {len(X_test)}")
@@ -387,9 +367,7 @@ def benchmark_students_on_task(
             log_benchmark_to_wandb(result)
 
             print(f"    ✓ Mean latency: {result.mean_latency_ms:.2f} ms")
-            print(
-                f"    ✓ Throughput: {result.throughput_samples_per_sec:.1f} samples/s"
-            )
+            print(f"    ✓ Throughput: {result.throughput_samples_per_sec:.1f} samples/s")
             print(f"    ✓ Peak memory: {result.peak_memory_mb:.1f} MB")
             print(f"    ✓ Parameters: {result.num_parameters:,}")
 
@@ -432,13 +410,15 @@ def print_summary_table(results: List[BenchmarkResult]):
     cpus = sorted(set(r.cpu_name for r in results if r.cpu_name))
     print(f"GPU: {', '.join(gpus) if gpus else 'unknown'}")
     print(f"CPU: {', '.join(cpus) if cpus else 'unknown'}")
-    print(f"  (TotalTime '*' = extrapolated = mean_latency x n_total_batches; SeqLen=padded/native)")
+    print("  (TotalTime '*' = extrapolated = mean_latency x n_total_batches; SeqLen=padded/native)")
     print(f"{'=' * 140}")
     # All rows should share one precision after the unification fix; surface it per-row so
-    # a reviewer can confirm the table is single-precision at a glance.
+    # a reader can confirm the table is single-precision at a glance.
     precs = sorted(set(r.precision for r in results if r.precision))
-    print(f"Precision: {', '.join(precs) if precs else 'unknown'} "
-          f"{'(UNIFORM)' if len(precs) == 1 else '(!! MIXED -- not single-precision !!)'}")
+    print(
+        f"Precision: {', '.join(precs) if precs else 'unknown'} "
+        f"{'(UNIFORM)' if len(precs) == 1 else '(!! MIXED -- not single-precision !!)'}"
+    )
     print(
         f"{'Task':<20} {'Model':<12} {'Type':<8} {'Prec':<5} {'Dev':<5} {'nTest':<7} {'SeqLen':<7} {'Native':<7} {'BS':<4} "
         f"{'Latency(ms)':<12} {'TotalTime(s)':<14} {'Memory(MB)':<12} {'Params':<13}"
@@ -463,7 +443,9 @@ def print_summary_table(results: List[BenchmarkResult]):
 
     # Cross-task totals per model (sum of whole-dataset time over all benchmarked tasks).
     print("-" * 140)
-    print("CROSS-TASK TOTALS (sum of whole-dataset TotalTime over all tasks; '*' if any extrapolated):")
+    print(
+        "CROSS-TASK TOTALS (sum of whole-dataset TotalTime over all tasks; '*' if any extrapolated):"
+    )
     models = sorted(set(r.model_name for r in results))
     for m in models:
         rs = [r for r in results if r.model_name == m]
@@ -509,10 +491,9 @@ def main(config: BenchmarkConfig):
     )
 
     all_results = []
-    all_errors = []
 
     print(f"\n{'=' * 80}")
-    print(f"INFERENCE BENCHMARK")
+    print("INFERENCE BENCHMARK")
     print(f"{'=' * 80}")
     print(f"Tasks: {task_names}")
     print(f"Teachers: {config.teachers if config.teachers else 'None'}")
@@ -750,7 +731,5 @@ experiment_configs = {
 
 
 if __name__ == "__main__":
-    config = tyro.extras.overridable_config_cli(
-        experiment_configs, sort_subcommands=True
-    )
+    config = tyro.extras.overridable_config_cli(experiment_configs, sort_subcommands=True)
     main(config)

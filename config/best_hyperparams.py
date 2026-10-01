@@ -15,7 +15,7 @@ Structure:
 """
 
 from dataclasses import dataclass, asdict
-from typing import Dict, Optional
+from typing import Dict
 
 
 @dataclass
@@ -748,10 +748,7 @@ def get_size_hyperparams(
             if size in SIZE_BEST_HYPERPARAMS[teacher][task]:
                 return SIZE_BEST_HYPERPARAMS[teacher][task][size]
             # Fallback for extra_large_fix if not explicitly defined
-            if (
-                size == "extra_large_fix"
-                and "extra_large" in SIZE_BEST_HYPERPARAMS[teacher][task]
-            ):
+            if size == "extra_large_fix" and "extra_large" in SIZE_BEST_HYPERPARAMS[teacher][task]:
                 print(
                     f"Warning: Using extra_large hyperparams for extra_large_fix ({teacher}/{task})"
                 )

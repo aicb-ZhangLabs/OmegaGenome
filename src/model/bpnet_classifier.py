@@ -12,7 +12,7 @@ class BPNetClassifierConfig:
     teacher_hidden_size: Optional[int] = None
     teacher_projection_opt: Literal["down", "up"] = "down"
 
-    # --- INPUT MODE (R1.3 rebuttal: one-hot vs pretrained-embedding student input) -------------
+    # --- INPUT MODE (one-hot vs pretrained-embedding student input) -------------
     # "onehot"        : DEFAULT, unchanged. forward() one-hot encodes input_ids (A/C/G/T -> 4 ch).
     # "nt_embedding"  : forward() instead receives PER-POSITION pretrained DNA-model embeddings
     #                   (shape [B, L, embedding_dim]) and maps them to the backbone's 4-ch input via a
@@ -23,7 +23,7 @@ class BPNetClassifierConfig:
     # Per-position teacher-embedding dim (NT-2.5B = 2560). Only used when input_mode == "nt_embedding".
     embedding_dim: Optional[int] = None
 
-    # --- EMBEDDING FRONT-END (R1.3 PI fix: the D->4 1x1 conv is a SEVERE bottleneck that may erase the
+    # --- EMBEDDING FRONT-END (PI fix: the D->4 1x1 conv is a SEVERE bottleneck that may erase the
     # pretrained embedding's info, making "embedding ~ one-hot" an ARTIFACT). Only used when
     # input_mode == "nt_embedding"; the cached [L,D] embeddings are reused unchanged (no re-precompute).
     #   "replace4"  : DEFAULT/control. adapter D->4, feed BPNet's one-hot 4-ch stem (capacity-matched).
@@ -34,11 +34,11 @@ class BPNetClassifierConfig:
     #   "latefuse_onehot" : FAITHFUL PI version. Input packs BOTH the cached embedding and the REAL
     #                 one-hot ([L, D+4]); the stem runs on the REAL one-hot (4-ch, like the baseline) ->
     #                 F[L,C]; the embedding is projected D->fuse_width and CONCAT'd deep. Tests if the
-    #                 pretrained embedding ADDS value on top of a real one-hot BPNet (the PI's question).
+    #                 pretrained embedding ADDS value on top of a real one-hot BPNet (the motivating question).
     front_end: Literal["replace4", "replaceK", "latefuse_emb", "latefuse_onehot"] = "replace4"
-    adapter_width: int = 32      # K for replaceK (adapter output / widened stem in-channels)
-    fuse_width: int = 32         # embedding projection width concatenated in latefuse
-    fuse_after_block: int = 2    # # of early dilated Residual blocks before the latefuse concat
+    adapter_width: int = 32  # K for replaceK (adapter output / widened stem in-channels)
+    fuse_width: int = 32  # embedding projection width concatenated in latefuse
+    fuse_after_block: int = 2  # # of early dilated Residual blocks before the latefuse concat
     # input_adapter projection depth (replace4 / replaceK). 0 (DEFAULT) = a single 1x1 conv = a per-
     # position LINEAR map D->out. >0 = a per-position 2-layer MLP: Conv1d(D->adapter_mlp_hidden) -> ReLU
     # -> Conv1d(adapter_mlp_hidden->out). Still point-wise (kernel_size=1): no mixing across positions,
@@ -58,27 +58,27 @@ class BPNetClassifierConfig:
         "extra_tiny",
         "medium_small",
         "deploy_120k",  # ~0.12M deploy params (65 ch) — NOTE: dilation CAPPED at 64 (small RF). For
-                        # Carbon-3B distillation use `original` instead (full-RF, matches other teachers).
-        "original_emb_matched",  # R1.3 PARAM-MATCH (replace4 arm, SECONDARY): original BPNet shrunk 64->61
-                        # ch (full-RF, uncapped dilation, profile/total_count heads kept). backbone+cls=
-                        # 110,477; +replace4 adapter (2560->4 = 10,244) -> deployable total 120,721 ~= one-hot
-                        # baseline 121,094 (diff -373). NOTE: replace4 is a 2560->4 BOTTLENECK that mostly
-                        # discards the embedding -> kept only as a secondary point. Uses BPNetWidth (a BPNet
-                        # subclass) so latefuse_onehot / replaceK arms work unchanged.
-        "emb_matched_replaceK",  # R1.3 PARAM-MATCH (replaceK arm, HEADLINE): BPNet shrunk to 25 ch. With the
-                        # replaceK front-end (D->K=32 adapter 81,952 + first conv widened 4->K) the TOTAL =
-                        # 120,433 ~= one-hot 121,094 (diff -661). Fair "same param budget" question: spend
-                        # params on a rich NT-embedding front-end (tiny backbone) vs a deep one-hot backbone?
-        "emb_matched_latefuse",  # R1.3 PARAM-MATCH (latefuse_onehot arm, HEADLINE): BPNet shrunk to 34 ch.
-                        # With the latefuse front-end (embed_proj D->fw=32 + fuse_block) the TOTAL = 120,238
-                        # ~= one-hot 121,094 (diff -856). Real one-hot stem + deep NT-embedding concat at the
-                        # SAME 121K param budget as the one-hot baseline.
+        # Carbon-3B distillation use `original` instead (full-RF, matches other teachers).
+        "original_emb_matched",  # PARAM-MATCH (replace4 arm, SECONDARY): original BPNet shrunk 64->61
+        # ch (full-RF, uncapped dilation, profile/total_count heads kept). backbone+cls=
+        # 110,477; +replace4 adapter (2560->4 = 10,244) -> deployable total 120,721 ~= one-hot
+        # baseline 121,094 (diff -373). NOTE: replace4 is a 2560->4 BOTTLENECK that mostly
+        # discards the embedding -> kept only as a secondary point. Uses BPNetWidth (a BPNet
+        # subclass) so latefuse_onehot / replaceK arms work unchanged.
+        "emb_matched_replaceK",  # PARAM-MATCH (replaceK arm, HEADLINE): BPNet shrunk to 25 ch. With the
+        # replaceK front-end (D->K=32 adapter 81,952 + first conv widened 4->K) the TOTAL =
+        # 120,433 ~= one-hot 121,094 (diff -661). Fair "same param budget" question: spend
+        # params on a rich NT-embedding front-end (tiny backbone) vs a deep one-hot backbone?
+        "emb_matched_latefuse",  # PARAM-MATCH (latefuse_onehot arm, HEADLINE): BPNet shrunk to 34 ch.
+        # With the latefuse front-end (embed_proj D->fw=32 + fuse_block) the TOTAL = 120,238
+        # ~= one-hot 121,094 (diff -856). Real one-hot stem + deep NT-embedding concat at the
+        # SAME 121K param budget as the one-hot baseline.
         "pico",
         "medium_large",
         "extra_large",
         "extra_large_fix",  # NEW: Fixed extra_large with proper dilation
         "xxlarge",
-        "bpnet_10m",  # R1.3 minimal-NT comparison: ~10.5M full-RF BPNet (C=621), matched to NT token-emb+cls
+        "bpnet_10m",  # minimal-NT comparison: ~10.5M full-RF BPNet (C=621), matched to NT token-emb+cls
     ] = "original"
     hidden_dim: Optional[int] = None
 
@@ -167,20 +167,27 @@ class BPNetClassifier(nn.Module):
                 # Use original BPNet() for backward compatibility
                 self.backbone = BPNet()
             elif config.model_size == "bpnet_10m":
-                # R1.3 minimal-NT comparison: a ~10.5M full-RF BPNet (C=621), matched to the NT
+                # minimal-NT comparison: a ~10.5M full-RF BPNet (C=621), matched to the NT
                 # token-embedding + classifier size (10,508,800 + 5,122 = 10,513,922). Uses BPNetWidth
                 # (good architecture: uncapped dilation 2**i, i=1..9), distilled from the NT-2.5B teacher.
                 self.backbone = BPNetWidth(channels=621)
-            elif config.model_size in ("original_emb_matched", "emb_matched_replaceK", "emb_matched_latefuse"):
-                # R1.3 PER-ARM param-match: shrink the BPNet width so that backbone + THAT arm's embedding
+            elif config.model_size in (
+                "original_emb_matched",
+                "emb_matched_replaceK",
+                "emb_matched_latefuse",
+            ):
+                # PER-ARM param-match: shrink the BPNet width so that backbone + THAT arm's embedding
                 # front-end + classifier = TOTAL ~= the one-hot baseline 121,094. Each arm's front-end has a
                 # different (mostly C-independent) cost, so each needs a different width. BPNetWidth subclass
                 # keeps the BPNet interface (isinstance + .stem) so replaceK / latefuse front-ends work.
                 #   replace4  (2560->4 bottleneck, SECONDARY) : C=61 -> total 120,721
                 #   replaceK  (D->32 adapter + widened stem)  : C=25 -> total 120,433
                 #   latefuse  (real one-hot stem + deep concat): C=34 -> total 120,238
-                _matched_ch = {"original_emb_matched": 61, "emb_matched_replaceK": 25,
-                               "emb_matched_latefuse": 34}[config.model_size]
+                _matched_ch = {
+                    "original_emb_matched": 61,
+                    "emb_matched_replaceK": 25,
+                    "emb_matched_latefuse": 34,
+                }[config.model_size]
                 self.backbone = BPNetWidth(channels=_matched_ch)
             else:
                 # Use variable-size BPNet for new experiments
@@ -206,19 +213,21 @@ class BPNetClassifier(nn.Module):
         self.pool = nn.AdaptiveAvgPool1d(1)
         self._define_classifier(C)
 
-        # --- nt_embedding front-end (R1.3) -----------------------------------------------------
+        # --- nt_embedding front-end -----------------------------------------------------
         # Map per-position teacher embeddings (embedding_dim) -> the 4 input channels the backbone's
         # first conv expects, via a learned 1x1 conv (point-wise, no mixing across positions). This is
         # the ONLY architectural addition for the embedding-input variant; its params are reported
         # separately as the "embedding front-end" cost vs the one-hot student. For onehot mode it is None.
         self.input_adapter = None
-        self.embed_proj = None      # latefuse: D -> fuse_width projection of the embedding
-        self.stem_adapter = None    # latefuse_emb: D -> 4 stem input (None for latefuse_onehot)
+        self.embed_proj = None  # latefuse: D -> fuse_width projection of the embedding
+        self.stem_adapter = None  # latefuse_emb: D -> 4 stem input (None for latefuse_onehot)
         self._latefuse = False
         self._latefuse_onehot = False
         if config.input_mode == "nt_embedding":
             if config.embedding_dim is None:
-                raise ValueError("input_mode='nt_embedding' requires config.embedding_dim (e.g. 2560 for NT-2.5B)")
+                raise ValueError(
+                    "input_mode='nt_embedding' requires config.embedding_dim (e.g. 2560 for NT-2.5B)"
+                )
             self._build_embedding_front_end(config, C)
 
         # Print model parameters
@@ -243,7 +252,7 @@ class BPNetClassifier(nn.Module):
         return nn.Conv1d(D, out_ch, kernel_size=1)
 
     def _build_embedding_front_end(self, config, C: int):
-        """Construct the chosen embedding front-end (R1.3 PI fix). Reuses the cached [L,D] embeddings.
+        """Construct the chosen embedding front-end (PI fix). Reuses the cached [L,D] embeddings.
 
         replace4 : adapter D->4, unchanged BPNet 4-ch stem (capacity-matched control).
         replaceK : adapter D->K, widen the stem's first conv in_channels 4->K (input-replace, no D->4
@@ -251,7 +260,7 @@ class BPNetClassifier(nn.Module):
         latefuse : keep the 4-ch one-hot stem + `fuse_after_block` early dilated Residual blocks, then
                    CONCAT a D->fuse_width projection of the embedding onto those features and widen the
                    next block's conv in_channels C -> C+fuse_width. Injects the embedding deeper to test
-                   if it ADDS to one-hot. Only supported for model_size='original' (the R1.3 student).
+                   if it ADDS to one-hot. Only supported for model_size='original' (the embedding-input student).
         """
         D = config.embedding_dim
         fe = config.front_end
@@ -264,15 +273,20 @@ class BPNetClassifier(nn.Module):
             # Widen the backbone's FIRST conv to consume K channels (4 -> K). original BPNet: stem[0];
             # VariableBPNet: layers[0]. Preserves out_channels / kernel / padding; only in_channels grows.
             first = self._first_conv()
-            new_first = nn.Conv1d(K, first.out_channels, first.kernel_size[0],
-                                  padding=first.padding, dilation=first.dilation)
+            new_first = nn.Conv1d(
+                K,
+                first.out_channels,
+                first.kernel_size[0],
+                padding=first.padding,
+                dilation=first.dilation,
+            )
             self._set_first_conv(new_first)
             return
         if fe in ("latefuse_emb", "latefuse_onehot"):
             if not isinstance(self.backbone, BPNet):
                 raise ValueError("latefuse front_end currently supports model_size='original' only")
             self._latefuse = True
-            self._latefuse_onehot = (fe == "latefuse_onehot")
+            self._latefuse_onehot = fe == "latefuse_onehot"
             # Stem branch input differs by arm:
             #   latefuse_emb    : dataset yields only the embedding [L,D]; the stem consumes a learned
             #                     D->4 projection of it (stem_adapter). The embedding's FULL info is still
@@ -287,7 +301,9 @@ class BPNetClassifier(nn.Module):
             stem = list(self.backbone.stem)  # [Conv1d, ReLU, Res, Res, ..., Res]  (2 + 9)
             n_early = 2 + max(0, config.fuse_after_block)  # conv0 + relu + N residual blocks
             self._early = nn.Sequential(*stem[:n_early])
-            late_blocks = stem[n_early:]   # remaining Residual blocks (each: Residual(Sequential(Conv,ReLU)))
+            late_blocks = stem[
+                n_early:
+            ]  # remaining Residual blocks (each: Residual(Sequential(Conv,ReLU)))
             if len(late_blocks) == 0:
                 raise ValueError("fuse_after_block too large: no blocks left after the concat")
             # The first late block's inner conv must consume C + fuse_width instead of C, and (since it is
@@ -295,12 +311,17 @@ class BPNetClassifier(nn.Module):
             # We therefore replace that Residual block with a NON-residual widen-conv (C+fw -> C) + ReLU,
             # then keep the remaining (still-residual) blocks unchanged.
             fw = config.fuse_width
-            first_late = late_blocks[0]            # Residual(Sequential(Conv1d(C,C,3,dil), ReLU))
-            inner = first_late.fn                  # Sequential(Conv1d, ReLU)
+            first_late = late_blocks[0]  # Residual(Sequential(Conv1d(C,C,3,dil), ReLU))
+            inner = first_late.fn  # Sequential(Conv1d, ReLU)
             old_conv = inner[0]
             fuse_conv = nn.Sequential(
-                nn.Conv1d(C + fw, C, old_conv.kernel_size[0], padding=old_conv.padding,
-                          dilation=old_conv.dilation),
+                nn.Conv1d(
+                    C + fw,
+                    C,
+                    old_conv.kernel_size[0],
+                    padding=old_conv.padding,
+                    dilation=old_conv.dilation,
+                ),
                 nn.ReLU(),
             )
             self._fuse_block = fuse_conv
@@ -342,14 +363,10 @@ class BPNetClassifier(nn.Module):
                 nn.Conv1d(4, 32, 15, padding="same"),
                 nn.ReLU(),
                 SimpleResidual(
-                    nn.Sequential(
-                        nn.Conv1d(32, 32, 3, padding="same", dilation=2), nn.ReLU()
-                    )
+                    nn.Sequential(nn.Conv1d(32, 32, 3, padding="same", dilation=2), nn.ReLU())
                 ),
                 SimpleResidual(
-                    nn.Sequential(
-                        nn.Conv1d(32, 32, 3, padding="same", dilation=4), nn.ReLU()
-                    )
+                    nn.Sequential(nn.Conv1d(32, 32, 3, padding="same", dilation=4), nn.ReLU())
                 ),
             )
             return VariableBPNet(layers, feature_dim=32)
@@ -360,19 +377,13 @@ class BPNetClassifier(nn.Module):
                 nn.Conv1d(4, 64, 21, padding="same"),
                 nn.ReLU(),
                 SimpleResidual(
-                    nn.Sequential(
-                        nn.Conv1d(64, 64, 3, padding="same", dilation=2), nn.ReLU()
-                    )
+                    nn.Sequential(nn.Conv1d(64, 64, 3, padding="same", dilation=2), nn.ReLU())
                 ),
                 SimpleResidual(
-                    nn.Sequential(
-                        nn.Conv1d(64, 64, 3, padding="same", dilation=4), nn.ReLU()
-                    )
+                    nn.Sequential(nn.Conv1d(64, 64, 3, padding="same", dilation=4), nn.ReLU())
                 ),
                 SimpleResidual(
-                    nn.Sequential(
-                        nn.Conv1d(64, 64, 3, padding="same", dilation=8), nn.ReLU()
-                    )
+                    nn.Sequential(nn.Conv1d(64, 64, 3, padding="same", dilation=8), nn.ReLU())
                 ),
             )
             return VariableBPNet(layers, feature_dim=64)
@@ -384,9 +395,7 @@ class BPNetClassifier(nn.Module):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
-                            nn.Conv1d(
-                                128, 128, 3, padding="same", dilation=2 ** min(i, 6)
-                            ),
+                            nn.Conv1d(128, 128, 3, padding="same", dilation=2 ** min(i, 6)),
                             nn.ReLU(),
                         )
                     )
@@ -400,9 +409,7 @@ class BPNetClassifier(nn.Module):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
-                            nn.Conv1d(
-                                256, 256, 3, padding="same", dilation=2 ** min(i, 8)
-                            ),
+                            nn.Conv1d(256, 256, 3, padding="same", dilation=2 ** min(i, 8)),
                             nn.ReLU(),
                         )
                     )
@@ -416,9 +423,7 @@ class BPNetClassifier(nn.Module):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
-                            nn.Conv1d(
-                                90, 90, 3, padding="same", dilation=2 ** min(i, 6)
-                            ),
+                            nn.Conv1d(90, 90, 3, padding="same", dilation=2 ** min(i, 6)),
                             nn.ReLU(),
                         )
                     )
@@ -452,9 +457,7 @@ class BPNetClassifier(nn.Module):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
-                            nn.Conv1d(
-                                30, 30, 3, padding="same", dilation=2 ** min(i, 6)
-                            ),
+                            nn.Conv1d(30, 30, 3, padding="same", dilation=2 ** min(i, 6)),
                             nn.ReLU(),
                         )
                     )
@@ -469,9 +472,7 @@ class BPNetClassifier(nn.Module):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
-                            nn.Conv1d(
-                                14, 14, 3, padding="same", dilation=2 ** min(i, 6)
-                            ),
+                            nn.Conv1d(14, 14, 3, padding="same", dilation=2 ** min(i, 6)),
                             nn.ReLU(),
                         )
                     )
@@ -500,9 +501,7 @@ class BPNetClassifier(nn.Module):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
-                            nn.Conv1d(
-                                120, 120, 3, padding="same", dilation=2 ** min(i, 6)
-                            ),
+                            nn.Conv1d(120, 120, 3, padding="same", dilation=2 ** min(i, 6)),
                             nn.ReLU(),
                         )
                     )
@@ -518,9 +517,7 @@ class BPNetClassifier(nn.Module):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
-                            nn.Conv1d(
-                                170, 170, 3, padding="same", dilation=2 ** min(i, 6)
-                            ),
+                            nn.Conv1d(170, 170, 3, padding="same", dilation=2 ** min(i, 6)),
                             nn.ReLU(),
                         )
                     )
@@ -566,9 +563,7 @@ class BPNetClassifier(nn.Module):
                 layers.append(
                     SimpleResidual(
                         nn.Sequential(
-                            nn.Conv1d(
-                                363, 363, 3, padding="same", dilation=2 ** min(i, 8)
-                            ),
+                            nn.Conv1d(363, 363, 3, padding="same", dilation=2 ** min(i, 8)),
                             nn.ReLU(),
                         )
                     )
@@ -587,9 +582,9 @@ class BPNetClassifier(nn.Module):
             "extra_tiny": 30,
             "tiny": 32,
             "small": 64,
-            "original_emb_matched": 61,  # R1.3 param-matched replace4 (64->61 ch)
-            "emb_matched_replaceK": 25,  # R1.3 param-matched replaceK arm
-            "emb_matched_latefuse": 34,  # R1.3 param-matched latefuse arm
+            "original_emb_matched": 61,  # param-matched replace4 (64->61 ch)
+            "emb_matched_replaceK": 25,  # param-matched replaceK arm
+            "emb_matched_latefuse": 34,  # param-matched latefuse arm
             "medium_small": 90,
             "medium": 128,
             "medium_large": 120,
@@ -612,9 +607,7 @@ class BPNetClassifier(nn.Module):
                     nn.ReLU(),
                     nn.Linear(C * 2, self.config.teacher_hidden_size),
                 )
-                self.classifier = nn.Linear(
-                    self.config.teacher_hidden_size, self.config.num_labels
-                )
+                self.classifier = nn.Linear(self.config.teacher_hidden_size, self.config.num_labels)
             else:
                 raise ValueError(
                     f"Invalid teacher projection: {self.config.teacher_projection_opt}"
@@ -662,22 +655,14 @@ class BPNetClassifier(nn.Module):
         # Show deployment size (without teacher projection)
         if teacher_proj_params > 0:
             print("\n--- Deployment Configuration (teacher proj excluded) ---")
-            print(
-                f"Deployment parameters: {deployment_params:,} ({deployment_params / 1e6:.2f}M)"
-            )
-            print(
-                f"  └─ Backbone:         {backbone_params:,} ({backbone_params / 1e6:.2f}M)"
-            )
-            print(
-                f"  └─ Classifier head:  {classifier_params:,} ({classifier_params / 1e6:.2f}M)"
-            )
+            print(f"Deployment parameters: {deployment_params:,} ({deployment_params / 1e6:.2f}M)")
+            print(f"  └─ Backbone:         {backbone_params:,} ({backbone_params / 1e6:.2f}M)")
+            print(f"  └─ Classifier head:  {classifier_params:,} ({classifier_params / 1e6:.2f}M)")
             print(
                 f"\nTeacher projection:    {teacher_proj_params:,} ({teacher_proj_params / 1e6:.2f}M) (training only)"
             )
         else:
-            print(
-                "\n(No teacher projection - all parameters are deployment parameters)"
-            )
+            print("\n(No teacher projection - all parameters are deployment parameters)")
 
         print(
             f"\nFeature dimension:     {getattr(self.backbone, 'feature_dim', 'N/A') if self.backbone is not None else 'N/A (latefuse)'}"
@@ -703,17 +688,17 @@ class BPNetClassifier(nn.Module):
                 # input_ids packs [B, L, D+4] = embedding ++ REAL one-hot. Split and run the stem on the
                 # REAL one-hot (exactly the baseline 4-ch stem).
                 D = self.config.embedding_dim
-                emb = input_ids[..., :D].permute(0, 2, 1).float()   # [B, D, L]
-                x = input_ids[..., D:].permute(0, 2, 1).float()     # [B, 4, L] real one-hot
+                emb = input_ids[..., :D].permute(0, 2, 1).float()  # [B, D, L]
+                x = input_ids[..., D:].permute(0, 2, 1).float()  # [B, 4, L] real one-hot
             else:
                 # latefuse_emb: input_ids is [B, L, D]; stem consumes a D->4 projection of the embedding.
-                emb = input_ids.permute(0, 2, 1).float()            # [B, D, L]
-                x = self.stem_adapter(emb)                          # [B, 4, L]
-            f = self._early(x)                            # [B, C, L]
-            e = self.embed_proj(emb)                      # [B, fuse_width, L]
-            fused = torch.cat([f, e], dim=1)              # [B, C+fuse_width, L]
-            h = self._fuse_block(fused)                   # [B, C, L]
-            feats = self._late(h)                         # [B, C, L]
+                emb = input_ids.permute(0, 2, 1).float()  # [B, D, L]
+                x = self.stem_adapter(emb)  # [B, 4, L]
+            f = self._early(x)  # [B, C, L]
+            e = self.embed_proj(emb)  # [B, fuse_width, L]
+            fused = torch.cat([f, e], dim=1)  # [B, C+fuse_width, L]
+            h = self._fuse_block(fused)  # [B, C, L]
+            feats = self._late(h)  # [B, C, L]
         else:
             if self.config.input_mode == "nt_embedding":
                 # replace4 (D->4) / replaceK (D->K): input_ids [B,L,D] -> [B,D,L] -> adapter -> [B,*,L]
@@ -745,9 +730,7 @@ class BPNetClassifier(nn.Module):
             return logits, pooled
         return logits
 
-    def aligned_feats(
-        self, sfeats: torch.Tensor, tfeats: Optional[torch.Tensor] = None
-    ):
+    def aligned_feats(self, sfeats: torch.Tensor, tfeats: Optional[torch.Tensor] = None):
         """
         align the features from the student and the teacher
         :param sfeats: the features from the student

@@ -21,9 +21,7 @@ class TrackDataset(Dataset):
     def __init__(self, sequences, targets, max_len: int):
         if len(sequences) != len(targets):
             raise ValueError(f"sequences ({len(sequences)}) != targets ({len(targets)})")
-        self.ids = torch.tensor(
-            [encode_seq(s, max_len) for s in sequences], dtype=torch.long
-        )
+        self.ids = torch.tensor([encode_seq(s, max_len) for s in sequences], dtype=torch.long)
         self.targets = torch.as_tensor(targets, dtype=torch.float)
         if self.targets.dim() != 3:
             raise ValueError(f"targets must be [N, L_teacher, T], got {tuple(self.targets.shape)}")

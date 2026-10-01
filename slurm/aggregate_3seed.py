@@ -11,26 +11,45 @@ asserts each seed run actually used the best hyperparameters.
 Usage:
   python slurm/aggregate_3seed.py [--base <output_dir>] [--seeds 0 1 2] [--best best_hyperparams.json]
 """
+
 import argparse
 import glob
 import json
 import os
-import re
 from collections import defaultdict
 from statistics import mean, pstdev
 
-DEFAULT_BASE = "/tmp/galaxy_srv_disk00/pengchx3/carbon_distillation"
+DEFAULT_BASE = os.environ.get("OG_SCRATCH", "output") + "/carbon_distillation"
 HP_KEYS = ("weight_ce", "weight_kl", "weight_mse", "temperature")
-ORDER = ["H3K27me3", "H3K36me3", "H4K20me1", "H2AFZ", "H3K27ac", "H3K4me1", "H3K4me2", "H3K4me3",
-         "H3K9ac", "H3K9me3", "promoter_all", "promoter_tata", "promoter_no_tata", "enhancers",
-         "enhancers_types", "splice_sites_all", "splice_sites_acceptors", "splice_sites_donors"]
+ORDER = [
+    "H3K27me3",
+    "H3K36me3",
+    "H4K20me1",
+    "H2AFZ",
+    "H3K27ac",
+    "H3K4me1",
+    "H3K4me2",
+    "H3K4me3",
+    "H3K9ac",
+    "H3K9me3",
+    "promoter_all",
+    "promoter_tata",
+    "promoter_no_tata",
+    "enhancers",
+    "enhancers_types",
+    "splice_sites_all",
+    "splice_sites_acceptors",
+    "splice_sites_donors",
+]
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default=DEFAULT_BASE)
     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
-    ap.add_argument("--best", default=None, help="best_hyperparams.json to cross-check HP per seed run")
+    ap.add_argument(
+        "--best", default=None, help="best_hyperparams.json to cross-check HP per seed run"
+    )
     ap.add_argument("--variant", default="raw", choices=["raw", "l2norm"])
     args = ap.parse_args()
     want = set(args.seeds)

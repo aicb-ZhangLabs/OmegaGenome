@@ -267,11 +267,10 @@ def train_distill_task(
     # this config actually needs (matches the precompute gate below); a needed-but-missing preload
     # falls through to the normal precompute (self-correcting, never silently wrong).
     use_preloaded = (
-        (preloaded_teacher_logits is not None or preloaded_teacher_features is not None)
-        and (
-            (preloaded_teacher_logits is not None or not needs_logits)
-            and (preloaded_teacher_features is not None or not needs_features)
-        )
+        preloaded_teacher_logits is not None or preloaded_teacher_features is not None
+    ) and (
+        (preloaded_teacher_logits is not None or not needs_logits)
+        and (preloaded_teacher_features is not None or not needs_features)
     )
     if (needs_logits or needs_features) and use_preloaded:
         train_tlogits = preloaded_teacher_logits if needs_logits else None
@@ -291,7 +290,9 @@ def train_distill_task(
         from config.env import project_path
 
         cache_base = config.cache_base_dir or project_path  # SSD when set, else legacy /extra
-        teacher_bs = config.teacher_batch_size or config.batch_size  # small batch for the 3B forward
+        teacher_bs = (
+            config.teacher_batch_size or config.batch_size
+        )  # small batch for the 3B forward
         train_tlogits, train_tfeatures = precompute_teacher_logits(
             teacher_tokenizer,
             teacher_model,
@@ -429,8 +430,10 @@ def train_distill_task(
 
         # Early stopping (best-val checkpoint already saved -> same reported MCC, less compute).
         if should_stop:
-            print(f"[{task_name}] EARLY STOP at epoch {epoch}: no val_mcc improvement for "
-                  f"{epochs_no_improve} epochs (best {best_val_mcc:.4f} @ epoch {best_epoch})")
+            print(
+                f"[{task_name}] EARLY STOP at epoch {epoch}: no val_mcc improvement for "
+                f"{epochs_no_improve} epochs (best {best_val_mcc:.4f} @ epoch {best_epoch})"
+            )
             break
 
     # Final test evaluation

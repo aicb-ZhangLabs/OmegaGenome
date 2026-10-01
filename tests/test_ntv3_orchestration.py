@@ -24,6 +24,7 @@ class _StubTeacher:
         L, T = len(seqs[0]) // 4, 3
         return torch.randn(len(seqs), L, T)
 
+
 _n = 0
 
 
@@ -34,14 +35,21 @@ def ok(c, m):
 
 
 def test_tiling():
-    ok(tile_windows("chr1", 0, 1000, 100) == [("chr1", i * 100, (i + 1) * 100) for i in range(10)],
-       "non-overlapping tiling")
+    ok(
+        tile_windows("chr1", 0, 1000, 100) == [("chr1", i * 100, (i + 1) * 100) for i in range(10)],
+        "non-overlapping tiling",
+    )
     ok(len(tile_windows("chr1", 0, 1000, 100, n=3)) == 3, "n cap")
-    ok(tile_windows("chr1", 0, 1000, 300, stride=100)[:2] == [("chr1", 0, 300), ("chr1", 100, 400)],
-       "stride/overlap")
+    ok(
+        tile_windows("chr1", 0, 1000, 300, stride=100)[:2]
+        == [("chr1", 0, 300), ("chr1", 100, 400)],
+        "stride/overlap",
+    )
     ok(tile_windows("chr1", 0, 50, 100) == [], "window > range -> empty")
-    ok(tile_windows("chr1", 100, 100 + 16384 * 2, 16384, n=2)[0] == ("chr1", 100, 16484),
-       "offset start")
+    ok(
+        tile_windows("chr1", 100, 100 + 16384 * 2, 16384, n=2)[0] == ("chr1", 100, 16484),
+        "offset start",
+    )
 
 
 def test_load_and_eval():
@@ -49,10 +57,17 @@ def test_load_and_eval():
         N, Lt, T, W = 6, 48, 3, 512
         seqs = ["ACGT" * (W // 4) for _ in range(N)]
         torch.save(
-            {"sequences": seqs, "targets": torch.randn(N, Lt, T), "labels": ["a", "b", "c"], "window": W},
+            {
+                "sequences": seqs,
+                "targets": torch.randn(N, Lt, T),
+                "labels": ["a", "b", "c"],
+                "window": W,
+            },
             os.path.join(d, "test.pt"),
         )
-        tgt_raw = torch.randn(N, Lt, T) * torch.tensor([8.0, 2.0, 0.4]) + 3.0  # heterogeneous scales
+        tgt_raw = (
+            torch.randn(N, Lt, T) * torch.tensor([8.0, 2.0, 0.4]) + 3.0
+        )  # heterogeneous scales
         torch.save(
             {"sequences": seqs, "targets": tgt_raw, "labels": ["a", "b", "c"], "window": W},
             os.path.join(d, "test.pt"),

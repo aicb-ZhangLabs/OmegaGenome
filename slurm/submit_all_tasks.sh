@@ -6,7 +6,7 @@
 set -euo pipefail
 module load slurm 2>/dev/null || true
 EXP="${1:-carbon_3b}"
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 
 TASKS=(H3K4me3 H3K4me1 H3K4me2 H3K9ac H3K9me3 H3K27ac H3K27me3 H3K36me3 H4K20me1 H2AFZ \

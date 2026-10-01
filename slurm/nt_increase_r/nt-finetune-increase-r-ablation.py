@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-LoRA-RANK ABLATION (OmegaGenome rebuttal R2.1.b)
+LoRA-RANK ABLATION (OmegaGenome)
 ================================================
 COPY of nt-finetune-list-detailed-10-17-lora-skip-r-fix-num-label.py.
 Purpose: show NT-2.5B teacher's held-out ceiling does NOT materially rise as we
@@ -20,7 +20,7 @@ bs 8, best-ckpt-by-MCC, target_modules=["query","value"]):
   * downstream_task_list defaults to ["H3K9me3","enhancers_types"]; a single
     task can be selected with env var TASK (one job == one (task,r) cell).
   * parent_path points to a fresh, r-stamped dir under
-        /extra/zhanglab0/INDV/pengchx3/NT/2b5-INCREASE-R-ablation-0629/
+        ${OG_STORE}/NT/2b5-INCREASE-R-ablation-0629/
 """
 
 # ----------------------------------------
@@ -67,14 +67,12 @@ def _get_lora_r():
 LORA_R = _get_lora_r()
 # Keep alpha/r ratio identical to the r=48 baseline (alpha=64 => 4/3 * r).
 LORA_ALPHA = int(round((64.0 / 48.0) * LORA_R))
-print(f"[ablation] LORA_R={LORA_R}  LORA_ALPHA={LORA_ALPHA}  (alpha/r={LORA_ALPHA/LORA_R:.4f})")
+print(f"[ablation] LORA_R={LORA_R}  LORA_ALPHA={LORA_ALPHA}  (alpha/r={LORA_ALPHA / LORA_R:.4f})")
 
 # ----------------------------------------
 # Global path prefix for all file operations (r-stamped, fresh dir)
 # ----------------------------------------
-parent_path = (
-    f"/extra/zhanglab0/INDV/pengchx3/NT/2b5-INCREASE-R-ablation-0629/r{LORA_R}/"
-)
+parent_path = f"{os.environ.get('OG_STORE', 'data')}/NT/2b5-INCREASE-R-ablation-0629/r{LORA_R}/"
 
 # ----------------------------------------
 # Downstream task list (the two lowest-ceiling / most "suspicious" tasks)
@@ -178,9 +176,7 @@ class SaveMoreDetailsCallback(TrainerCallback):
             test_output = trainer.predict(self.test_dataset)
             test_preds = np.argmax(test_output.predictions, axis=-1)
             test_labels = test_output.label_ids
-            test_mcc, test_f1 = compute_test_metrics(
-                test_preds, test_labels, self.num_labels
-            )
+            test_mcc, test_f1 = compute_test_metrics(test_preds, test_labels, self.num_labels)
             self.csv_writer.writerow([epoch, "test_mcc", test_mcc])
             self.csv_writer.writerow([epoch, "test_f1", test_f1])
             self.csv_file.flush()
@@ -223,9 +219,7 @@ if __name__ == "__main__":
     for dataset_name in downstream_task_list:
         print(f"\n=== Fine-tuning on dataset: {dataset_name} (r={LORA_R}) ===")
         try:
-            num_labels, metric_fn, metric_for_best_model = get_num_labels_and_metric(
-                dataset_name
-            )
+            num_labels, metric_fn, metric_for_best_model = get_num_labels_and_metric(dataset_name)
 
             print("Loading base model and adding classification head...")
             base_model = AutoModelForSequenceClassification.from_pretrained(
@@ -253,12 +247,8 @@ if __name__ == "__main__":
                     split={"train": "train", "test": "test"},
                     trust_remote_code=True,
                 )
-                train_dataset = raw_ds["train"].filter(
-                    lambda ex: ex["task"] == dataset_name
-                )
-                test_dataset = raw_ds["test"].filter(
-                    lambda ex: ex["task"] == dataset_name
-                )
+                train_dataset = raw_ds["train"].filter(lambda ex: ex["task"] == dataset_name)
+                test_dataset = raw_ds["test"].filter(lambda ex: ex["task"] == dataset_name)
             except Exception as e:
                 print(f"Error loading dataset for {dataset_name}: {e}")
                 print("Skipping this dataset.")
@@ -273,9 +263,7 @@ if __name__ == "__main__":
                 train_sequences, train_labels, test_size=0.1, random_state=42
             )
 
-            ds_train = Dataset.from_dict(
-                {"data": train_sequences, "labels": train_labels}
-            )
+            ds_train = Dataset.from_dict({"data": train_sequences, "labels": train_labels})
             ds_val = Dataset.from_dict({"data": val_sequences, "labels": val_labels})
             ds_test = Dataset.from_dict({"data": test_sequences, "labels": test_labels})
 
@@ -283,9 +271,7 @@ if __name__ == "__main__":
             ds_train_tokenized = ds_train.map(
                 tokenize_function, batched=True, remove_columns=["data"]
             )
-            ds_val_tokenized = ds_val.map(
-                tokenize_function, batched=True, remove_columns=["data"]
-            )
+            ds_val_tokenized = ds_val.map(tokenize_function, batched=True, remove_columns=["data"])
             ds_test_tokenized = ds_test.map(
                 tokenize_function, batched=True, remove_columns=["data"]
             )
@@ -333,15 +319,11 @@ if __name__ == "__main__":
                 "f1_score" if metric_for_best_model == "f1_score" else "mcc_score"
             )
             metric_curve = [
-                (x["step"], x[metric_key])
-                for x in trainer.state.log_history
-                if metric_key in x
+                (x["step"], x[metric_key]) for x in trainer.state.log_history if metric_key in x
             ]
             if metric_curve:
                 steps, metric_values = zip(*metric_curve)
-                fig_path = os.path.join(
-                    finetuned_plots_dir, f"{dataset_name}_val_{metric_key}.png"
-                )
+                fig_path = os.path.join(finetuned_plots_dir, f"{dataset_name}_val_{metric_key}.png")
                 plt.figure()
                 plt.plot(steps, metric_values, label=f"Validation {metric_key}")
                 plt.title(f"Validation {metric_key} - {dataset_name} (r={LORA_R})")
@@ -358,9 +340,7 @@ if __name__ == "__main__":
             test_metrics = trainer.predict(ds_test_tokenized).metrics
             print(f"Test metrics for {dataset_name}:\n{test_metrics}")
 
-            result_filename = os.path.join(
-                finetuned_models_dir, f"{dataset_name}_test_metrics.txt"
-            )
+            result_filename = os.path.join(finetuned_models_dir, f"{dataset_name}_test_metrics.txt")
             with open(result_filename, "w") as f:
                 f.write(str(test_metrics))
             print(f"Saved test metrics to {result_filename}")

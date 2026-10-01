@@ -4,7 +4,7 @@
 #   sbatch slurm/ntv3_distill_v1.sbatch
 # Storage: model cache -> home (faster load, no sshfs memmap risk); targets+results -> SSD
 # (big, accessible from any node). Requires the galaxy SSD mounted on voyager; falls back to
-# home if not. Confirm with Jing before submitting.
+# home if not. Confirm with the lab before submitting.
 #SBATCH --job-name=ntv3-distill-v1
 #SBATCH --nodes=1
 #SBATCH --nodelist=voyager
@@ -18,24 +18,24 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
 
 # model cache on home (fast, fits); HF token for gated 650M
-HOME_HF=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.hf_cache
+HOME_HF=${OG_ROOT:-$PWD}/.hf_cache
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub" \
        TRANSFORMERS_CACHE="$HOME_HF/hub" TOKENIZERS_PARALLELISM=false
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 
 # big outputs on SSD if mounted on this node, else home
-SSD=/tmp/galaxy_srv_disk00/pengchx3
+SSD=${OG_SCRATCH:-$PWD/output}
 if mountpoint -q "$SSD" 2>/dev/null; then OUT="$SSD/ntv3_targets/v1"; else OUT="$REPO/.ntv3_run/v1"; fi
 mkdir -p "$OUT"
 echo "outputs -> $OUT"
 
 PY="$REPO/.venv_carbon_portable/bin/python"
 # this worktree shares code_carbon's portable venv
-[ -x "$PY" ] || PY=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
+[ -x "$PY" ] || PY=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
 
 echo "=== 1. generate NTv3-650M per-bp targets ==="
 "$PY" -m src.train.ntv3_gen_targets --model InstaDeepAI/NTv3_650M_post --out "$OUT" \

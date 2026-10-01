@@ -10,13 +10,13 @@ the 3-seed runner consumes, and prints a summary.
 Usage:
   python slurm/extract_best_hyperparams.py [--base <output_dir>] [--out best_hyperparams.json]
 """
+
 import argparse
 import glob
 import json
 import os
-import re
 
-DEFAULT_BASE = "/tmp/galaxy_srv_disk00/pengchx3/carbon_distillation"
+DEFAULT_BASE = os.environ.get("OG_SCRATCH", "output") + "/carbon_distillation"
 HP_KEYS = ("weight_ce", "weight_kl", "weight_mse", "temperature")  # the swept knobs we re-apply
 
 
@@ -56,7 +56,9 @@ def collect(base: str):
         except Exception:
             continue
         if s.get("task") and s.get("best_val_mcc") is not None:
-            counts[(variant_from_path(f), s["task"])] = counts.get((variant_from_path(f), s["task"]), 0) + 1
+            counts[(variant_from_path(f), s["task"])] = (
+                counts.get((variant_from_path(f), s["task"]), 0) + 1
+            )
     return best, counts, n
 
 
@@ -70,7 +72,11 @@ def main():
     # nested out: {variant: {task: {hyperparameters, best_val_mcc, best_test_mcc, n_candidates}}}
     out = {}
     for (variant, task), s in sorted(best.items()):
-        hp = {k: s.get("hyperparameters", {}).get(k) for k in HP_KEYS if k in s.get("hyperparameters", {})}
+        hp = {
+            k: s.get("hyperparameters", {}).get(k)
+            for k in HP_KEYS
+            if k in s.get("hyperparameters", {})
+        }
         out.setdefault(variant, {})[task] = {
             "hyperparameters": hp,
             "best_val_mcc": round(s["best_val_mcc"], 4),
@@ -88,8 +94,12 @@ def main():
         print(f"{'task':<24}{'val':>7}{'test':>7}{'  n':>4}  hyperparams")
         for task in sorted(rows):
             r = rows[task]
-            hp = ", ".join(f"{k.replace('weight_','w_')}={v}" for k, v in r["hyperparameters"].items())
-            print(f"{task:<24}{r['best_val_mcc']:>7}{r['best_test_mcc']:>7}{r['n_candidates']:>4}  {hp}")
+            hp = ", ".join(
+                f"{k.replace('weight_', 'w_')}={v}" for k, v in r["hyperparameters"].items()
+            )
+            print(
+                f"{task:<24}{r['best_val_mcc']:>7}{r['best_test_mcc']:>7}{r['n_candidates']:>4}  {hp}"
+            )
     print(f"\nwrote {args.out}")
 
 

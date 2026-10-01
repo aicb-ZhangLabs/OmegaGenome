@@ -11,20 +11,20 @@
 # 200-epoch training-cycle BEFORE the primer's row lands. All ready arms then compete for free GPUs.
 #
 # Gate:   ready(replaceK|onehot)=independent ;  ready(replace4|latefuse)=cache-files-present(task).
-# Dedup:  skip if a job named fs13_<task>_<arm> is RUNNING/PENDING (protects in-flight 264035-264049),
+# Dedup:  skip if a job named fsmc_<task>_<arm> is RUNNING/PENDING,
 #         and skip if the arm's completed row is present in its per-arm CSV OR the main CSV (covers the
-#         already-done R7 rows + the 3 in-flight replace4 launched under the old main-CSV scheme).
+#         already-done first-batch rows + the 3 in-flight replace4 launched under the old main-CSV scheme).
 # Only ever SUBMITS; never scancels (non-fs jobs untouched).  DRYRUN=1 -> classify WORK and exit.
 set -uo pipefail
 SB=/pkg/slurm/22.05.3/bin
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 SUBMIT="$REPO/slurm/submit_fs_arm.sh"
-SSD=/srv/disk00/sshfs/pengchx3            # login node = galaxy mount, for row/cache-file checks
-RESDIR="$SSD/rebuttal_nt/run_fromscratch/results"
-CACHEDIR="$SSD/rebuttal_nt/run_fromscratch/data/cache_embedding/nt_adapters"
+SSD=${OG_SCRATCH:-$PWD/output}            # login node = galaxy mount, for row/cache-file checks
+RESDIR="$SSD/nt_runs/run_fromscratch/results"
+CACHEDIR="$SSD/nt_runs/run_fromscratch/data/cache_embedding/nt_adapters"
 LOG="$REPO/slurm/fs_grid_loop.log"
 
-R7="splice_sites_donors splice_sites_all promoter_all promoter_tata promoter_no_tata H3K4me3"
+BATCH1="splice_sites_donors splice_sites_all promoter_all promoter_tata promoter_no_tata H3K4me3"
 NEW="H2AFZ H3K27ac H3K27me3 H3K36me3 H3K4me1 H3K4me2 H3K9ac H3K9me3 H4K20me1 enhancers enhancers_types splice_sites_acceptors"
 
 declare -A CAP=( [galaxy]=5 [laniakea]=7 [voyager]=3 )
@@ -34,17 +34,17 @@ DRYRUN="${DRYRUN:-0}"
 
 log(){ echo "[$(date '+%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
-main_csv(){ echo "$RESDIR/r13_fromscratch_$1.csv"; }
+main_csv(){ echo "$RESDIR/fromscratch_$1.csv"; }
 
-# completed 200-epoch row present? checks per-arm CSV OR main CSV (old-scheme in-flight + done R7).
+# completed 200-epoch row present? checks per-arm CSV OR main CSV (old-scheme in-flight + done first batch).
 have_row(){ # task arm
   local t="$1" a="$2" main; main="$(main_csv "$t")"
   case "$a" in
-    onehot)   grep -q ",onehot," "$RESDIR/r13_fromscratch_${t}_onehot.csv" 2>/dev/null ;;
-    replace4) grep -q ",nt,mid,replace4," "$RESDIR/r13_fromscratch_${t}_replace4.csv" 2>/dev/null \
+    onehot)   grep -q ",onehot," "$RESDIR/fromscratch_${t}_onehot.csv" 2>/dev/null ;;
+    replace4) grep -q ",nt,mid,replace4," "$RESDIR/fromscratch_${t}_replace4.csv" 2>/dev/null \
               || grep -q ",nt,mid,replace4," "$main" 2>/dev/null ;;
     replaceK) grep -q ",nt,mid,replaceK," "$main" 2>/dev/null ;;
-    latefuse) grep -q ",nt,mid,latefuse_onehot," "$RESDIR/r13_fromscratch_${t}_latefuse.csv" 2>/dev/null \
+    latefuse) grep -q ",nt,mid,latefuse_onehot," "$RESDIR/fromscratch_${t}_latefuse.csv" 2>/dev/null \
               || grep -q ",nt,mid,latefuse_onehot," "$main" 2>/dev/null ;;
   esac
 }
@@ -66,13 +66,13 @@ is_ready(){ # task arm
   esac
 }
 
-in_squeue(){ $SB/squeue -u pengchx3 -h -o '%j' 2>/dev/null | grep -qx "fs13_$1_$2"; }
-node_count(){ $SB/squeue -u pengchx3 -h -t RUNNING,PENDING -w "$1" -o '%i' 2>/dev/null | grep -c .; }
+in_squeue(){ $SB/squeue -u $USER -h -o '%j' 2>/dev/null | grep -qx "fsmc_$1_$2"; }
+node_count(){ $SB/squeue -u $USER -h -t RUNNING,PENDING -w "$1" -o '%i' 2>/dev/null | grep -c .; }
 pick_node(){ local n c; for n in "$@"; do c=$(node_count "$n"); [ "$c" -lt "${CAP[$n]}" ] && { echo "$n"; return 0; }; done; echo ""; }
 
-# Work list: 6 R7 replace4 + 12 new x {replaceK,onehot,replace4,latefuse}
+# Work list: 6 first-batch replace4 + 12 new x {replaceK,onehot,replace4,latefuse}
 WORK=()
-for t in $R7;  do WORK+=("$t:replace4"); done
+for t in $BATCH1;  do WORK+=("$t:replace4"); done
 for t in $NEW; do for a in replaceK onehot replace4 latefuse; do WORK+=("$t:$a"); done; done
 
 # Classification (used by DRYRUN and by the live loop's opening audit)
@@ -81,7 +81,7 @@ classify(){
   for item in "${WORK[@]}"; do
     t="${item%%:*}"; a="${item##*:}"
     if   have_row "$t" "$a";  then st="DONE";     done=$((done+1))
-    elif in_squeue "$t" "$a"; then st="INFLIGHT($($SB/squeue -u pengchx3 -h -o '%i' -n fs13_${t}_${a} 2>/dev/null))"; inflight=$((inflight+1))
+    elif in_squeue "$t" "$a"; then st="INFLIGHT($($SB/squeue -u $USER -h -o '%i' -n fsmc_${t}_${a} 2>/dev/null))"; inflight=$((inflight+1))
     elif is_ready "$t" "$a";  then st="READY";    ready=$((ready+1))
     else                           st="WAIT(cache)"; waiting=$((waiting+1)); fi
     printf '  %-26s %-9s %s\n' "$t" "$a" "$st" | tee -a "$LOG"   # per-line tee keeps counters in main shell

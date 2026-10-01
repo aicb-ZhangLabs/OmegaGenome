@@ -3,7 +3,7 @@
 # Cache is fully populated + self-validating, so these are cache-hit + student-train only (fast).
 # Sequential per seed (one submitter at a time); authoritative count_node keeps caps even while the
 # l2norm campaign drains concurrently.
-cd /home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+cd ${OG_ROOT:-$PWD}
 TASKS="H3K27me3 H3K36me3 H4K20me1 H2AFZ H3K27ac H3K4me1 H3K4me2 H3K4me3 H3K9ac H3K9me3 \
        promoter_all promoter_tata promoter_no_tata enhancers enhancers_types \
        splice_sites_all splice_sites_acceptors splice_sites_donors"

@@ -13,8 +13,12 @@ import tempfile
 import numpy as np
 import torch
 
-from src.data.ntv3_ft_data import (GenomeBigWigDataset, crop_center, make_target_scaling_fn,
-                                    sample_regions_for_total_length)
+from src.data.ntv3_ft_data import (
+    GenomeBigWigDataset,
+    crop_center,
+    make_target_scaling_fn,
+    sample_regions_for_total_length,
+)
 from src.model.ntv3_finetune import LinearHead
 from src.trainer.ntv3_optim import build_optimizer_and_scheduler
 from src.trainer.track_losses import poisson_multinomial_loss
@@ -33,7 +37,7 @@ def test_crop_center():
     x = torch.arange(8).view(1, 8, 1).float()  # length 8
     c = crop_center(x, 0.375)  # offset=int(8*0.625//2)=2, len=4
     ok(c.shape == (1, 4, 1), f"crop shape {c.shape}")
-    ok(c[0, :, 0].tolist() == [2, 3, 4, 5], f"crop centered {c[0,:,0].tolist()}")
+    ok(c[0, :, 0].tolist() == [2, 3, 4, 5], f"crop centered {c[0, :, 0].tolist()}")
     ok(crop_center(np.arange(8).reshape(1, 8, 1), 0.375).shape == (1, 4, 1), "numpy crop ok")
 
 
@@ -61,8 +65,10 @@ def test_tracks_metrics():
     pred = torch.randn(20, 2)
     m.update(pred, pred.clone(), loss=0.5)  # perfectly correlated
     out = m.compute()
-    ok(abs(out["a/pearson"] - 1.0) < 1e-6 and abs(out["mean/pearson"] - 1.0) < 1e-6,
-       f"perfect corr -> 1.0, got {out['mean/pearson']}")
+    ok(
+        abs(out["a/pearson"] - 1.0) < 1e-6 and abs(out["mean/pearson"] - 1.0) < 1e-6,
+        f"perfect corr -> 1.0, got {out['mean/pearson']}",
+    )
     ok(abs(out["loss"] - 0.5) < 1e-9, "loss recorded")
 
 
@@ -72,7 +78,7 @@ def test_target_scaling():
     y = fn(x)
     ok(abs(y[0, 0] - 1.0) < 1e-6 and abs(y[0, 1] - 1.0) < 1e-6, "below-clip = x/mean")
     expected = 2.0 * (20.0 * 10.0) ** 0.5 - 10.0
-    ok(abs(y[1, 0].item() - expected) < 1e-4, f"softclip >10: {y[1,0].item()} vs {expected}")
+    ok(abs(y[1, 0].item() - expected) < 1e-4, f"softclip >10: {y[1, 0].item()} vs {expected}")
 
 
 def test_sample_regions_budget():
@@ -88,8 +94,9 @@ def _write_synth_genome(d, length=4000):
         f.write(">chr1\n")
         seq = "ACGT" * (length // 4)
         for i in range(0, len(seq), 80):
-            f.write(seq[i:i + 80] + "\n")
+            f.write(seq[i : i + 80] + "\n")
     import pyBigWig
+
     bw_path = os.path.join(d, "t0.bigwig")
     bw = pyBigWig.open(bw_path, "w")
     bw.addHeader([("chr1", length)])
@@ -108,22 +115,34 @@ def test_genome_bigwig_dataset():
         fasta, bw_paths = _write_synth_genome(d, length=4000)
         regions = [("chr1", 0, 4000)]
         fn = make_target_scaling_fn(np.array([3.0]))  # mean=3 -> constant signal scales to 1.0
-        ds = GenomeBigWigDataset(fasta, bw_paths, regions, sequence_length=1000, tokenizer=_StubTokenizer(),
-                                 transform_fn=fn, overlap=0.0, keep_target_center_fraction=0.375)
+        ds = GenomeBigWigDataset(
+            fasta,
+            bw_paths,
+            regions,
+            sequence_length=1000,
+            tokenizer=_StubTokenizer(),
+            transform_fn=fn,
+            overlap=0.0,
+            keep_target_center_fraction=0.375,
+        )
         ok(len(ds) == 4, f"4 non-overlapping 1000bp windows in 4000bp, got {len(ds)}")
         s = ds[0]
         l_out = 1000 - 2 * int(1000 * 0.625 // 2)
         ok(s["tokens"].shape == (1000,), f"tokens {s['tokens'].shape}")
         ok(s["bigwig_targets"].shape == (l_out, 1), f"targets {s['bigwig_targets'].shape}")
-        ok(torch.allclose(s["bigwig_targets"], torch.ones(l_out, 1), atol=1e-4), "scaled constant -> 1.0")
+        ok(
+            torch.allclose(s["bigwig_targets"], torch.ones(l_out, 1), atol=1e-4),
+            "scaled constant -> 1.0",
+        )
         ds2 = GenomeBigWigDataset(fasta, bw_paths, regions, 1000, _StubTokenizer(), fn, overlap=0.9)
         ok(len(ds2) > len(ds), f"overlap increases windows: {len(ds2)} > {len(ds)}")
 
 
 def test_optimizer_scheduler():
     model = torch.nn.Linear(4, 4)
-    opt, sched = build_optimizer_and_scheduler(model, initial_lr=1e-5, end_lr=5e-5, weight_decay=0.01,
-                                               num_warmup=10, num_steps=100)
+    opt, sched = build_optimizer_and_scheduler(
+        model, initial_lr=1e-5, end_lr=5e-5, weight_decay=0.01, num_warmup=10, num_steps=100
+    )
     ok(abs(opt.param_groups[0]["lr"] - 1e-5) < 1e-7, "starts near initial lr")
     for _ in range(10):
         opt.step()
@@ -137,9 +156,16 @@ def test_optimizer_scheduler():
 
 
 if __name__ == "__main__":
-    tests = [test_crop_center, test_linear_head, test_poisson_multinomial_loss, test_tracks_metrics,
-             test_target_scaling, test_sample_regions_budget, test_genome_bigwig_dataset,
-             test_optimizer_scheduler]
+    tests = [
+        test_crop_center,
+        test_linear_head,
+        test_poisson_multinomial_loss,
+        test_tracks_metrics,
+        test_target_scaling,
+        test_sample_regions_budget,
+        test_genome_bigwig_dataset,
+        test_optimizer_scheduler,
+    ]
     failed = 0
     for fn in tests:
         try:

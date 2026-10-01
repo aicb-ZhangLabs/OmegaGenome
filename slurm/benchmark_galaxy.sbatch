@@ -1,5 +1,5 @@
 #!/bin/bash
-# PRIMARY rebuttal benchmark on GALAXY (consumer RTX 3090, 24G) = the paper's deployment
+# PRIMARY benchmark on GALAXY (consumer RTX 3090, 24G) = the paper's deployment
 # target ("real-time on consumer GPUs"). SAME-HARDWARE comparison: NT-2.5B, Enformer,
 # DNABERT-2 teachers + the paper's BPNet student (`original`, ~0.12M params), ALL in one
 # process on one 3090 GPU, FULL splice_sites_all test set, fp16, batch_size=16,
@@ -26,20 +26,20 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 
 HOME_HF="$REPO/.hf_cache"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
 export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false
 export WANDB_MODE=offline
 # Disable hf_xet/CAS downloader (its multi-GB scratch blew the home quota); plain HTTP
 # writes straight into blobs/. NT-2.5B shards should already be fully cached by now.
 export HF_HUB_DISABLE_XET=1
 export HF_XET_CACHE="$REPO/.hf_cache/xet"
-export OUTPUT_PATH=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/rebuttal_infra/benchmark_runs_galaxy
+export OUTPUT_PATH=${OG_WORKSPACE:-$PWD/..}/analysis/benchmark_runs_galaxy
 
 PY="$REPO/.venv_carbon_portable/bin/python"
 

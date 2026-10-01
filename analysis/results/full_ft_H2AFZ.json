@@ -1,0 +1,9 @@
+{
+  "task": "H2AFZ",
+  "kind": "full_ft",
+  "model_dir": "${OG_STORE}/NT/2b5-multi-species_nucleotide-transformer-finetune-results-NO-LORA-MULTI-GPU-epoch10-3-22-revised-deepspeed/finetuned_models/H2AFZ_finetuned/final_model",
+  "dataset": "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised",
+  "n_test": 3000,
+  "test_mcc": 0.5141569176083192,
+  "timestamp": "2026-06-29T10:31:18.579897"
+}

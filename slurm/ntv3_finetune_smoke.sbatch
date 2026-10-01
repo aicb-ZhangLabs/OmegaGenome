@@ -15,16 +15,16 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
-HOME_HF=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.hf_cache
+HOME_HF=${OG_ROOT:-$PWD}/.hf_cache
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" TRANSFORMERS_CACHE="$HOME_HF/hub"
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false
-PV=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
+PV=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
 
-SSD=/tmp/galaxy_srv_disk00/pengchx3
-mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3
+SSD=${OG_SCRATCH:-$PWD/output}
+mountpoint -q "$SSD" 2>/dev/null || SSD=${OG_SCRATCH:-$PWD/output}
 DATA="$SSD/ntv3_benchmark_data"
 STAGE="${SLURM_TMPDIR:-/tmp/ntv3_stage_$USER}"
 

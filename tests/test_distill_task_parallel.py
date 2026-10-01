@@ -22,7 +22,7 @@ Run: <venv>/bin/python -m tests.test_distill_task_parallel
 import os
 import sys
 import tempfile
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 
 _n = 0
 
@@ -111,6 +111,7 @@ def test_parallel_one_is_serial_path():
     sentinel_ctx = object()
     orig = (d.prepare_task, d.train_student, d.wandb, d._spawn_pool)
     try:
+
         def fake_prepare(config, task_name):
             calls["prepare"] += 1
             return sentinel_ctx
@@ -178,10 +179,16 @@ def test_ctx_cache_roundtrip():
 
         raw = torch.load(path, map_location="cpu", weights_only=False)
         ok("teacher_model" not in raw, "live teacher_model is NOT serialized")
-        ok(set(raw.keys()) == set(d._TASK_CTX_CACHE_FIELDS), "exactly the HP-independent fields saved")
+        ok(
+            set(raw.keys()) == set(d._TASK_CTX_CACHE_FIELDS),
+            "exactly the HP-independent fields saved",
+        )
 
         loaded = d._load_task_ctx_from_cache(path)
-        ok(isinstance(loaded.teacher_model, _NoOpTeacher), "reconstructed ctx has a teacher-free stub")
+        ok(
+            isinstance(loaded.teacher_model, _NoOpTeacher),
+            "reconstructed ctx has a teacher-free stub",
+        )
         ok(loaded.teacher_hidden == 8 and loaded.num_labels == 3, "scalar fields round-trip")
         ok(loaded.teacher_ckpt == "/path/to/ckpt" and loaded.score == 0.77, "ckpt/score round-trip")
         ok(loaded.X_train == ["ACGT", "TTTT"], "X_train list round-trips")
@@ -210,6 +217,7 @@ def test_parallel_shards_collects_isolates_and_frees():
         d._free_teacher,
     )
     try:
+
         def fake_prepare(config, task_name):
             return TaskContext(
                 teacher_tokenizer=None,
@@ -218,9 +226,12 @@ def test_parallel_shards_collects_isolates_and_frees():
                 num_labels=2,
                 teacher_ckpt="ckpt",
                 score=0.5,
-                X_train=["A"], y_train=[0],
-                X_val=["C"], y_val=[1],
-                X_test=["G"], y_test=[0],
+                X_train=["A"],
+                y_train=[0],
+                X_val=["C"],
+                y_val=[1],
+                X_test=["G"],
+                y_test=[0],
             )
 
         def fake_train(config, task_name, task_ctx):
@@ -272,10 +283,19 @@ def test_parallel_shards_collects_isolates_and_frees():
 
         ok(events["freed"] is True, "(5) live teacher was freed in the parallel path")
         ok(events["empty_cache"] >= 1, "(5) cuda.empty_cache invoked when freeing teacher")
-        ok(_SyncPool.created == [3], f"(3) ONE pool with parallel=3 workers (got {_SyncPool.created})")
+        ok(
+            _SyncPool.created == [3],
+            f"(3) ONE pool with parallel=3 workers (got {_SyncPool.created})",
+        )
         # warm-up (1.0) + worker 2.0 + worker 4.0 ran; 0.0 raised and was isolated.
-        ok(sorted(trained) == [1.0, 2.0, 4.0], f"(3)(4) all non-failing configs ran (got {sorted(trained)})")
-        ok(0.0 not in trained, "(4) the raising config did not complete, but did not abort siblings")
+        ok(
+            sorted(trained) == [1.0, 2.0, 4.0],
+            f"(3)(4) all non-failing configs ran (got {sorted(trained)})",
+        )
+        ok(
+            0.0 not in trained,
+            "(4) the raising config did not complete, but did not abort siblings",
+        )
     finally:
         (
             d.prepare_task,
@@ -298,10 +318,18 @@ def test_worker_entry_error_isolation():
     orig = (d.train_student, d.wandb, d._load_task_ctx_from_cache)
     try:
         ctx = TaskContext(
-            teacher_tokenizer=None, teacher_model=None, teacher_hidden=8,
-            num_labels=2, teacher_ckpt="c", score=0.0,
-            X_train=["A"], y_train=[0], X_val=["C"], y_val=[1],
-            X_test=["G"], y_test=[0],
+            teacher_tokenizer=None,
+            teacher_model=None,
+            teacher_hidden=8,
+            num_labels=2,
+            teacher_ckpt="c",
+            score=0.0,
+            X_train=["A"],
+            y_train=[0],
+            X_val=["C"],
+            y_val=[1],
+            X_test=["G"],
+            y_test=[0],
         )
         d._load_task_ctx_from_cache = lambda path: ctx
         d.wandb = _FakeWandb
@@ -332,7 +360,6 @@ def test_worker_entry_error_isolation():
 # (6) --parallel CLI flag parses and defaults to 1.
 # ---------------------------------------------------------------------------
 def test_cli_parallel_flag():
-    import argparse
     # Rebuild the same parser distill_task.main() builds, minimally, to assert the flag.
     # We invoke main() with patched internals to confirm plumbing end-to-end.
     import src.train.distill_task as dt
@@ -358,7 +385,10 @@ def test_cli_parallel_flag():
         # explicit --parallel 8 -> plumbed through
         sys.argv = ["prog", "--task", "H3K4me1", "--config-list", "x.txt", "--parallel", "8"]
         dt.main()
-        ok(captured["parallel"] == 8, f"--parallel 8 plumbed into distill_task_batch (got {captured['parallel']})")
+        ok(
+            captured["parallel"] == 8,
+            f"--parallel 8 plumbed into distill_task_batch (got {captured['parallel']})",
+        )
     finally:
         dt.distill_task_batch, dt.load_config_list, dt.experiment_configs = orig
 
@@ -384,15 +414,23 @@ def _patch_parallel_scaffold(d, fake_train, base):
 
     def fake_prepare(config, task_name):
         return TaskContext(
-            teacher_tokenizer=None, teacher_model="LIVE_3B", teacher_hidden=8,
-            num_labels=2, teacher_ckpt="ckpt", score=0.5,
-            X_train=["A"], y_train=[0], X_val=["C"], y_val=[1],
-            X_test=["G"], y_test=[0],
+            teacher_tokenizer=None,
+            teacher_model="LIVE_3B",
+            teacher_hidden=8,
+            num_labels=2,
+            teacher_ckpt="ckpt",
+            score=0.5,
+            X_train=["A"],
+            y_train=[0],
+            X_val=["C"],
+            y_val=[1],
+            X_test=["G"],
+            y_test=[0],
         )
 
     def fake_warm(base_config, task_name, ctx, overrides):
         # Warm must run with the LIVE teacher (before free) and exactly once.
-        state["warm_before_free"] = (state["freed"] is False)
+        state["warm_before_free"] = state["freed"] is False
         state["warm_calls"] += 1
 
     def fake_free(ctx):
@@ -400,7 +438,7 @@ def _patch_parallel_scaffold(d, fake_train, base):
         state["freed"] = True
 
     def fake_serialize(ctx, path):
-        state["serialize_after_free"] = (ctx.teacher_model is None)
+        state["serialize_after_free"] = ctx.teacher_model is None
         saved["ctx"] = ctx
         return path
 
@@ -445,8 +483,13 @@ def test_warm_once_and_pool_covers_all_configs():
         trained_idx.append(config.distillation_config.temperature)
 
     orig = (
-        d.prepare_task, d.train_student, d.wandb, d._spawn_pool,
-        d._warm_teacher_cache, d._free_teacher, d._serialize_task_ctx,
+        d.prepare_task,
+        d.train_student,
+        d.wandb,
+        d._spawn_pool,
+        d._warm_teacher_cache,
+        d._free_teacher,
+        d._serialize_task_ctx,
         d._load_task_ctx_from_cache,
     )
     try:
@@ -458,9 +501,11 @@ def test_warm_once_and_pool_covers_all_configs():
 
         # Wrap the pool so we know when the pool phase begins.
         real_spawn = d._spawn_pool
+
         def spawn_marking(parallel):
             pool_started["flag"] = True
             return real_spawn(parallel)
+
         d._spawn_pool = spawn_marking
 
         # 3 configs, at least one teacher-needing (weight_kl>0) -> warm fires.
@@ -471,16 +516,36 @@ def test_warm_once_and_pool_covers_all_configs():
         ]
         d.distill_task_batch(base, "H3K4me1", overrides, parallel=2, parallel_mode="spawn")
 
-        ok(state["warm_calls"] == 1, f"(ii) minimal warm invoked exactly ONCE (got {state['warm_calls']})")
+        ok(
+            state["warm_calls"] == 1,
+            f"(ii) minimal warm invoked exactly ONCE (got {state['warm_calls']})",
+        )
         ok(state["warm_before_free"] is True, "(ii) warm ran with the LIVE teacher (before free)")
-        ok(train_calls["before_pool"] == 0, "(ii) NO full train_student ran before the pool (no serial config-0 warm-up)")
-        ok(train_calls["in_pool"] == 3, f"(i) all 3 full trainings happened IN the pool (got {train_calls['in_pool']})")
-        ok(state["pool_indices"] == [0, 1, 2], f"(i) pool covers ALL configs INCLUDING index 0 (got {state['pool_indices']})")
-        ok(sorted(trained_idx) == [1.0, 2.0, 3.0], "(i) every config (incl idx 0) got its full training")
+        ok(
+            train_calls["before_pool"] == 0,
+            "(ii) NO full train_student ran before the pool (no serial config-0 warm-up)",
+        )
+        ok(
+            train_calls["in_pool"] == 3,
+            f"(i) all 3 full trainings happened IN the pool (got {train_calls['in_pool']})",
+        )
+        ok(
+            state["pool_indices"] == [0, 1, 2],
+            f"(i) pool covers ALL configs INCLUDING index 0 (got {state['pool_indices']})",
+        )
+        ok(
+            sorted(trained_idx) == [1.0, 2.0, 3.0],
+            "(i) every config (incl idx 0) got its full training",
+        )
     finally:
         (
-            d.prepare_task, d.train_student, d.wandb, d._spawn_pool,
-            d._warm_teacher_cache, d._free_teacher, d._serialize_task_ctx,
+            d.prepare_task,
+            d.train_student,
+            d.wandb,
+            d._spawn_pool,
+            d._warm_teacher_cache,
+            d._free_teacher,
+            d._serialize_task_ctx,
             d._load_task_ctx_from_cache,
         ) = orig
 
@@ -498,8 +563,13 @@ def test_pure_ce_skips_warm_but_frees_and_runs_all():
         trained_idx.append(config.distillation_config.temperature)
 
     orig = (
-        d.prepare_task, d.train_student, d.wandb, d._spawn_pool,
-        d._warm_teacher_cache, d._free_teacher, d._serialize_task_ctx,
+        d.prepare_task,
+        d.train_student,
+        d.wandb,
+        d._spawn_pool,
+        d._warm_teacher_cache,
+        d._free_teacher,
+        d._serialize_task_ctx,
         d._load_task_ctx_from_cache,
     )
     try:
@@ -518,13 +588,24 @@ def test_pure_ce_skips_warm_but_frees_and_runs_all():
 
         ok(state["warm_calls"] == 0, "(iii) pure-CE batch SKIPS the teacher warm")
         ok(state["freed"] is True, "(iii) teacher still FREED even when warm is skipped")
-        ok(state["serialize_after_free"] is True, "(iii) ctx serialized AFTER the teacher was freed")
-        ok(state["pool_indices"] == [0, 1], f"(iii) pool still covers ALL configs incl idx 0 (got {state['pool_indices']})")
+        ok(
+            state["serialize_after_free"] is True,
+            "(iii) ctx serialized AFTER the teacher was freed",
+        )
+        ok(
+            state["pool_indices"] == [0, 1],
+            f"(iii) pool still covers ALL configs incl idx 0 (got {state['pool_indices']})",
+        )
         ok(sorted(trained_idx) == [1.0, 2.0], "(iii) all configs trained in the pool")
     finally:
         (
-            d.prepare_task, d.train_student, d.wandb, d._spawn_pool,
-            d._warm_teacher_cache, d._free_teacher, d._serialize_task_ctx,
+            d.prepare_task,
+            d.train_student,
+            d.wandb,
+            d._spawn_pool,
+            d._warm_teacher_cache,
+            d._free_teacher,
+            d._serialize_task_ctx,
             d._load_task_ctx_from_cache,
         ) = orig
 
@@ -545,8 +626,13 @@ def test_error_isolation_with_all_configs_including_index0():
         trained_idx.append(t)
 
     orig = (
-        d.prepare_task, d.train_student, d.wandb, d._spawn_pool,
-        d._warm_teacher_cache, d._free_teacher, d._serialize_task_ctx,
+        d.prepare_task,
+        d.train_student,
+        d.wandb,
+        d._spawn_pool,
+        d._warm_teacher_cache,
+        d._free_teacher,
+        d._serialize_task_ctx,
         d._load_task_ctx_from_cache,
     )
     try:
@@ -564,13 +650,27 @@ def test_error_isolation_with_all_configs_including_index0():
         ]
         d.distill_task_batch(base, "H3K4me1", overrides, parallel=2, parallel_mode="spawn")
 
-        ok(state["pool_indices"] == [0, 1, 2], "(iv) pool was handed all configs incl the raising idx 0")
-        ok(sorted(trained_idx) == [2.0, 3.0], f"(iv) siblings ran despite idx-0 failure (got {sorted(trained_idx)})")
-        ok(0.0 not in trained_idx, "(iv) the raising config did not complete, but did not abort siblings")
+        ok(
+            state["pool_indices"] == [0, 1, 2],
+            "(iv) pool was handed all configs incl the raising idx 0",
+        )
+        ok(
+            sorted(trained_idx) == [2.0, 3.0],
+            f"(iv) siblings ran despite idx-0 failure (got {sorted(trained_idx)})",
+        )
+        ok(
+            0.0 not in trained_idx,
+            "(iv) the raising config did not complete, but did not abort siblings",
+        )
     finally:
         (
-            d.prepare_task, d.train_student, d.wandb, d._spawn_pool,
-            d._warm_teacher_cache, d._free_teacher, d._serialize_task_ctx,
+            d.prepare_task,
+            d.train_student,
+            d.wandb,
+            d._spawn_pool,
+            d._warm_teacher_cache,
+            d._free_teacher,
+            d._serialize_task_ctx,
             d._load_task_ctx_from_cache,
         ) = orig
 
@@ -579,12 +679,21 @@ def main():
     for name, fn in [
         ("test_parallel_one_is_serial_path", test_parallel_one_is_serial_path),
         ("test_ctx_cache_roundtrip", test_ctx_cache_roundtrip),
-        ("test_parallel_shards_collects_isolates_and_frees", test_parallel_shards_collects_isolates_and_frees),
+        (
+            "test_parallel_shards_collects_isolates_and_frees",
+            test_parallel_shards_collects_isolates_and_frees,
+        ),
         ("test_worker_entry_error_isolation", test_worker_entry_error_isolation),
         ("test_cli_parallel_flag", test_cli_parallel_flag),
         ("test_warm_once_and_pool_covers_all_configs", test_warm_once_and_pool_covers_all_configs),
-        ("test_pure_ce_skips_warm_but_frees_and_runs_all", test_pure_ce_skips_warm_but_frees_and_runs_all),
-        ("test_error_isolation_with_all_configs_including_index0", test_error_isolation_with_all_configs_including_index0),
+        (
+            "test_pure_ce_skips_warm_but_frees_and_runs_all",
+            test_pure_ce_skips_warm_but_frees_and_runs_all,
+        ),
+        (
+            "test_error_isolation_with_all_configs_including_index0",
+            test_error_isolation_with_all_configs_including_index0,
+        ),
     ]:
         print(name)
         fn()

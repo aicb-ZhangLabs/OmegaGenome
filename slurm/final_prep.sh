@@ -8,10 +8,10 @@
 #   results/FINAL_PREP_READY.txt      (marker + best-HP summary)
 # To then launch the 3-seed jobs:  nohup bash slurm/auto_submit_specs.sh best_3seed_specs.txt &
 set -uo pipefail
-cd /home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+cd ${OG_ROOT:-$PWD}
 PY=.venv_carbon_portable/bin/python
-GPY=/home/pengchx3/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/bin/python3.11
-GAL=/srv/disk00/sshfs/pengchx3/carbon_distillation
+GPY=python3.11
+GAL=${OG_SCRATCH:-$PWD/output}/carbon_distillation
 SSH="ssh -o BatchMode=yes -o ConnectTimeout=15 galaxy"
 
 gridcount(){  # unique completed RAW (task,kl,mse,T) via galaxy-local find; echoes an int (0 on failure)

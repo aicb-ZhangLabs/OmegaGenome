@@ -13,6 +13,8 @@ benchmark tracks at single-nucleotide resolution over the central ``keep_target_
 Full fine-tuning by default (the paper recipe); ``use_lora`` offers a cheap LoRA alternative.
 """
 
+import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -33,13 +35,23 @@ NTV3_LORA_TARGETS = ["linear", "mha_output", "fc1", "fc2"]
 # EXISTING native dims so the from-scratch series can also instantiate those sizes random-init (the
 # same-protocol reference points that de-confound the pretrained-vs-scratch curve). Measured CPU param
 # counts (see design §3): 4m=4.34M, 8m=7.69M, 30m=29.87M, 100m=106.46M, 300m=303.05M.
-NTV3_TEMPLATE = "/extra/zhanglab0/INDV/pengchx3/ntv3_local/8m_pre"  # prepare_local_snapshot -> _loadable
+NTV3_TEMPLATE = (
+    os.environ.get("OG_STORE", "data") + "/ntv3_local/8m_pre"
+)  # prepare_local_snapshot -> _loadable
 NTV3_SCALED_SIZES = {  # embed_dim, num_layers, attention_heads, ffn_embed_dim, key_size
-    "ntv3-4m":   dict(embed_dim=192,  num_layers=2, attention_heads=6,  ffn_embed_dim=768,  key_size=32),
-    "ntv3-8m":   dict(embed_dim=256,  num_layers=2, attention_heads=8,  ffn_embed_dim=1024, key_size=32),
-    "ntv3-30m":  dict(embed_dim=448,  num_layers=4, attention_heads=8,  ffn_embed_dim=1792, key_size=56),
-    "ntv3-100m": dict(embed_dim=768,  num_layers=6, attention_heads=12, ffn_embed_dim=3072, key_size=64),
-    "ntv3-300m": dict(embed_dim=1152, num_layers=9, attention_heads=18, ffn_embed_dim=4608, key_size=64),
+    "ntv3-4m": dict(embed_dim=192, num_layers=2, attention_heads=6, ffn_embed_dim=768, key_size=32),
+    "ntv3-8m": dict(
+        embed_dim=256, num_layers=2, attention_heads=8, ffn_embed_dim=1024, key_size=32
+    ),
+    "ntv3-30m": dict(
+        embed_dim=448, num_layers=4, attention_heads=8, ffn_embed_dim=1792, key_size=56
+    ),
+    "ntv3-100m": dict(
+        embed_dim=768, num_layers=6, attention_heads=12, ffn_embed_dim=3072, key_size=64
+    ),
+    "ntv3-300m": dict(
+        embed_dim=1152, num_layers=9, attention_heads=18, ffn_embed_dim=4608, key_size=64
+    ),
 }
 
 
@@ -52,8 +64,9 @@ def scaled_ntv3_config(size_key: str, template: str = NTV3_TEMPLATE):
     from src.model.ntv3_teacher import prepare_local_snapshot
 
     dims = NTV3_SCALED_SIZES[size_key]
-    cfg = AutoConfig.from_pretrained(prepare_local_snapshot(template), trust_remote_code=True,
-                                     local_files_only=True)
+    cfg = AutoConfig.from_pretrained(
+        prepare_local_snapshot(template), trust_remote_code=True, local_files_only=True
+    )
     cfg.embed_dim = dims["embed_dim"]
     cfg.conv_init_embed_dim = dims["embed_dim"]  # family invariant: conv stem width == embed_dim
     cfg.num_layers = dims["num_layers"]
@@ -67,8 +80,9 @@ def apply_lora(backbone, r: int = 16, alpha: int = 32, dropout: float = 0.05):
     """Wrap an NTv3 backbone with PEFT LoRA on the transformer linears (base frozen, adapters train)."""
     from peft import LoraConfig, get_peft_model
 
-    cfg = LoraConfig(r=r, lora_alpha=alpha, lora_dropout=dropout,
-                     target_modules=NTV3_LORA_TARGETS, bias="none")
+    cfg = LoraConfig(
+        r=r, lora_alpha=alpha, lora_dropout=dropout, target_modules=NTV3_LORA_TARGETS, bias="none"
+    )
     return get_peft_model(backbone, cfg)
 
 
@@ -92,16 +106,29 @@ class NTv3BigWigModel(nn.Module):
     on the species token, and predict the benchmark tracks at single-nt resolution.
     """
 
-    def __init__(self, model_name: str, num_tracks: int, species_str: str = "human",
-                 keep_target_center_fraction: float = NTV3_CROP_FRAC, use_lora: bool = False,
-                 lora_r: int = 16, lora_alpha: int = 32, local_files_only: bool = False):
+    def __init__(
+        self,
+        model_name: str,
+        num_tracks: int,
+        species_str: str = "human",
+        keep_target_center_fraction: float = NTV3_CROP_FRAC,
+        use_lora: bool = False,
+        lora_r: int = 16,
+        lora_alpha: int = 32,
+        local_files_only: bool = False,
+    ):
         super().__init__()
         from transformers import AutoConfig, AutoModel
 
-        self.config = AutoConfig.from_pretrained(model_name, trust_remote_code=True,
-                                                 local_files_only=local_files_only)
-        base = AutoModel.from_pretrained(model_name, trust_remote_code=True, config=self.config,
-                                         local_files_only=local_files_only)
+        self.config = AutoConfig.from_pretrained(
+            model_name, trust_remote_code=True, local_files_only=local_files_only
+        )
+        base = AutoModel.from_pretrained(
+            model_name,
+            trust_remote_code=True,
+            config=self.config,
+            local_files_only=local_files_only,
+        )
         # Rebuild the headless conditioned backbone (parent class of `core`) and load the post-trained
         # weights; strict=False drops the native heads we don't fine-tune.
         discrete_conditioned_model = type(base.core).__bases__[0]
@@ -110,8 +137,11 @@ class NTv3BigWigModel(nn.Module):
         del base
 
         # Species conditioning token (fall back to the mask token id 2 for unsupported species).
-        species_id = self.config.species_to_token_id.get(species_str, 2) \
-            if hasattr(self.config, "species_to_token_id") else 2
+        species_id = (
+            self.config.species_to_token_id.get(species_str, 2)
+            if hasattr(self.config, "species_to_token_id")
+            else 2
+        )
         self.register_buffer("species_ids", torch.LongTensor([species_id]), persistent=False)
 
         self.keep_target_center_fraction = keep_target_center_fraction
@@ -120,7 +150,9 @@ class NTv3BigWigModel(nn.Module):
             self.core = apply_lora(self.core, r=lora_r, alpha=lora_alpha)
 
     def forward(self, tokens: torch.Tensor) -> dict:
-        species_tokens = torch.repeat_interleave(self.species_ids, tokens.shape[0]).to(tokens.device)
+        species_tokens = torch.repeat_interleave(self.species_ids, tokens.shape[0]).to(
+            tokens.device
+        )
         outputs = self.core(tokens, [species_tokens], output_hidden_states=True)
         emb = outputs["hidden_states"][-1]  # [B, seq_len, embed_dim] @ single-nt resolution
         if self.keep_target_center_fraction < 1.0:
@@ -140,9 +172,17 @@ class NTv3PreBigWigModel(nn.Module):
     ``{"bigwig_tracks_logits": [B, L_out, num_tracks]}`` (non-negative, ``L_out = 0.375*L``).
     """
 
-    def __init__(self, model_name: str, num_tracks: int,
-                 keep_target_center_fraction: float = NTV3_CROP_FRAC, use_lora: bool = False,
-                 lora_r: int = 16, lora_alpha: int = 32, local_files_only: bool = False, **_ignored):
+    def __init__(
+        self,
+        model_name: str,
+        num_tracks: int,
+        keep_target_center_fraction: float = NTV3_CROP_FRAC,
+        use_lora: bool = False,
+        lora_r: int = 16,
+        lora_alpha: int = 32,
+        local_files_only: bool = False,
+        **_ignored,
+    ):
         super().__init__()
         from transformers import AutoConfig, AutoModelForMaskedLM
 
@@ -154,10 +194,15 @@ class NTv3PreBigWigModel(nn.Module):
             self.config = scaled_ntv3_config(model_name)
             self.backbone = AutoModelForMaskedLM.from_config(self.config, trust_remote_code=True)
         else:
-            self.config = AutoConfig.from_pretrained(model_name, trust_remote_code=True,
-                                                     local_files_only=local_files_only)
+            self.config = AutoConfig.from_pretrained(
+                model_name, trust_remote_code=True, local_files_only=local_files_only
+            )
             self.backbone = AutoModelForMaskedLM.from_pretrained(
-                model_name, trust_remote_code=True, config=self.config, local_files_only=local_files_only)
+                model_name,
+                trust_remote_code=True,
+                config=self.config,
+                local_files_only=local_files_only,
+            )
         self.keep_target_center_fraction = keep_target_center_fraction
         self.bigwig_head = LinearHead(self.config.embed_dim, num_tracks)
         if use_lora:
@@ -186,15 +231,20 @@ def _load_carbon_bpnet_module():
     import os
 
     here = os.path.dirname(os.path.abspath(__file__))
-    bp_path = os.path.normpath(os.path.join(
-        here, "..", "..", "..", "code_carbon", "src", "model", "nn", "bpnet_pytorch.py"))
+    bp_path = os.path.normpath(
+        os.path.join(
+            here, "..", "..", "..", "code_carbon", "src", "model", "nn", "bpnet_pytorch.py"
+        )
+    )
     spec = importlib.util.spec_from_file_location("carbon_bpnet_pytorch", bp_path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 
 
-def _carbon_bpnet_backbone(model_size: str = "original", channels: int = None, n_dilated: int = None):
+def _carbon_bpnet_backbone(
+    model_size: str = "original", channels: int = None, n_dilated: int = None
+):
     """REUSE the tested ``code_carbon`` BPNet dilated-conv tower (the same one the Carbon-3B distillation
     distills into — full receptive field, dilation 2^i, NO cap). Returns ``(backbone_module, feat_dim)``
     where the module maps one-hot ``[B, 4, L]`` -> per-bp features ``[B, C, L]``.
@@ -207,14 +257,23 @@ def _carbon_bpnet_backbone(model_size: str = "original", channels: int = None, n
     mod = _load_carbon_bpnet_module()
     if channels is None and n_dilated is None:
         if model_size != "original":
-            raise ValueError(f"named size {model_size!r} not wired; pass channels/n_dilated instead")
+            raise ValueError(
+                f"named size {model_size!r} not wired; pass channels/n_dilated instead"
+            )
         return mod.BPNet().stem, 64  # stock original tower (64 ch, dilation 2..512)
     channels = channels or 64
     n_dilated = n_dilated or 9
     layers = [nn.Conv1d(4, channels, 25, padding="same"), nn.ReLU()]
-    for i in range(1, n_dilated + 1):  # dilation 2^i, uncapped -> full receptive field (matches original)
-        layers.append(mod.Residual(
-            nn.Sequential(nn.Conv1d(channels, channels, 3, padding="same", dilation=2 ** i), nn.ReLU())))
+    for i in range(
+        1, n_dilated + 1
+    ):  # dilation 2^i, uncapped -> full receptive field (matches original)
+        layers.append(
+            mod.Residual(
+                nn.Sequential(
+                    nn.Conv1d(channels, channels, 3, padding="same", dilation=2**i), nn.ReLU()
+                )
+            )
+        )
     return nn.Sequential(*layers), channels
 
 
@@ -230,16 +289,25 @@ class BPNetTrackStudent(nn.Module):
         forward(tokens) -> {"bigwig_tracks_logits": [B, L_out, num_tracks], "features": [B, L_out, C]}
     """
 
-    def __init__(self, model_name: str = None, num_tracks: int = 1,
-                 keep_target_center_fraction: float = NTV3_CROP_FRAC, model_size: str = "original",
-                 channels: int = None, n_dilated: int = None,
-                 nuc_ids: dict = None, vocab_size: int = NTV3_VOCAB_SIZE, **_ignored):
+    def __init__(
+        self,
+        model_name: str = None,
+        num_tracks: int = 1,
+        keep_target_center_fraction: float = NTV3_CROP_FRAC,
+        model_size: str = "original",
+        channels: int = None,
+        n_dilated: int = None,
+        nuc_ids: dict = None,
+        vocab_size: int = NTV3_VOCAB_SIZE,
+        **_ignored,
+    ):
         super().__init__()
         self.keep_target_center_fraction = keep_target_center_fraction
         self.backbone, channels = _carbon_bpnet_backbone(model_size, channels, n_dilated)
 
         class _Cfg:  # lightweight stand-in for the HF config the NTv3 students carry (KD reads embed_dim)
             pass
+
         self.config = _Cfg()
         self.config.embed_dim = channels
 
@@ -251,12 +319,14 @@ class BPNetTrackStudent(nn.Module):
             lut[nuc_ids[base], ch] = 1.0
         self.register_buffer("nuc_lut", lut, persistent=False)
 
-        self.head = LinearHead(channels, num_tracks)  # LayerNorm -> Linear -> softplus (same NTv3 head)
+        self.head = LinearHead(
+            channels, num_tracks
+        )  # LayerNorm -> Linear -> softplus (same NTv3 head)
 
     def forward(self, tokens: torch.Tensor) -> dict:
-        x = self.nuc_lut[tokens].transpose(1, 2)        # [B, 4, L]  (Conv1d wants channels-first)
-        x = self.backbone(x)                            # [B, C, L]  (reused carbon dilated tower)
-        emb = x.transpose(1, 2)                         # [B, L, C]  (channels-last, like NTv3 emb)
+        x = self.nuc_lut[tokens].transpose(1, 2)  # [B, 4, L]  (Conv1d wants channels-first)
+        x = self.backbone(x)  # [B, C, L]  (reused carbon dilated tower)
+        emb = x.transpose(1, 2)  # [B, L, C]  (channels-last, like NTv3 emb)
         if self.keep_target_center_fraction < 1.0:
             emb = crop_center(emb, self.keep_target_center_fraction)
         return {"bigwig_tracks_logits": self.head(emb), "features": emb}  # [B, L_out, *]
@@ -298,14 +368,16 @@ def build_bigwig_model(model_name: str, num_tracks: int, **kwargs):
     if os.path.isdir(model_name):
         model_name = prepare_local_snapshot(model_name)
         kwargs["local_files_only"] = True
-    cfg = AutoConfig.from_pretrained(model_name, trust_remote_code=True,
-                                     local_files_only=kwargs.get("local_files_only", False))
+    cfg = AutoConfig.from_pretrained(
+        model_name, trust_remote_code=True, local_files_only=kwargs.get("local_files_only", False)
+    )
     cls = NTv3PreBigWigModel if _is_pretrained_ckpt(cfg) else NTv3BigWigModel
     return cls(model_name, num_tracks, **kwargs)
 
 
-def load_finetuned_bigwig_teacher(ckpt_path: str, base_model: str, num_tracks: int,
-                                  device="cpu", **kwargs):
+def load_finetuned_bigwig_teacher(
+    ckpt_path: str, base_model: str, num_tracks: int, device="cpu", **kwargs
+):
     """Load a FINE-TUNED NTv3 bigWig model as a frozen KD teacher (e.g. the reproduced 650M
     ``best_model.pth``). Reuses ``build_bigwig_model`` to construct the arch on ``base_model``, then
     overwrites with the fine-tuned ``state_dict`` (best_model.pth is a raw state_dict). Returns the
@@ -316,7 +388,7 @@ def load_finetuned_bigwig_teacher(ckpt_path: str, base_model: str, num_tracks: i
     sd = torch.load(ckpt_path, map_location="cpu")
     sd = sd["model"] if isinstance(sd, dict) and "model" in sd else sd
     # ckpts saved from a torch.compile'd model carry a "_orig_mod." prefix; strip it.
-    sd = {k[len("_orig_mod."):] if k.startswith("_orig_mod.") else k: v for k, v in sd.items()}
+    sd = {k[len("_orig_mod.") :] if k.startswith("_orig_mod.") else k: v for k, v in sd.items()}
     # strict=False to tolerate derived rotary-cache buffers (registered on first forward, not saved);
     # but guard that nothing REAL is missing/unexpected (mirrors the resume loader).
     info = model.load_state_dict(sd, strict=False)
@@ -324,7 +396,9 @@ def load_finetuned_bigwig_teacher(ckpt_path: str, base_model: str, num_tracks: i
     real_missing = [k for k in info.missing_keys if not any(t in k for t in _rot)]
     real_unexpected = [k for k in info.unexpected_keys if not any(t in k for t in _rot)]
     if real_missing or real_unexpected:
-        raise RuntimeError(f"teacher load mismatch: missing={real_missing[:5]} unexpected={real_unexpected[:5]}")
+        raise RuntimeError(
+            f"teacher load mismatch: missing={real_missing[:5]} unexpected={real_unexpected[:5]}"
+        )
     model = model.to(device).eval()
     for p in model.parameters():
         p.requires_grad_(False)

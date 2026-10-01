@@ -18,8 +18,11 @@ import numpy as np
 import torch
 
 # ---- our ports under test ----
-from src.data.ntv3_ft_data import (crop_center, make_target_scaling_fn,
-                                    sample_regions_for_total_length)
+from src.data.ntv3_ft_data import (
+    crop_center,
+    make_target_scaling_fn,
+    sample_regions_for_total_length,
+)
 from src.trainer.ntv3_optim import build_optimizer_and_scheduler
 from src.trainer.track_losses import poisson_multinomial_loss
 
@@ -39,7 +42,7 @@ def _nb_crop_center(x, keep_target_center_fraction: float = 0.375):
     seq_len = x.shape[-2]
     target_offset = int(seq_len * (1 - keep_target_center_fraction) // 2)
     target_length = seq_len - 2 * target_offset
-    return x[..., target_offset:target_offset + target_length, :]
+    return x[..., target_offset : target_offset + target_length, :]
 
 
 def _nb_poisson_loss(ytrue, ypred, epsilon=1e-7):
@@ -107,8 +110,14 @@ def _nb_sample_regions_for_a_total_length(regions, total_length_needed, seed=0):
     return sampled_regions
 
 
-def _nb_scheduler_multiplier(current_step, initial_learning_rate, optimizer_lr,
-                             num_steps_warmup, num_steps_training, final_lr_multiplier=0.5):
+def _nb_scheduler_multiplier(
+    current_step,
+    initial_learning_rate,
+    optimizer_lr,
+    num_steps_warmup,
+    num_steps_training,
+    final_lr_multiplier=0.5,
+):
     num = np.log(1.0 / final_lr_multiplier)
     denom = np.log(float(num_steps_training) / float(num_steps_warmup))
     alpha_polynomial_decay = num / denom
@@ -130,12 +139,19 @@ def _nb_window_coords(regions, sequence_length, stride):
     region_info, cumulative_starts, total = [], [], 0
     for chr_name, region_s, region_e in regions:
         region_length = region_e - region_s
-        n = (region_length - sequence_length) // stride + 1 if region_length >= sequence_length else 0
+        n = (
+            (region_length - sequence_length) // stride + 1
+            if region_length >= sequence_length
+            else 0
+        )
         if n > 0:
-            region_info.append({"chr_name": chr_name, "region_start_offset": region_s, "num_samples": n})
+            region_info.append(
+                {"chr_name": chr_name, "region_start_offset": region_s, "num_samples": n}
+            )
             cumulative_starts.append(total)
             total += n
     import bisect
+
     coords = []
     for idx in range(total):
         ci = bisect.bisect_right(cumulative_starts, idx) - 1
@@ -165,7 +181,10 @@ def test_parity_loss_and_grads():
         targets = torch.rand(*shape) * 8
         mine = poisson_multinomial_loss(logits, targets)
         nb = _nb_poisson_multinomial_loss(logits, targets)
-        ok(torch.allclose(mine, nb, atol=0, rtol=0), f"loss bit-parity {shape}: {mine.item()} vs {nb.item()}")
+        ok(
+            torch.allclose(mine, nb, atol=0, rtol=0),
+            f"loss bit-parity {shape}: {mine.item()} vs {nb.item()}",
+        )
     # gradient parity — SAME input fed to both, grads must match bit-for-bit
     x = torch.rand(2, 128, 5) * 4
     t = torch.rand(2, 128, 5) * 4
@@ -202,14 +221,17 @@ def test_parity_scheduler():
     # compare actual LR at each step to notebook multiplier * peak
     for step in range(total + 1):
         nb_lr = _nb_scheduler_multiplier(step, init, peak, warm, total) * peak
-        ok(abs(opt.param_groups[0]["lr"] - nb_lr) < 1e-12,
-           f"scheduler LR parity at step {step}: {opt.param_groups[0]['lr']} vs {nb_lr}")
+        ok(
+            abs(opt.param_groups[0]["lr"] - nb_lr) < 1e-12,
+            f"scheduler LR parity at step {step}: {opt.param_groups[0]['lr']} vs {nb_lr}",
+        )
         opt.step()
         sched.step()
 
 
 def test_parity_window_coords():
     from src.data.ntv3_ft_data import GenomeBigWigDataset
+
     regions = [("c1", 0, 4000), ("c2", 100, 9000)]
     for seq_len, overlap in [(1000, 0.0), (1000, 0.9), (512, 0.5)]:
         stride = max(1, int((1 - overlap) * seq_len))
@@ -218,9 +240,14 @@ def test_parity_window_coords():
         ds.sequence_length, ds.stride = seq_len, stride
         ri, cs, total = ds._process_regions(regions)
         ds.region_info, ds._cumulative_starts, ds.num_samples = ri, cs, total
-        mine = [(ds.region_info[bisect_idx(cs, i)]["chr_name"],
-                 ds.region_info[bisect_idx(cs, i)]["region_start_offset"] + (i - cs[bisect_idx(cs, i)]) * stride)
-                for i in range(total)]
+        mine = [
+            (
+                ds.region_info[bisect_idx(cs, i)]["chr_name"],
+                ds.region_info[bisect_idx(cs, i)]["region_start_offset"]
+                + (i - cs[bisect_idx(cs, i)]) * stride,
+            )
+            for i in range(total)
+        ]
         nb = [(c, s) for (c, s, _e) in _nb_window_coords(regions, seq_len, stride)]
         ok(mine == nb, f"window-coord parity seq={seq_len} overlap={overlap}: {len(mine)} windows")
 
@@ -245,20 +272,33 @@ def test_parity_tracks_metric():
     Q = np.concatenate(targs)
     for i in range(T):
         ref = np.corrcoef(P[:, i], Q[:, i])[0, 1]
-        ok(abs(out[f"t{i}/pearson"] - ref) < 1e-9, f"track {i} pearson parity: {out[f't{i}/pearson']} vs {ref}")
-    ok(abs(out["mean/pearson"] - np.mean([np.corrcoef(P[:, i], Q[:, i])[0, 1] for i in range(T)])) < 1e-9,
-       "mean pearson parity")
+        ok(
+            abs(out[f"t{i}/pearson"] - ref) < 1e-9,
+            f"track {i} pearson parity: {out[f't{i}/pearson']} vs {ref}",
+        )
+    ok(
+        abs(out["mean/pearson"] - np.mean([np.corrcoef(P[:, i], Q[:, i])[0, 1] for i in range(T)]))
+        < 1e-9,
+        "mean pearson parity",
+    )
 
 
 def bisect_idx(cumulative_starts, idx):
     import bisect
+
     return bisect.bisect_right(cumulative_starts, idx) - 1
 
 
 if __name__ == "__main__":
-    tests = [test_parity_crop_center, test_parity_loss_and_grads, test_parity_target_transform,
-             test_parity_sample_regions, test_parity_scheduler, test_parity_window_coords,
-             test_parity_tracks_metric]
+    tests = [
+        test_parity_crop_center,
+        test_parity_loss_and_grads,
+        test_parity_target_transform,
+        test_parity_sample_regions,
+        test_parity_scheduler,
+        test_parity_window_coords,
+        test_parity_tracks_metric,
+    ]
     failed = 0
     for fn in tests:
         try:

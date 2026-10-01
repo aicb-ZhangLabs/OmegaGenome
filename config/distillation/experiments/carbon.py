@@ -34,9 +34,24 @@ from ..paths import CARBON_TEACHER_DIR
 CARBON_PARENT_PATH = CARBON_TEACHER_DIR
 
 CARBON_TASKS = [
-    "H3K27me3", "H3K36me3", "H4K20me1", "H2AFZ", "H3K27ac", "H3K4me1", "H3K4me2", "H3K4me3",
-    "H3K9ac", "H3K9me3", "promoter_all", "promoter_tata", "promoter_no_tata", "enhancers",
-    "enhancers_types", "splice_sites_all", "splice_sites_acceptors", "splice_sites_donors",
+    "H3K27me3",
+    "H3K36me3",
+    "H4K20me1",
+    "H2AFZ",
+    "H3K27ac",
+    "H3K4me1",
+    "H3K4me2",
+    "H3K4me3",
+    "H3K9ac",
+    "H3K9me3",
+    "promoter_all",
+    "promoter_tata",
+    "promoter_no_tata",
+    "enhancers",
+    "enhancers_types",
+    "splice_sites_all",
+    "splice_sites_acceptors",
+    "splice_sites_donors",
 ]
 
 # --- single-config 18-task runs (ce0.5/kl0.5/mse0.2 vanilla): raw vs L2-norm MSE ---
@@ -172,9 +187,9 @@ nt_iso_smoke_config = DistillationExperimentConfig(
 
 # Voyager (80GB) hedge of the smoke — DISTINCT cache_base_dir + output_dir so it can't collide with
 # the laniakea carbon-smoke (same teacher+task would otherwise share the precompute cache path).
-from dataclasses import replace as _replace
-from ..paths import CARBON_OUTPUT_BASE as _COB
-from ..trainer import _CARBON_OUT as _CO
+from dataclasses import replace as _replace  # noqa: E402
+from ..paths import CARBON_OUTPUT_BASE as _COB  # noqa: E402
+from ..trainer import _CARBON_OUT as _CO  # noqa: E402
 
 carbon_smoke_vy_config = _replace(
     carbon_smoke_config,
@@ -188,15 +203,42 @@ carbon_smoke_vy_config = _replace(
 # Registries (picked by name via tyro on the distill / distill_hyperparam CLIs).
 # Values are (description, config) tuples — tyro's overridable_config_cli indexes [1] for the config.
 experiment_configs = {
-    "carbon-smoke": ("Carbon->deploy_120k 1-task inline smoke (H3K4me3, 2 epochs)", carbon_smoke_config),
-    "carbon-smoke-vy": ("Voyager hedge of carbon-smoke (distinct cache/output paths)", carbon_smoke_vy_config),
-    "nt-iso-smoke": ("NT-2.5B isolation smoke: proves Carbon changes don't break NT", nt_iso_smoke_config),
-    "carbon-raw": ("Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, raw MSE", carbon_raw_config),
-    "carbon-l2norm": ("Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, L2-norm MSE", carbon_l2norm_config),
-    "carbon-raw-original": ("Carbon->ORIGINAL BPNet student (full RF, matches other teachers); SEPARATE output leaf", carbon_raw_original_config),
+    "carbon-smoke": (
+        "Carbon->deploy_120k 1-task inline smoke (H3K4me3, 2 epochs)",
+        carbon_smoke_config,
+    ),
+    "carbon-smoke-vy": (
+        "Voyager hedge of carbon-smoke (distinct cache/output paths)",
+        carbon_smoke_vy_config,
+    ),
+    "nt-iso-smoke": (
+        "NT-2.5B isolation smoke: proves Carbon changes don't break NT",
+        nt_iso_smoke_config,
+    ),
+    "carbon-raw": (
+        "Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, raw MSE",
+        carbon_raw_config,
+    ),
+    "carbon-l2norm": (
+        "Carbon->deploy_120k 18-task vanilla ce0.5/kl0.5/mse0.2, L2-norm MSE",
+        carbon_l2norm_config,
+    ),
+    "carbon-raw-original": (
+        "Carbon->ORIGINAL BPNet student (full RF, matches other teachers); SEPARATE output leaf",
+        carbon_raw_original_config,
+    ),
 }
 hyperparam_experiment_configs = {
-    "carbon-base-raw": ("Carbon->deploy_120k base vanilla HP sweep (raw MSE)", carbon_base_hyperparam_raw_config),
-    "carbon-base-l2norm": ("Carbon->deploy_120k base vanilla HP sweep (L2-norm MSE)", carbon_base_hyperparam_l2norm_config),
-    "carbon-hp-raw": ("Carbon->deploy_120k FOCUSED HP sweep (raw, 18 combos x 18 tasks=324)", carbon_hp_raw_focused_config),
+    "carbon-base-raw": (
+        "Carbon->deploy_120k base vanilla HP sweep (raw MSE)",
+        carbon_base_hyperparam_raw_config,
+    ),
+    "carbon-base-l2norm": (
+        "Carbon->deploy_120k base vanilla HP sweep (L2-norm MSE)",
+        carbon_base_hyperparam_l2norm_config,
+    ),
+    "carbon-hp-raw": (
+        "Carbon->deploy_120k FOCUSED HP sweep (raw, 18 combos x 18 tasks=324)",
+        carbon_hp_raw_focused_config,
+    ),
 }

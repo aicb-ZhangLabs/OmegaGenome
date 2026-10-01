@@ -1,7 +1,7 @@
-"""Per-position teacher-embedding precompute + cache for the R1.3 embedding-input student.
+"""Per-position teacher-embedding precompute + cache for the embedding-input student.
 
-Reviewer R1.3 asks whether replacing the BPNet student's ONE-HOT input with a pretrained
-DNA-model embedding helps. To answer it cleanly we feed the student PER-POSITION (per-bp)
+Motivation: does replacing the BPNet student's ONE-HOT input with a pretrained
+DNA-model embedding help? To answer it cleanly we feed the student PER-POSITION (per-bp)
 embeddings from the finetuned NT-2.5B teacher instead of one-hot, then distill exactly as
 before (same teacher logits/features targets, same losses, same best-ckpt selection).
 
@@ -60,7 +60,9 @@ def get_embedding_cache_dir(cache_base: str, teacher_parent_dir: str, task_name:
     return Path(cache_base) / "data" / "cache_embedding" / teacher_model_name / task_name
 
 
-def _embedding_cache_key(sequences: list, teacher_ckpt: str, max_length: int, layer_tag: str = "last") -> str:
+def _embedding_cache_key(
+    sequences: list, teacher_ckpt: str, max_length: int, layer_tag: str = "last"
+) -> str:
     """MD5 over (n, ckpt, max_len, layer, first/last seq) — same scheme as utils._compute_cache_key.
 
     ``layer_tag`` (e.g. "last" or "L16") is folded into the key so embeddings from DIFFERENT
@@ -249,7 +251,7 @@ def precompute_perbp_embeddings(
 
     ``load_in_ram`` (default True): on a cache HIT, read the compact fp16 cache FULLY into RAM instead
     of memmapping it. The galaxy SSD is an SSHFS mount on laniakea/voyager and a memmap READ over it
-    hangs the training loop on any sshfs blip (this is exactly what hung the NT r13 jobs at step 0).
+    hangs the training loop on any sshfs blip (this is exactly what hung the NT token-embedding jobs at step 0).
     The compact cache is small enough (~tens of GB max; nodes have 48-64GB) to hold in RAM. Set False
     only on a node-local (non-sshfs) cache where mmap is safe and RAM is tight.
     """
@@ -276,7 +278,7 @@ def precompute_perbp_embeddings(
                 # CRITICAL (sshfs hang fix): the galaxy SSD is an SSHFS mount on laniakea/voyager, and
                 # a numpy MEMMAP into a cache file on it hangs the training loop on any sshfs blip
                 # (precompute's sequential WRITE survives; the per-step lazy memmap READ at training
-                # start does not — this is what hung the 10 NT r13 jobs at step 0). The compact fp16
+                # start does not — this is what hung the 10 NT token-embedding jobs at step 0). The compact fp16
                 # per-token cache is small (~tens of GB max), so by default load it FULLY INTO RAM
                 # (no mmap_mode) so every __getitem__ reads from memory, never the sshfs mount.
                 mmap = None if load_in_ram else "r"
@@ -290,10 +292,12 @@ def precompute_perbp_embeddings(
         except Exception as e:
             print(f"[emb-cache] failed to read {cache_dir}: {e}; recomputing")
 
-    print(f"[emb-cache MISS] computing per-token embeddings for {task_name}/{split} ({len(sequences)} seqs)...")
+    print(
+        f"[emb-cache MISS] computing per-token embeddings for {task_name}/{split} ({len(sequences)} seqs)..."
+    )
     teacher_model.eval()
     special_ids = set(getattr(tokenizer, "all_special_ids", []) or [])
-    tok_rows = []   # list of [T_i, H] fp16
+    tok_rows = []  # list of [T_i, H] fp16
     clen_rows = []  # list of [T_i] int
     resolved_layer = None  # filled on first batch (depends on len(out.hidden_states))
 
@@ -311,10 +315,14 @@ def precompute_perbp_embeddings(
         attention_mask = enc.attention_mask.to(device)
         if hidden_state_fn is not None:
             # Teacher-specific forward (e.g. DNABERT-2 layer-slice); returns ([B,T,H], resolved_idx).
-            per_token, rl = hidden_state_fn(teacher_model, input_ids, attention_mask, embedding_layer)
+            per_token, rl = hidden_state_fn(
+                teacher_model, input_ids, attention_mask, embedding_layer
+            )
             if resolved_layer is None:
                 resolved_layer = rl
-                print(f"[emb-cache] custom hidden_state_fn; using layer index {resolved_layer} (tag '{layer_tag}')")
+                print(
+                    f"[emb-cache] custom hidden_state_fn; using layer index {resolved_layer} (tag '{layer_tag}')"
+                )
         else:
             out = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
             # Standard HF path. out.hidden_states is a tuple of length (n_layers + 1)
@@ -324,8 +332,10 @@ def precompute_perbp_embeddings(
             n_hs = len(hidden_states)
             if resolved_layer is None:
                 resolved_layer = (n_hs // 2) if embedding_layer is None else embedding_layer
-                print(f"[emb-cache] teacher exposes {n_hs} hidden states; "
-                      f"using layer index {resolved_layer} (tag '{layer_tag}')")
+                print(
+                    f"[emb-cache] teacher exposes {n_hs} hidden states; "
+                    f"using layer index {resolved_layer} (tag '{layer_tag}')"
+                )
             per_token = hidden_states[resolved_layer]
         # Cache per-TOKEN states in fp16 (compact); per-bp expansion happens lazily on load.
         hs = per_token.half().cpu().numpy()  # [B, T, H] fp16

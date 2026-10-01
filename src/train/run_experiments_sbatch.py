@@ -7,16 +7,16 @@ via sbatch, as an alternative to nntool.slurm.
 Usage:
     # List available experiments
     python -m src.train.run_experiments_sbatch --help
-    
+
     # Run extra_large_fix experiment with sbatch
     python -m src.train.run_experiments_sbatch extra_large_fix
-    
+
     # Dry run (preview without submitting)
     python -m src.train.run_experiments_sbatch extra_large_fix --dry-run
-    
+
     # Run hyperparameter search
     python -m src.train.run_experiments_sbatch extra_large_fix_hyperparam
-    
+
     # Run with specific node
     python -m src.train.run_experiments_sbatch extra_large_fix --node-list voyager
 """
@@ -29,7 +29,7 @@ from itertools import product
 from datetime import datetime
 
 from config.env import project_path, output_path
-from config.best_hyperparams import get_size_hyperparams, get_method_hyperparams
+from config.best_hyperparams import get_size_hyperparams
 from src.train.sbatch_utils import (
     SbatchConfig,
     create_and_submit_experiment,
@@ -40,29 +40,30 @@ from src.train.sbatch_utils import (
 # CONFIGURATION CLASSES
 # ============================================================================
 
+
 @dataclass
 class ExperimentConfig:
     """Base configuration for sbatch experiments."""
-    
+
     # Model configuration
     model_type: Literal["nt", "caduceus", "enformer", "dnabert2"] = "nt"
     student_model_type: Literal["bpnet", "bilstm", "cnn"] = "bpnet"
     student_model_size: str = "extra_large_fix"
-    
+
     # Tasks and seeds
     tasks: List[str] = field(default_factory=lambda: ["splice_sites_all"])
     seeds: List[int] = field(default_factory=lambda: [42, 123, 456, 789, 1024])
-    
+
     # Training parameters
     epochs: int = 200
     batch_size: int = 16
     lr: float = 1e-4
     max_len: int = 1000
-    
+
     # Output
     output_dir: str = ""
     wandb_project: str = "OmegaGenome-SBATCH"
-    
+
     # SLURM configuration
     partition: str = "zhanglab.p"
     node_list: Optional[str] = None
@@ -71,14 +72,14 @@ class ExperimentConfig:
     mem: str = "64GB"
     time: str = "7-00:00:00"
     mail_user: Optional[str] = None
-    
+
     # Submission options
     dry_run: bool = False
     delay_between_jobs: float = 1.0  # seconds between job submissions
-    
+
     # Python path (auto-detected if empty)
     python_path: str = ""
-    
+
     def __post_init__(self):
         if not self.output_dir:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -88,19 +89,19 @@ class ExperimentConfig:
             )
 
 
-@dataclass  
+@dataclass
 class HyperparamSearchConfig(ExperimentConfig):
     """Configuration for hyperparameter search experiments."""
-    
+
     # Hyperparameter grid
     weight_ces: List[float] = field(default_factory=lambda: [0.5])
     weight_kls: List[float] = field(default_factory=lambda: [0.0, 0.25, 0.5, 1.0])
     weight_mses: List[float] = field(default_factory=lambda: [0.0, 1, 2, 5])
     temperatures: List[float] = field(default_factory=lambda: [0.5, 1.0, 1.5, 2.0, 4.0])
-    
+
     # Use single seed for hyperparam search
     seeds: List[int] = field(default_factory=lambda: [42])
-    
+
     def __post_init__(self):
         super().__post_init__()
         if "hyperparam" not in self.wandb_project.lower():
@@ -111,6 +112,7 @@ class HyperparamSearchConfig(ExperimentConfig):
 # HELPER FUNCTIONS
 # ============================================================================
 
+
 def get_teacher_config(model_type: str):
     """Get teacher configuration for the specified model type."""
     from config.distillation.glm import nt_2b5, caduceus, enformer, dna_bert_v2
@@ -118,16 +120,16 @@ def get_teacher_config(model_type: str):
     from config.distillation.experiments.caduceus import CADUCEUS_PARENT_PATH
     from config.distillation.experiments.enformer import ENFORMER_PARENT_PATH
     from config.distillation.experiments.dna_bert_v2 import DNABERT2_PARENT_PATH
-    
+
     config_map = {
         "nt": (nt_2b5, NT_PARENT_PATH),
         "caduceus": (caduceus, CADUCEUS_PARENT_PATH),
         "enformer": (enformer, ENFORMER_PARENT_PATH),
         "dnabert2": (dna_bert_v2, DNABERT2_PARENT_PATH),
     }
-    
+
     glm_config, parent_path = config_map[model_type]
-    
+
     return {
         "model_name_or_path": glm_config.model_name_or_path,
         "num_labels": glm_config.num_labels,
@@ -149,9 +151,9 @@ def build_experiment_dict(
     distill_method: str = "vanilla",
 ) -> dict:
     """Build experiment configuration dictionary."""
-    
+
     teacher_config, teacher_parent_dir = get_teacher_config(config.model_type)
-    
+
     # Build task-specific output directory
     exp_output_dir = os.path.join(
         config.output_dir,
@@ -160,21 +162,18 @@ def build_experiment_dict(
         config.student_model_size,
         task_name,
     )
-    
+
     return {
         "task_name": task_name,
         "model_type": config.model_type,
         "teacher_parent_dir": teacher_parent_dir,
         "random_state": seed,
-        
         "teacher_config": teacher_config,
-        
         "student_config": {
             "num_labels": 2,
             "model_type": config.student_model_type,
             "model_size": config.student_model_size,
         },
-        
         "distillation_config": {
             "weight_ce": weight_ce,
             "weight_kl": weight_kl,
@@ -185,7 +184,6 @@ def build_experiment_dict(
             "dkd_alpha": 1.0,
             "dkd_beta": 8.0,
         },
-        
         "trainer_config": {
             "output_dir": exp_output_dir,
             "wandb_project": config.wandb_project,
@@ -195,7 +193,6 @@ def build_experiment_dict(
             "max_len": config.max_len,
             "device": "cuda",
         },
-        
         "dataset_config": {
             "task_name": task_name,
             "data_path": "",
@@ -208,12 +205,13 @@ def build_experiment_dict(
 # MAIN EXECUTION FUNCTIONS
 # ============================================================================
 
+
 def run_standard_experiments(config: ExperimentConfig):
     """Run standard experiments with best hyperparameters."""
     import time
-    
+
     total_experiments = len(config.tasks) * len(config.seeds)
-    
+
     print(f"\n{'=' * 80}")
     print("SBATCH STANDARD EXPERIMENTS")
     print(f"{'=' * 80}")
@@ -225,7 +223,7 @@ def run_standard_experiments(config: ExperimentConfig):
     print(f"Dry run: {config.dry_run}")
     print(f"Output: {config.output_dir}")
     print(f"{'=' * 80}\n")
-    
+
     # Build sbatch config
     sbatch_config = SbatchConfig(
         job_name=f"og-{config.student_model_size[:8]}",
@@ -238,17 +236,19 @@ def run_standard_experiments(config: ExperimentConfig):
         mail_user=config.mail_user,
         python_path=config.python_path,
     )
-    
+
     submitted_jobs = []
-    
+
     for task_name in config.tasks:
         # Get best hyperparameters
         hp = get_size_hyperparams(config.model_type, task_name, config.student_model_size)
-        
+
         print(f"\nTask: {task_name}")
-        print(f"  Best hyperparams: CE={hp.weight_ce}, KL={hp.weight_kl}, "
-              f"MSE={hp.weight_mse}, T={hp.temperature}")
-        
+        print(
+            f"  Best hyperparams: CE={hp.weight_ce}, KL={hp.weight_kl}, "
+            f"MSE={hp.weight_mse}, T={hp.temperature}"
+        )
+
         for seed in config.seeds:
             # Build experiment config
             exp_dict, exp_output_dir = build_experiment_dict(
@@ -261,7 +261,7 @@ def run_standard_experiments(config: ExperimentConfig):
                 temperature=hp.temperature,
                 distill_method=hp.distill_method,
             )
-            
+
             # Submit job
             job_id = create_and_submit_experiment(
                 sbatch_config=sbatch_config,
@@ -273,18 +273,20 @@ def run_standard_experiments(config: ExperimentConfig):
                 output_dir=exp_output_dir,
                 dry_run=config.dry_run,
             )
-            
+
             if job_id:
-                submitted_jobs.append({
-                    "job_id": job_id,
-                    "task": task_name,
-                    "seed": seed,
-                })
-            
+                submitted_jobs.append(
+                    {
+                        "job_id": job_id,
+                        "task": task_name,
+                        "seed": seed,
+                    }
+                )
+
             # Delay between submissions
             if not config.dry_run and config.delay_between_jobs > 0:
                 time.sleep(config.delay_between_jobs)
-    
+
     print_summary(submitted_jobs)
     return submitted_jobs
 
@@ -292,7 +294,7 @@ def run_standard_experiments(config: ExperimentConfig):
 def run_hyperparam_search(config: HyperparamSearchConfig):
     """Run hyperparameter search experiments."""
     import time
-    
+
     # Build hyperparameter combinations (filter redundant weight_kl=0 cases)
     kl_combinations = []
     seen_zero_kl = False
@@ -303,17 +305,19 @@ def run_hyperparam_search(config: HyperparamSearchConfig):
                 seen_zero_kl = True
         else:
             kl_combinations.append((wkl, temp))
-    
-    all_combinations = list(product(
-        config.tasks,
-        config.seeds,
-        config.weight_ces,
-        config.weight_mses,
-        kl_combinations,
-    ))
-    
+
+    all_combinations = list(
+        product(
+            config.tasks,
+            config.seeds,
+            config.weight_ces,
+            config.weight_mses,
+            kl_combinations,
+        )
+    )
+
     total_experiments = len(all_combinations)
-    
+
     print(f"\n{'=' * 80}")
     print("SBATCH HYPERPARAMETER SEARCH")
     print(f"{'=' * 80}")
@@ -327,7 +331,7 @@ def run_hyperparam_search(config: HyperparamSearchConfig):
     print(f"  Temperatures: {config.temperatures}")
     print(f"Dry run: {config.dry_run}")
     print(f"{'=' * 80}\n")
-    
+
     # Build sbatch config
     sbatch_config = SbatchConfig(
         job_name=f"og-hp-{config.student_model_size[:6]}",
@@ -340,13 +344,17 @@ def run_hyperparam_search(config: HyperparamSearchConfig):
         mail_user=config.mail_user,
         python_path=config.python_path,
     )
-    
+
     submitted_jobs = []
-    
-    for idx, (task_name, seed, weight_ce, weight_mse, (weight_kl, temperature)) in enumerate(all_combinations, 1):
-        print(f"\n[{idx}/{total_experiments}] {task_name} s{seed}: "
-              f"CE={weight_ce}, KL={weight_kl}, MSE={weight_mse}, T={temperature}")
-        
+
+    for idx, (task_name, seed, weight_ce, weight_mse, (weight_kl, temperature)) in enumerate(
+        all_combinations, 1
+    ):
+        print(
+            f"\n[{idx}/{total_experiments}] {task_name} s{seed}: "
+            f"CE={weight_ce}, KL={weight_kl}, MSE={weight_mse}, T={temperature}"
+        )
+
         # Build experiment config
         exp_dict, exp_output_dir = build_experiment_dict(
             config=config,
@@ -357,11 +365,11 @@ def run_hyperparam_search(config: HyperparamSearchConfig):
             weight_mse=weight_mse,
             temperature=temperature,
         )
-        
+
         # Update output dir for hyperparam search
         exp_output_dir = os.path.join(exp_output_dir, "hyperparam")
         exp_dict["trainer_config"]["output_dir"] = exp_output_dir
-        
+
         # Submit job
         job_id = create_and_submit_experiment(
             sbatch_config=sbatch_config,
@@ -373,19 +381,21 @@ def run_hyperparam_search(config: HyperparamSearchConfig):
             output_dir=exp_output_dir,
             dry_run=config.dry_run,
         )
-        
+
         if job_id:
-            submitted_jobs.append({
-                "job_id": job_id,
-                "task": task_name,
-                "seed": seed,
-                "hyperparams": f"CE{weight_ce}_KL{weight_kl}_MSE{weight_mse}_T{temperature}",
-            })
-        
+            submitted_jobs.append(
+                {
+                    "job_id": job_id,
+                    "task": task_name,
+                    "seed": seed,
+                    "hyperparams": f"CE{weight_ce}_KL{weight_kl}_MSE{weight_mse}_T{temperature}",
+                }
+            )
+
         # Delay between submissions
         if not config.dry_run and config.delay_between_jobs > 0:
             time.sleep(config.delay_between_jobs)
-    
+
     print_summary(submitted_jobs)
     return submitted_jobs
 
@@ -396,19 +406,19 @@ def print_summary(submitted_jobs: List[dict]):
     print("SUBMISSION SUMMARY")
     print(f"{'=' * 80}")
     print(f"Total jobs submitted: {len(submitted_jobs)}")
-    
+
     if submitted_jobs:
         for job in submitted_jobs[:10]:
             info = f"Job {job['job_id']}: {job['task']}"
-            if 'seed' in job:
+            if "seed" in job:
                 info += f" seed={job['seed']}"
-            if 'hyperparams' in job:
+            if "hyperparams" in job:
                 info += f" {job['hyperparams']}"
             print(f"  {info}")
-        
+
         if len(submitted_jobs) > 10:
             print(f"  ... and {len(submitted_jobs) - 10} more")
-    
+
     print(f"{'=' * 80}\n")
 
 
@@ -429,7 +439,6 @@ experiment_configs = {
             wandb_project="OmegaGenome-ExtraLarge-Fix",
         ),
     ),
-    
     # Single test run
     "extra_large_fix_single": (
         "Run single extra_large_fix experiment (for testing)",
@@ -442,7 +451,6 @@ experiment_configs = {
             wandb_project="OmegaGenome-ExtraLarge-Fix-Test",
         ),
     ),
-    
     # Hyperparameter search
     "extra_large_fix_hyperparam": (
         "Hyperparameter search for extra_large_fix model",
@@ -455,7 +463,6 @@ experiment_configs = {
             wandb_project="OmegaGenome-ExtraLarge-Fix-HyperParam",
         ),
     ),
-    
     # Size comparison experiments
     "size_comparison": (
         "Compare different model sizes",
@@ -468,7 +475,6 @@ experiment_configs = {
             wandb_project="OmegaGenome-Size-Comparison",
         ),
     ),
-    
     # Method comparison
     "method_comparison": (
         "Compare different distillation methods",
@@ -481,7 +487,6 @@ experiment_configs = {
             wandb_project="OmegaGenome-Method-Comparison",
         ),
     ),
-    
     # Scaling law verification
     "scaling_law": (
         "Scaling law verification (pico to xxlarge)",

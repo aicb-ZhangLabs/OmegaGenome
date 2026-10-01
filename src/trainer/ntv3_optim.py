@@ -12,8 +12,15 @@ import torch
 from torch.optim.lr_scheduler import LambdaLR
 
 
-def build_optimizer_and_scheduler(model, initial_lr: float, end_lr: float, weight_decay: float,
-                                  num_warmup: int, num_steps: int, final_lr_multiplier: float = 0.5):
+def build_optimizer_and_scheduler(
+    model,
+    initial_lr: float,
+    end_lr: float,
+    weight_decay: float,
+    num_warmup: int,
+    num_steps: int,
+    final_lr_multiplier: float = 0.5,
+):
     """AdamW (lr = peak ``end_lr``) + warmup→square-decay LambdaLR. Returns (optimizer, scheduler).
 
     The optimizer's base LR is the peak (``end_lr``); the lambda scales it: it starts at

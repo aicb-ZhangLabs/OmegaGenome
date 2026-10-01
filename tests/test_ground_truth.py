@@ -4,7 +4,6 @@ import os
 import sys
 import tempfile
 
-import numpy as np
 
 from src.data.ground_truth import ground_truth_targets, prepare_bigwigs
 
@@ -54,7 +53,9 @@ def test_binning():
 
         out = ground_truth_targets([p], [("chr1", 0, 1000)], nbins=2)  # [1, 2, 1]
         assert out.shape == (1, 2, 1), f"shape {out.shape}"
-        assert abs(out[0, 0, 0] - 1.0) < 1e-3 and abs(out[0, 1, 0] - 5.0) < 1e-3, f"bins {out[0,:,0]}"
+        assert abs(out[0, 0, 0] - 1.0) < 1e-3 and abs(out[0, 1, 0] - 5.0) < 1e-3, (
+            f"bins {out[0, :, 0]}"
+        )
         # chr-name fallback (chr1 vs 1) shouldn't crash; here both present check tolerant
         print("PASS binning:", out[0, :, 0])
 

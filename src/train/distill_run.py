@@ -84,9 +84,7 @@ def _run_batch(args):
     )
     overrides = load_config_list(args.config_list, args.task)
     if not overrides:
-        raise SystemExit(
-            f"No config lines for task={args.task!r} found in {args.config_list}"
-        )
+        raise SystemExit(f"No config lines for task={args.task!r} found in {args.config_list}")
     print(
         f"[distill_run] mode=batch task={args.task}: {len(overrides)} configs "
         f"from {args.config_list} (parallel={args.parallel})"

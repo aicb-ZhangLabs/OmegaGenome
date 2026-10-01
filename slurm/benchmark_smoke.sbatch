@@ -1,5 +1,5 @@
 #!/bin/bash
-# SMOKE test for the R1.11/R2.2 inference latency+memory benchmark.
+# SMOKE test for the inference latency+memory benchmark.
 # Tiny: caduceus teacher (self-contained ckpt, no big download) + BPNet student on
 # splice_sites_all, num_batches=2, fp16. Confirms the pipeline runs end-to-end and
 # writes a CSV. NOT a results run. Fits a 24GB GPU (galaxy).
@@ -17,18 +17,18 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 
 # Node-agnostic HF cache (the .hf_cache that already holds the NT dataset + NT tokenizer).
 HOME_HF="$REPO/.hf_cache"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
 export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false
 export WANDB_MODE=offline
 # Pin benchmark output under /home (persisted, not /tmp).
-export OUTPUT_PATH=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/rebuttal_infra/benchmark_runs
+export OUTPUT_PATH=${OG_WORKSPACE:-$PWD/..}/analysis/benchmark_runs
 
 PY="$REPO/.venv_carbon_portable/bin/python"
 

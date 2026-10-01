@@ -17,19 +17,19 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 
 HOME_HF="$REPO/.hf_cache"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
 export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false WANDB_MODE=offline
 export HF_HUB_DISABLE_XET=1
 export HF_XET_CACHE="$REPO/.hf_cache/xet"
-export CARBON_TEACHER_DIR=/home/pengchx3/carbon_teachers/carbon_3b_lora
+export CARBON_TEACHER_DIR=${CARBON_TEACHER_DIR:-$PWD/data/finetuned_models}/carbon_3b_lora
 # SSD output (galaxy SSD via sshfs on laniakea). NEVER /home (quota) or /extra-write.
-export OUTPUT_PATH=/tmp/galaxy_srv_disk00/pengchx3/latency_18task/smoke
+export OUTPUT_PATH=${OG_SCRATCH:-$PWD/output}/latency_18task/smoke
 
 PY="$REPO/.venv_carbon_portable/bin/python"
 

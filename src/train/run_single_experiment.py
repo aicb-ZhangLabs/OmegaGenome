@@ -9,13 +9,14 @@ Usage:
 """
 
 import os
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import json
 import argparse
 import wandb
 from datetime import datetime
-from dataclasses import replace, asdict
+from dataclasses import replace
 
 from accelerate.utils import set_seed
 
@@ -50,7 +51,7 @@ def load_config_from_json(config_path: str) -> dict:
 
 def build_config_objects(config_dict: dict):
     """Build configuration dataclass objects from dictionary."""
-    
+
     # Build GLMConfig (teacher config)
     teacher_config = GLMConfig(
         model_name_or_path=config_dict["teacher_config"]["model_name_or_path"],
@@ -65,7 +66,7 @@ def build_config_objects(config_dict: dict):
         add_special_tokens=config_dict["teacher_config"].get("add_special_tokens", True),
         torch_dtype=config_dict["teacher_config"].get("torch_dtype", None),
     )
-    
+
     # Build BPNetClassifierConfig (student config)
     student_config = BPNetClassifierConfig(
         num_labels=config_dict["student_config"].get("num_labels", 2),
@@ -73,7 +74,7 @@ def build_config_objects(config_dict: dict):
         model_size=config_dict["student_config"].get("model_size", "original"),
         teacher_hidden_size=config_dict["student_config"].get("teacher_hidden_size", None),
     )
-    
+
     # Build DistillationModelConfig
     distillation_config = DistillationModelConfig(
         weight_ce=config_dict["distillation_config"].get("weight_ce", 0.5),
@@ -85,7 +86,7 @@ def build_config_objects(config_dict: dict):
         dkd_alpha=config_dict["distillation_config"].get("dkd_alpha", 1.0),
         dkd_beta=config_dict["distillation_config"].get("dkd_beta", 8.0),
     )
-    
+
     # Build DistillTrainerConfig
     trainer_config = DistillTrainerConfig(
         output_dir=config_dict["trainer_config"]["output_dir"],
@@ -96,17 +97,16 @@ def build_config_objects(config_dict: dict):
         max_len=config_dict["trainer_config"].get("max_len", 1000),
         device=config_dict["trainer_config"].get("device", "cuda"),
     )
-    
+
     # Build DatasetConfig
     dataset_config = DatasetConfig(
         task_name=config_dict["dataset_config"]["task_name"],
         data_path=config_dict["dataset_config"].get("data_path", ""),
         dataset_name=config_dict["dataset_config"].get(
-            "dataset_name",
-            "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised"
+            "dataset_name", "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised"
         ),
     )
-    
+
     return {
         "teacher_config": teacher_config,
         "student_config": student_config,
@@ -122,59 +122,59 @@ def build_config_objects(config_dict: dict):
 
 def run_experiment(config_path: str):
     """Run a single distillation experiment from config file."""
-    
+
     print(f"\n{'=' * 80}")
     print("SBATCH-BASED DISTILLATION EXPERIMENT")
     print(f"{'=' * 80}")
     print(f"Config file: {config_path}")
     print(f"Start time: {datetime.now().isoformat()}")
     print(f"{'=' * 80}\n")
-    
+
     # Load and parse config
     config_dict = load_config_from_json(config_path)
     config = build_config_objects(config_dict)
-    
+
     task_name = config["task_name"]
     model_type = config["model_type"]
-    
+
     print(f"Task: {task_name}")
     print(f"Model Type: {model_type.upper()}")
     print(f"Student: {config['student_config'].model_type}-{config['student_config'].model_size}")
     print(f"Method: {config['distillation_config'].distill_method}")
     print(f"Seed: {config['random_state']}")
     print(f"{'=' * 80}\n")
-    
+
     # Set random seed
     set_seed(config["random_state"])
-    
+
     # Get number of labels for the task
     num_labels = get_num_labels(task_name)
     teacher_config = replace(config["teacher_config"], num_labels=num_labels)
-    
+
     # Create a minimal config object for find_teacher_checkpoint
     class MinimalConfig:
         def __init__(self, tc, tpd, mt):
             self.teacher_config = tc
             self.teacher_parent_dir = tpd
             self.model_type = mt
-    
+
     mini_config = MinimalConfig(
         teacher_config,
         config["teacher_parent_dir"],
         model_type,
     )
-    
+
     # Find teacher checkpoint
     teacher_ckpt, score = find_teacher_checkpoint(mini_config, task_name)
-    
+
     if teacher_ckpt is None:
         print(f"[!] No teacher checkpoint found for {task_name}, exiting.")
         return
-    
+
     print(f"Teacher checkpoint: {teacher_ckpt}")
     if score > 0:
         print(f"Teacher validation MCC: {score:.4f}")
-    
+
     # Create trainer config for get_teacher_model.
     # Delegate every attribute to the real trainer_config so downstream teacher
     # evaluation can read batch_size / teacher_batch_size / max_len / num_workers / etc.
@@ -199,33 +199,33 @@ def run_experiment(config_path: str):
         model_type,
         TrainerConfigWrapper(config["trainer_config"]),
     )
-    
+
     # Load teacher model
     teacher_tokenizer, teacher_model, teacher_hidden = get_teacher_model(
         full_config, task_name, teacher_ckpt
     )
     print(f"Teacher hidden size: {teacher_hidden}")
     teacher_model.eval()
-    
+
     # Build data splits
     X_train, y_train, X_val, y_val, X_test, y_test = build_data_splits_from_huggingface(
         config["dataset_config"]
     )
-    
+
     # Determine actual teacher hidden size for MSE loss
     needs_features = config["distillation_config"].weight_mse > 0
-    
+
     if needs_features:
         from config.env import project_path
         import torch
         from src.trainer.utils import _get_cache_dir
-        
+
         actual_teacher_hidden = None
-        
+
         # Try to read from cache metadata
         cache_dir = _get_cache_dir(project_path, config["teacher_parent_dir"], task_name)
         metadata_path = cache_dir / "metadata.json"
-        
+
         if metadata_path.exists():
             try:
                 with open(metadata_path, "r") as f:
@@ -235,7 +235,7 @@ def run_experiment(config_path: str):
                     print(f"✓ Read feature dimension from cache: {actual_teacher_hidden}")
             except Exception as e:
                 print(f"Warning: Could not read cache metadata: {e}")
-        
+
         # Fallback: do a forward pass
         if actual_teacher_hidden is None:
             print("Doing forward pass to determine feature dimension...")
@@ -254,7 +254,7 @@ def run_experiment(config_path: str):
                     if hasattr(tok, "attention_mask")
                     else torch.ones_like(input_ids)
                 )
-                
+
                 with torch.no_grad():
                     _, sample_features = teacher_model(
                         input_ids=input_ids,
@@ -265,11 +265,11 @@ def run_experiment(config_path: str):
                     print(f"✓ Feature dimension from forward pass: {actual_teacher_hidden}")
             except Exception as e:
                 print(f"Warning: Forward pass failed: {e}")
-        
+
         if actual_teacher_hidden is not None and actual_teacher_hidden != teacher_hidden:
             print(f"Overriding teacher_hidden: {teacher_hidden} -> {actual_teacher_hidden}")
             teacher_hidden = actual_teacher_hidden
-    
+
     # Build student model
     student_config = replace(
         config["student_config"],
@@ -277,7 +277,7 @@ def run_experiment(config_path: str):
         teacher_hidden_size=teacher_hidden,
     )
     model = BPNetClassifier(student_config)
-    
+
     # Build distillation model
     distillation_model = DistillationModel(
         config["distillation_config"],
@@ -285,7 +285,7 @@ def run_experiment(config_path: str):
         model,
         config["trainer_config"].device,
     )
-    
+
     # Create run directory
     run_dir = create_run_directory(
         config["trainer_config"].output_dir,
@@ -293,13 +293,13 @@ def run_experiment(config_path: str):
         config["distillation_config"],
     )
     print(f"Run directory: {run_dir}")
-    
+
     # WandB setup
     hyperparams_str = create_run_hyperparams_str(config["distillation_config"])
     model_id = f"{student_config.model_type}_{student_config.model_size}"
     distill_method = config["distillation_config"].distill_method
     run_name = f"{task_name}/{model_id}/{distill_method}/{hyperparams_str}"
-    
+
     wandb.init(
         project=config["trainer_config"].wandb_project,
         name=run_name,
@@ -309,7 +309,7 @@ def run_experiment(config_path: str):
         tags=[task_name, model_type, model_id, distill_method, "sbatch"],
     )
     wandb.watch(model, log="all", log_freq=100)
-    
+
     # Evaluate teacher
     teacher_mcc = evaluate_and_log_teacher(
         teacher_model,
@@ -321,7 +321,7 @@ def run_experiment(config_path: str):
         run_dir,
         teacher_ckpt,
     )
-    
+
     # Save hyperparameters
     hyperparams = config_dict.copy()
     hyperparams["run_dir"] = run_dir
@@ -329,10 +329,10 @@ def run_experiment(config_path: str):
     hyperparams["teacher_checkpoint"] = teacher_ckpt
     hyperparams["teacher_test_mcc"] = float(teacher_mcc)
     hyperparams["submission_method"] = "sbatch"
-    
+
     with open(os.path.join(run_dir, "hyperparameters.json"), "w") as f:
         json.dump(hyperparams, f, indent=2, default=str)
-    
+
     # Train
     train_distill_task(
         config["trainer_config"],
@@ -360,7 +360,7 @@ def run_experiment(config_path: str):
     )
 
     wandb.finish()
-    
+
     print(f"\n{'=' * 80}")
     print("EXPERIMENT COMPLETED")
     print(f"End time: {datetime.now().isoformat()}")
@@ -377,13 +377,13 @@ def main():
         required=True,
         help="Path to the JSON configuration file",
     )
-    
+
     args = parser.parse_args()
-    
+
     if not os.path.exists(args.config_path):
         print(f"Error: Config file not found: {args.config_path}")
         return 1
-    
+
     run_experiment(args.config_path)
     return 0
 

@@ -18,21 +18,21 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
 # HF cache: the InstaDeepAI/NTv3_* snapshots were archived off .hf_cache to the SSD archive dir; the
 # models--*/ dirs sit at its root, so the archive dir IS the hub. Point HF there so the offline 650M
-# teacher load resolves. Audit-verified: NTv3_650M_post resolves + matches the live teacher (ntv3_size_audit.md #1).
-SSD=/tmp/galaxy_srv_disk00/pengchx3
-mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3
+# teacher load resolves. Verified: NTv3_650M_post resolves and matches the live teacher.
+SSD=${OG_SCRATCH:-$PWD/output}
+mountpoint -q "$SSD" 2>/dev/null || SSD=${OG_SCRATCH:-$PWD/output}
 HOME_HF="$SSD/hf_cache_archive_from_code_carbon"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF" TRANSFORMERS_CACHE="$HOME_HF"
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1  # read the cached models, never WRITE to /home (quota)
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false
 export TRITON_CACHE_DIR="/tmp/triton_${USER}_$(hostname -s)"  # node-local -> each node compiles its own kernels (galaxy GLIBC fix)
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-PV=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
+PV=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
 
 DATA="$SSD/ntv3_benchmark_data"  # SSD resolved above (with the HF-cache archive)
 # Keep wandb OFF /home (its per-user quota is what killed the wave of jobs: wandb's stdout-capture write

@@ -3,7 +3,7 @@
 # IMPORTANT: ~/.bashrc pins HF caches to /srv/disk00/sshfs/... (the galaxy SSD), which is
 # only writable on galaxy. To run on laniakea/voyager too we override the whole HF cache
 # family to a node-agnostic home path. Also forces wandb online.
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 
 export HF_HOME="$REPO/.hf_cache"
 export HF_HUB_CACHE="$HF_HOME/hub"
@@ -20,7 +20,7 @@ export WANDB_DIR="$REPO"
 # Pin the output dir. Otherwise nntool timestamps it per process, scattering the 18
 # per-task jobs into separate folders. Pinning puts every {task}_finetuned/ under one
 # parent so results consolidate and stage-2 distillation can find all teacher checkpoints.
-export OUTPUT_PATH=/extra/zhanglab0/INDV/pengchx3/OmegaGenome_carbon_runs
+export OUTPUT_PATH=${OG_STORE:-$PWD/data}/OmegaGenome_carbon_runs
 
 mkdir -p "$HF_HUB_CACHE" "$HF_DATASETS_CACHE" "$HF_ASSETS_CACHE" "$WANDB_CACHE_DIR"
 

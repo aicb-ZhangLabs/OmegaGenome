@@ -15,16 +15,16 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
-HOME_HF=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.hf_cache
+HOME_HF=${OG_ROOT:-$PWD}/.hf_cache
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" TRANSFORMERS_CACHE="$HOME_HF/hub" TOKENIZERS_PARALLELISM=false
 
-SSD=/tmp/galaxy_srv_disk00/pengchx3
-mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3   # galaxy-native path
+SSD=${OG_SCRATCH:-$PWD/output}
+mountpoint -q "$SSD" 2>/dev/null || SSD=${OG_SCRATCH:-$PWD/output}   # galaxy-native path
 OUT="$SSD/ntv3_targets/v1_100m"
 mkdir -p "$OUT"; echo "outputs -> $OUT"
-PY=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
+PY=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
 M100="$SSD/ntv3_local/100m_post"   # 100M snapshot on the SSD (not /extra)
 
 echo "=== 1. generate NTv3-100M per-bp targets ==="

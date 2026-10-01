@@ -1,9 +1,0 @@
-{
-  "task": "H3K27ac",
-  "kind": "lora",
-  "model_dir": "/extra/zhanglab0/INDV/pengchx3/NT/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch20-10-17-revised-r32-fix-num-label/finetuned_models/H3K27ac_finetuned/model-best-epoch10-mcc_score0.5272",
-  "dataset": "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised",
-  "n_test": 1616,
-  "test_mcc": 0.0,
-  "timestamp": "2026-06-29T10:36:09.401292"
-}

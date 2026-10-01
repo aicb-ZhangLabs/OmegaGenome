@@ -18,7 +18,7 @@ Run: <venv>/bin/python -m tests.test_distill_task_batch_audit
 """
 
 import sys
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 
 _n = 0
 
@@ -90,8 +90,14 @@ def test_apply_override_nested_and_immutable():
     ok(out.distillation_config.weight_ce == 0.5, "weight_ce overridden")
     ok(out.distillation_config.weight_kl == 0.25, "weight_kl overridden")
     ok(out.distillation_config.temperature == 2.0, "temperature overridden")
-    ok(out.distillation_config.weight_mse == 0.0, "weight_mse untouched (nested merge, not replace)")
-    ok(out.trainer_config.early_stop_patience == 70, "trainer_config.early_stop_patience overridden")
+    ok(
+        out.distillation_config.weight_mse == 0.0,
+        "weight_mse untouched (nested merge, not replace)",
+    )
+    ok(
+        out.trainer_config.early_stop_patience == 70,
+        "trainer_config.early_stop_patience overridden",
+    )
     ok(out.trainer_config.lr == 1e-4, "trainer_config.lr untouched (nested merge)")
     ok(out.random_state == 7, "random_state (top-level) overridden")
     # Immutability of base AND its nested configs.
@@ -133,27 +139,61 @@ def test_batch_call_counts_and_shared_ctx():
         d.prepare_task, d.train_student, d.wandb = fake_prepare, fake_train, _FakeWandb
         base = _FakeExperimentCfg(dataset_config=_FakeDatasetCfg(task_name="H3K27ac"))
         overrides = [
-            {"distillation_config": {"weight_ce": 0.5, "weight_kl": 0.25, "weight_mse": 0.0, "temperature": 1.5},
-             "trainer_config": {"early_stop_patience": 70}},
-            {"distillation_config": {"weight_ce": 0.5, "weight_kl": 0.25, "weight_mse": 1.0, "temperature": 0.5},
-             "trainer_config": {"early_stop_patience": 70}},
-            {"distillation_config": {"weight_ce": 1.0, "weight_kl": 0.0, "weight_mse": 0.0, "temperature": 1.0},
-             "trainer_config": {"early_stop_patience": 70}, "random_state": 99},
+            {
+                "distillation_config": {
+                    "weight_ce": 0.5,
+                    "weight_kl": 0.25,
+                    "weight_mse": 0.0,
+                    "temperature": 1.5,
+                },
+                "trainer_config": {"early_stop_patience": 70},
+            },
+            {
+                "distillation_config": {
+                    "weight_ce": 0.5,
+                    "weight_kl": 0.25,
+                    "weight_mse": 1.0,
+                    "temperature": 0.5,
+                },
+                "trainer_config": {"early_stop_patience": 70},
+            },
+            {
+                "distillation_config": {
+                    "weight_ce": 1.0,
+                    "weight_kl": 0.0,
+                    "weight_mse": 0.0,
+                    "temperature": 1.0,
+                },
+                "trainer_config": {"early_stop_patience": 70},
+                "random_state": 99,
+            },
         ]
         d.distill_task_batch(base, "H3K27ac", overrides)
 
         ok(calls["prepare"] == 1, f"(a) prepare_task called ONCE (got {calls['prepare']})")
         ok(len(calls["train"]) == 3, f"(b) train_student called N=3 (got {len(calls['train'])})")
         ids = {c["ctx_id"] for c in calls["train"]}
-        ok(ids == {id(sentinel_ctx)}, "(e) every train_student got the SAME ctx identity (teacher reuse)")
+        ok(
+            ids == {id(sentinel_ctx)},
+            "(e) every train_student got the SAME ctx identity (teacher reuse)",
+        )
         ok(all(c["task"] == "H3K27ac" for c in calls["train"]), "task pinned for all configs")
 
         c0, c1, c2 = calls["train"]
-        ok(c0["weight_kl"] == 0.25 and c0["temperature"] == 1.5 and c0["weight_mse"] == 0.0, "config0 HP")
+        ok(
+            c0["weight_kl"] == 0.25 and c0["temperature"] == 1.5 and c0["weight_mse"] == 0.0,
+            "config0 HP",
+        )
         ok(c1["weight_mse"] == 1.0 and c1["temperature"] == 0.5, "config1 HP (mse on)")
         ok(c2["weight_ce"] == 1.0 and c2["weight_kl"] == 0.0, "config2 HP")
-        ok(all(c["patience"] == 70 for c in calls["train"]), "(f) early_stop_patience=70 reached EVERY config")
-        ok(c0["random_state"] == 42 and c2["random_state"] == 99, "(g) per-config random_state applied")
+        ok(
+            all(c["patience"] == 70 for c in calls["train"]),
+            "(f) early_stop_patience=70 reached EVERY config",
+        )
+        ok(
+            c0["random_state"] == 42 and c2["random_state"] == 99,
+            "(g) per-config random_state applied",
+        )
     finally:
         d.prepare_task, d.train_student, d.wandb = orig
 
@@ -177,7 +217,11 @@ def test_base_config_immutable_after_batch():
             base.random_state,
         )
         overrides = [
-            {"distillation_config": {"weight_ce": 9.0, "weight_mse": 5.0}, "trainer_config": {"early_stop_patience": 1}, "random_state": 123},
+            {
+                "distillation_config": {"weight_ce": 9.0, "weight_mse": 5.0},
+                "trainer_config": {"early_stop_patience": 1},
+                "random_state": 123,
+            },
             {"distillation_config": {"weight_ce": 7.0}},
         ]
         d.distill_task_batch(base, "X", overrides)
@@ -234,6 +278,7 @@ def test_mse_seeding_only_affects_prepare():
     seen = {"prep_mse": None, "train_mse": []}
     orig = (d.prepare_task, d.train_student, d.wandb)
     try:
+
         def fake_prepare(config, task_name):
             seen["prep_mse"] = config.distillation_config.weight_mse
             return object()
@@ -248,15 +293,27 @@ def test_mse_seeding_only_affects_prepare():
             {"distillation_config": {"weight_mse": 1.0}},
         ]
         d.distill_task_batch(base, "M", overrides)
-        ok(seen["prep_mse"] > 0, f"prepare_task seeded with mse>0 since a config uses MSE (got {seen['prep_mse']})")
-        ok(seen["train_mse"] == [0.0, 1.0], f"train_student gets each config's OWN mse incl 0 (got {seen['train_mse']})")
-        ok(base.distillation_config.weight_mse == 0.0, "base weight_mse still 0 (seeding did not mutate base)")
+        ok(
+            seen["prep_mse"] > 0,
+            f"prepare_task seeded with mse>0 since a config uses MSE (got {seen['prep_mse']})",
+        )
+        ok(
+            seen["train_mse"] == [0.0, 1.0],
+            f"train_student gets each config's OWN mse incl 0 (got {seen['train_mse']})",
+        )
+        ok(
+            base.distillation_config.weight_mse == 0.0,
+            "base weight_mse still 0 (seeding did not mutate base)",
+        )
 
         # If NO config uses MSE, prepare must NOT be seeded (stays at base 0.0).
         seen["prep_mse"] = None
         seen["train_mse"] = []
         d.distill_task_batch(base, "M", [{"distillation_config": {"weight_mse": 0.0}}])
-        ok(seen["prep_mse"] == 0.0, f"no-MSE batch leaves prepare mse at 0.0 (got {seen['prep_mse']})")
+        ok(
+            seen["prep_mse"] == 0.0,
+            f"no-MSE batch leaves prepare mse at 0.0 (got {seen['prep_mse']})",
+        )
     finally:
         d.prepare_task, d.train_student, d.wandb = orig
 
@@ -278,8 +335,14 @@ def test_cli_parser_real_lines():
     dc = ov["distillation_config"]
     ok(dc["weight_ce"] == 0.5 and dc["weight_kl"] == 0.25, "mse0 line: ce/kl parsed")
     ok(dc["weight_mse"] == 0.0 and dc["temperature"] == 1.5, "mse0 line: mse/temp parsed")
-    ok(ov["trainer_config"]["early_stop_patience"] == 70, "mse0 line: early_stop_patience parsed (NOT dropped)")
-    ok(isinstance(ov["trainer_config"]["early_stop_patience"], int), "early_stop_patience cast to int")
+    ok(
+        ov["trainer_config"]["early_stop_patience"] == 70,
+        "mse0 line: early_stop_patience parsed (NOT dropped)",
+    )
+    ok(
+        isinstance(ov["trainer_config"]["early_stop_patience"], int),
+        "early_stop_patience cast to int",
+    )
     ok("random_state" not in ov, "mse0 line: no random_state flag -> absent")
 
     line_mse1 = (
@@ -297,7 +360,9 @@ def test_cli_parser_real_lines():
     ok(ov2["random_state"] == 123, "random-state parsed when present")
 
     # task-filtering: enhancers must NOT match enhancers_types lines (prefix trap).
-    import tempfile, os
+    import tempfile
+    import os
+
     txt = (
         "x --task-names enhancers --distillation-config.weight-ce 0.5 "
         "--distillation-config.weight-kl 0.0 --distillation-config.weight-mse 0.0 "
@@ -311,11 +376,19 @@ def test_cli_parser_real_lines():
         with os.fdopen(fd, "w") as f:
             f.write(txt)
         only_enh = load_config_list(path, "enhancers")
-        ok(len(only_enh) == 1, f"task filter: 'enhancers' selects exactly 1 line not the _types one (got {len(only_enh)})")
-        ok(only_enh[0]["distillation_config"]["temperature"] == 1.0, "task filter: picked the enhancers (T=1.0) line")
+        ok(
+            len(only_enh) == 1,
+            f"task filter: 'enhancers' selects exactly 1 line not the _types one (got {len(only_enh)})",
+        )
+        ok(
+            only_enh[0]["distillation_config"]["temperature"] == 1.0,
+            "task filter: picked the enhancers (T=1.0) line",
+        )
         only_types = load_config_list(path, "enhancers_types")
-        ok(len(only_types) == 1 and only_types[0]["distillation_config"]["temperature"] == 2.0,
-           "task filter: 'enhancers_types' selects its own line")
+        ok(
+            len(only_types) == 1 and only_types[0]["distillation_config"]["temperature"] == 2.0,
+            "task filter: 'enhancers_types' selects its own line",
+        )
     finally:
         os.unlink(path)
 
@@ -336,9 +409,14 @@ def test_real_spec_file_roundtrip():
     ovs = load_config_list(spec, "H3K27me3")
     ok(len(ovs) > 0, f"real spec: H3K27me3 has configs (got {len(ovs)})")
     mses = {o["distillation_config"]["weight_mse"] for o in ovs}
-    ok(0.0 in mses and any(m > 0 for m in mses), f"real spec: both mse==0 and mse>0 present (got {sorted(mses)})")
-    ok(all(o.get("trainer_config", {}).get("early_stop_patience") == 70 for o in ovs),
-       "real spec: early_stop_patience=70 on every parsed config")
+    ok(
+        0.0 in mses and any(m > 0 for m in mses),
+        f"real spec: both mse==0 and mse>0 present (got {sorted(mses)})",
+    )
+    ok(
+        all(o.get("trainer_config", {}).get("early_stop_patience") == 70 for o in ovs),
+        "real spec: early_stop_patience=70 on every parsed config",
+    )
 
 
 def main():

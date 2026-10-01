@@ -15,7 +15,7 @@ Run: python -m tests.test_distill_task_batch
 """
 
 import sys
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 
 _n = 0
 
@@ -113,20 +113,51 @@ def test_batch_call_counts():
 
         base = _FakeExperimentCfg(dataset_config=_FakeDatasetCfg(task_name="H3K27ac"))
         overrides = [
-            {"distillation_config": {"weight_ce": 0.5, "weight_kl": 0.25, "weight_mse": 0.0, "temperature": 1.5}},
-            {"distillation_config": {"weight_ce": 0.5, "weight_kl": 0.25, "weight_mse": 1.0, "temperature": 0.5}},
-            {"distillation_config": {"weight_ce": 1.0, "weight_kl": 0.0, "weight_mse": 0.0, "temperature": 1.0}, "random_state": 99},
+            {
+                "distillation_config": {
+                    "weight_ce": 0.5,
+                    "weight_kl": 0.25,
+                    "weight_mse": 0.0,
+                    "temperature": 1.5,
+                }
+            },
+            {
+                "distillation_config": {
+                    "weight_ce": 0.5,
+                    "weight_kl": 0.25,
+                    "weight_mse": 1.0,
+                    "temperature": 0.5,
+                }
+            },
+            {
+                "distillation_config": {
+                    "weight_ce": 1.0,
+                    "weight_kl": 0.0,
+                    "weight_mse": 0.0,
+                    "temperature": 1.0,
+                },
+                "random_state": 99,
+            },
         ]
 
         d.distill_task_batch(base, "H3K27ac", overrides)
 
-        ok(calls["prepare"] == 1, f"prepare_task called ONCE (got {calls['prepare']}) -> teacher amortized")
+        ok(
+            calls["prepare"] == 1,
+            f"prepare_task called ONCE (got {calls['prepare']}) -> teacher amortized",
+        )
         ok(len(calls["train"]) == 3, f"train_student called N=3 times (got {len(calls['train'])})")
-        ok(all(c["ctx_is_sentinel"] for c in calls["train"]), "every train_student got the SHARED ctx")
+        ok(
+            all(c["ctx_is_sentinel"] for c in calls["train"]),
+            "every train_student got the SHARED ctx",
+        )
         ok(all(c["task"] == "H3K27ac" for c in calls["train"]), "task pinned for all configs")
 
         c0, c1, c2 = calls["train"]
-        ok(c0["weight_kl"] == 0.25 and c0["temperature"] == 1.5 and c0["weight_mse"] == 0.0, "config 0 HP applied")
+        ok(
+            c0["weight_kl"] == 0.25 and c0["temperature"] == 1.5 and c0["weight_mse"] == 0.0,
+            "config 0 HP applied",
+        )
         ok(c1["weight_mse"] == 1.0 and c1["temperature"] == 0.5, "config 1 HP applied (mse on)")
         ok(c2["weight_ce"] == 1.0 and c2["weight_kl"] == 0.0, "config 2 HP applied")
         ok(c0["random_state"] == 42 and c2["random_state"] == 99, "per-config random_state applied")
@@ -192,10 +223,14 @@ def test_cli_line_parser():
 
 
 def main():
-    print("test_apply_override"); test_apply_override()
-    print("test_batch_call_counts"); test_batch_call_counts()
-    print("test_batch_one_bad_config_does_not_abort"); test_batch_one_bad_config_does_not_abort()
-    print("test_cli_line_parser"); test_cli_line_parser()
+    print("test_apply_override")
+    test_apply_override()
+    print("test_batch_call_counts")
+    test_batch_call_counts()
+    print("test_batch_one_bad_config_does_not_abort")
+    test_batch_one_bad_config_does_not_abort()
+    print("test_cli_line_parser")
+    test_cli_line_parser()
     print(f"\nALL PASSED ({_n} assertions)")
     return 0
 

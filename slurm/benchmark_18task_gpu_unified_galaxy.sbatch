@@ -6,7 +6,7 @@
 # genuine fp16 weights/memory, PLUS a CUDA fp16 autocast around the forward that promotes the
 # stray fp32 bias/LayerNorm tensors in Enformer/DNABERT-2 (which previously forced the fp32 leg).
 # The BPNet student runs the same fp16 autocast (it can't be half()-cast -> forward one-hots
-# input_ids to float32). Every CSV row's `precision` column == fp16 (single-precision table, R1.11).
+# input_ids to float32). Every CSV row's `precision` column == fp16 (single-precision table).
 #
 # DNABERT-2 Triton flash-attn auto-disabled in-process (PyTorch attention fallback).
 # Big teachers (NT-2.5B, Carbon-3B): time a fixed 8 batches/task -> extrapolated whole-set time
@@ -34,21 +34,21 @@
 # the whole job in <1s before any benchmarking. `set -eu` (no pipefail) keeps error-checking on
 # the real python step while tolerating the harmless SIGPIPE on the diagnostic `| head` lines.
 set -eu
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 
 HOME_HF="$REPO/.hf_cache"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
 export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false WANDB_MODE=offline
 export HF_HUB_DISABLE_XET=1
 export HF_XET_CACHE="$REPO/.hf_cache/xet"
-export CARBON_TEACHER_DIR=/home/pengchx3/carbon_teachers/carbon_3b_lora
-# Galaxy SSD output. On galaxy, /tmp/galaxy_srv_disk00/pengchx3 and /srv/disk00/sshfs/pengchx3
+export CARBON_TEACHER_DIR=${CARBON_TEACHER_DIR:-$PWD/data/finetuned_models}/carbon_3b_lora
+# Galaxy SSD output. On galaxy, ${OG_SCRATCH:-$PWD/output} and ${OG_SCRATCH:-$PWD/output}
 # are the SAME directory (same inode), so this writes exactly where the tracker expects.
 # NEVER /home (quota) or /extra-write.
-export OUTPUT_PATH=/tmp/galaxy_srv_disk00/pengchx3/latency_18task/gpu_fp16_unified
+export OUTPUT_PATH=${OG_SCRATCH:-$PWD/output}/latency_18task/gpu_fp16_unified
 
 PY="$REPO/.venv_carbon_portable/bin/python"
 

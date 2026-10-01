@@ -30,13 +30,14 @@ import torch.nn.functional as F
 import numpy as np
 import sys
 from dataclasses import dataclass
-from typing import List, Tuple, Dict, Literal, Optional
+from typing import List, Tuple, Dict, Literal
 
 
 # ============================================================================
 # GLOBAL DEBUG SETTINGS
 # ============================================================================
 import os as _os
+
 DEBUG = _os.environ.get("DISTILL_DEBUG", "0") == "1"  # default OFF (was hardcoded True -> ~3k log
 # lines/job of "[DEBUG batch=..] Teacher logits=None"; 574 grid jobs => GBs of /home log spam).
 # Set DISTILL_DEBUG=1 to restore the per-batch debug logging. Logging-only; no effect on results.
@@ -48,9 +49,7 @@ DEBUG_LOG_FIRST_N = 5  # Always log first N batches
 def log(msg, force=False):
     """Debug logging function."""
     global DEBUG_BATCH
-    if DEBUG and (
-        force or DEBUG_BATCH < DEBUG_LOG_FIRST_N or DEBUG_BATCH % DEBUG_LOG_EVERY == 0
-    ):
+    if DEBUG and (force or DEBUG_BATCH < DEBUG_LOG_FIRST_N or DEBUG_BATCH % DEBUG_LOG_EVERY == 0):
         print(f"[DEBUG batch={DEBUG_BATCH}] {msg}", file=sys.stderr)
 
 
@@ -83,7 +82,7 @@ def per_sample(t, name):
             f"  means: [{means.min():.4f}, {means.max():.4f}] avg={means.mean():.4f}\n"
             f"  std_pop: [{stds_pop.min():.4f}, {stds_pop.max():.4f}] avg={stds_pop.mean():.4f}\n"
             f"  std_samp: [{stds_samp.min():.4f}, {stds_samp.max():.4f}] avg={stds_samp.mean():.4f}\n"
-            f"  ratio(samp/pop)={((stds_samp)/(stds_pop+1e-10)).mean():.4f}"
+            f"  ratio(samp/pop)={((stds_samp) / (stds_pop + 1e-10)).mean():.4f}"
         )
 
 
@@ -186,12 +185,8 @@ def dkd_loss(logits_student, logits_teacher, target, alpha, beta, temperature):
     # ===== NCKD (Non-Target Class KD) =====
     # Mask out target class by subtracting large number before softmax
     # This effectively suppresses the target class probability
-    pred_teacher_part2 = F.softmax(
-        logits_teacher / temperature - 1000.0 * gt_mask, dim=1
-    )
-    log_pred_student_part2 = F.log_softmax(
-        logits_student / temperature - 1000.0 * gt_mask, dim=1
-    )
+    pred_teacher_part2 = F.softmax(logits_teacher / temperature - 1000.0 * gt_mask, dim=1)
+    log_pred_student_part2 = F.log_softmax(logits_student / temperature - 1000.0 * gt_mask, dim=1)
 
     # KL divergence on masked distribution
     nckd_loss = (
@@ -235,16 +230,8 @@ class DistillationModel(nn.Module):
 
     def prepare_batch(self, batch: List[torch.Tensor]):
         ids, labs = batch[0].to(self.device), batch[1].to(self.device)
-        tlog = (
-            batch[2].to(self.device)
-            if len(batch) > 2 and self.config.weight_kl > 0
-            else None
-        )
-        tfeats = (
-            batch[3].to(self.device)
-            if len(batch) > 3 and self.config.weight_mse > 0
-            else None
-        )
+        tlog = batch[2].to(self.device) if len(batch) > 2 and self.config.weight_kl > 0 else None
+        tfeats = batch[3].to(self.device) if len(batch) > 3 and self.config.weight_mse > 0 else None
         return {"ids": ids, "labs": labs, "tlog": tlog, "tfeats": tfeats}
 
     def get_student_knowledge(self, inputs: Dict[str, torch.Tensor]):
@@ -301,7 +288,7 @@ class DistillationModel(nn.Module):
         # whole block makes the disabled path sync-free. DEBUG=1 prints the same values
         # (only the KL line, emitted inside kl_term, now precedes this block).
         if DEBUG:
-            log(f"\n{'='*60}")
+            log(f"\n{'=' * 60}")
             log(f"METHOD: {self.config.distill_method}")
             log(per_sample(s_logits, "Student logits"))
             log(per_sample(tlog, "Teacher logits"))
@@ -322,7 +309,7 @@ class DistillationModel(nn.Module):
 
             log(f"CE: raw={ce.item():.6f}, weighted={(self.config.weight_ce * ce).item():.6f}")
             log(f"TOTAL: {loss.item():.6f}")
-            log(f"{'='*60}\n")
+            log(f"{'=' * 60}\n")
 
         return loss, {
             "loss": loss.item(),
@@ -384,8 +371,9 @@ class DistillationModel(nn.Module):
             return (z - mu) / sigma / temp
 
         s_norm, t_norm = standardize(s_logits), standardize(t_logits)
-        return F.kl_div(F.log_softmax(s_norm, dim=-1), F.softmax(t_norm, dim=-1),
-                        reduction="batchmean") * (temp ** 2)
+        return F.kl_div(
+            F.log_softmax(s_norm, dim=-1), F.softmax(t_norm, dim=-1), reduction="batchmean"
+        ) * (temp**2)
 
     def _logit_standard_kl_debug(self, s_logits, t_logits):
         """
@@ -406,7 +394,7 @@ class DistillationModel(nn.Module):
 
         log(f"\n[LOGIT_STD] K={K}, B={B}, temp={temp}")
         log(
-            f"[LOGIT_STD] Expected std ratio (sample/pop) = sqrt({K}/{K-1}) = {np.sqrt(K/(K-1)):.6f}"
+            f"[LOGIT_STD] Expected std ratio (sample/pop) = sqrt({K}/{K - 1}) = {np.sqrt(K / (K - 1)):.6f}"
         )
 
         # STEP 1: Compute mean
@@ -419,12 +407,7 @@ class DistillationModel(nn.Module):
         # Paper's Algorithm 1: σ(x) = sqrt((1/K) Σ (x^(k) - x̄)²)
         s_std_pop = s_logits.std(dim=-1, keepdim=True, unbiased=False)  # CORRECT
         t_std_pop = t_logits.std(dim=-1, keepdim=True, unbiased=False)  # CORRECT
-        s_std_samp = s_logits.std(
-            dim=-1, keepdim=True, unbiased=True
-        )  # WRONG (PyTorch default)
-        t_std_samp = t_logits.std(
-            dim=-1, keepdim=True, unbiased=True
-        )  # WRONG (PyTorch default)
+        s_std_samp = s_logits.std(dim=-1, keepdim=True, unbiased=True)  # WRONG (PyTorch default)
 
         log(stats(s_std_pop, "[LOGIT_STD] s_std POPULATION (unbiased=False) [CORRECT]"))
         log(stats(s_std_samp, "[LOGIT_STD] s_std SAMPLE (unbiased=True) [WRONG]"))
@@ -480,10 +463,10 @@ class DistillationModel(nn.Module):
 
         log(f"[LOGIT_STD] max_entropy (K={K}): {max_entropy:.6f}")
         log(
-            f"[LOGIT_STD] s_entropy: {s_entropy.item():.6f} ({100*s_entropy.item()/max_entropy:.1f}%)"
+            f"[LOGIT_STD] s_entropy: {s_entropy.item():.6f} ({100 * s_entropy.item() / max_entropy:.1f}%)"
         )
         log(
-            f"[LOGIT_STD] t_entropy: {t_entropy.item():.6f} ({100*t_entropy.item()/max_entropy:.1f}%)"
+            f"[LOGIT_STD] t_entropy: {t_entropy.item():.6f} ({100 * t_entropy.item() / max_entropy:.1f}%)"
         )
 
         if s_entropy.item() / max_entropy > 0.95:
@@ -541,9 +524,7 @@ class DistillationModel(nn.Module):
         inter_corr = inter_corr / (s_n * t_n + 1e-8)
         inter_loss = (1 - inter_corr).mean()
 
-        s_mean, t_mean = s_probs.mean(dim=1, keepdim=True), t_probs.mean(
-            dim=1, keepdim=True
-        )
+        s_mean, t_mean = s_probs.mean(dim=1, keepdim=True), t_probs.mean(dim=1, keepdim=True)
         s_c, t_c = s_probs - s_mean, t_probs - t_mean
         intra_corr = (s_c * t_c).sum(dim=1)
         s_n = torch.sqrt((s_c**2).sum(dim=1) + 1e-8)

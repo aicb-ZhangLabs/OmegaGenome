@@ -6,10 +6,10 @@
 # scontrol) so concurrent submitters can't over-submit. Usage:
 #   bash slurm/auto_submit_specs.sh <specs_file>
 set -uo pipefail
-cd /home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+cd ${OG_ROOT:-$PWD}
 SB=/pkg/slurm/22.05.3/bin
 SPECS="${1:?need specs file}"
-HFSSD=/tmp/galaxy_srv_disk00/pengchx3/hf_cache_shared
+HFSSD=${OG_SCRATCH:-$PWD/output}/hf_cache_shared
 CAPS_FILE="slurm/submit_caps.env"   # live per-node caps — edit it and it's picked up each loop (no restart)
 read_caps(){                        # robust: integer-only parse, defaults if missing, clamp to GPU counts
   LAN_CAP=$(grep -oE '^LAN_CAP=[0-9]+' "$CAPS_FILE" 2>/dev/null | grep -oE '[0-9]+$' | tail -1); LAN_CAP=${LAN_CAP:-7}
@@ -26,8 +26,8 @@ pick_node(){                        # first node (priority order) with room unde
 }
 count_node(){
   local node="$1" r pd=0 j rn
-  r=$("$SB/squeue" -u pengchx3 -w "$node" -h -t R 2>/dev/null | wc -l)
-  for j in $("$SB/squeue" -u pengchx3 -h -t PD -o "%i" 2>/dev/null); do
+  r=$("$SB/squeue" -u $USER -w "$node" -h -t R 2>/dev/null | wc -l)
+  for j in $("$SB/squeue" -u $USER -h -t PD -o "%i" 2>/dev/null); do
     rn=$("$SB/scontrol" show job "$j" 2>/dev/null | grep -oE 'ReqNodeList=[^ ]+' | head -1)
     [[ "$rn" == *"$node"* ]] && pd=$((pd+1))
   done

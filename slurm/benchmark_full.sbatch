@@ -1,5 +1,5 @@
 #!/bin/bash
-# FULL inference latency + peak-memory benchmark for reviewer points R1.11 / R2.2.
+# FULL inference latency + peak-memory benchmark for the efficiency claims.
 # ALL teachers (NT-2.5B, Caduceus, Enformer, DNABERT-2) + the paper's BPNet student
 # (`original`, ~0.12M params), on the FULL splice_sites_all test set, fp16,
 # batch_size=16, seq_len(max_length)=1000 bp.
@@ -24,20 +24,20 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 
 HOME_HF="$REPO/.hf_cache"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
 export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false
 export WANDB_MODE=offline
 # Disable the hf_xet/CAS downloader: it stages a multi-GB scratch copy that blew the home
 # quota mid-download. Plain-HTTP download writes straight into blobs/ (no double space).
 export HF_HUB_DISABLE_XET=1
 export HF_XET_CACHE="$REPO/.hf_cache/xet"   # if xet ever runs, keep its scratch under the repo cache
-export OUTPUT_PATH=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/rebuttal_infra/benchmark_runs
+export OUTPUT_PATH=${OG_WORKSPACE:-$PWD/..}/analysis/benchmark_runs
 
 PY="$REPO/.venv_carbon_portable/bin/python"
 

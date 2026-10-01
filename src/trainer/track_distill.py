@@ -89,6 +89,7 @@ def track_distill_loss(
 #   * mse / pearson — simple value match / direct optimisation of the eval metric.
 # EVERY weight and EVERY per-term loss type is configurable (TrackKDConfig); nothing hard-coded.
 
+
 @dataclass
 class TrackKDConfig:
     """Config for the 3-term per-bp track KD loss. All weights + per-term loss types configurable.
@@ -96,20 +97,23 @@ class TrackKDConfig:
     Defaults mirror the carbon classification recipe (0.5 / 0.5 / 0.2) with the faithful
     Poisson-multinomial (Borzoi/NTv3) losses so the student stays comparable to the 650M teacher.
     """
-    w_ce: float = 0.5          # ground-truth term weight (student vs real bigWig)
-    w_kl: float = 0.5          # distill term weight (student vs frozen 650M teacher tracks)
-    w_mse: float = 0.2         # feature-matching term weight (0 disables; needs *_feat args)
-    gt_loss: str = "poisson_multinomial"       # {"poisson_multinomial", "mse", "pearson", "dist", "standardized_mse"}
+
+    w_ce: float = 0.5  # ground-truth term weight (student vs real bigWig)
+    w_kl: float = 0.5  # distill term weight (student vs frozen 650M teacher tracks)
+    w_mse: float = 0.2  # feature-matching term weight (0 disables; needs *_feat args)
+    gt_loss: str = "poisson_multinomial"  # {"poisson_multinomial", "mse", "pearson", "dist", "standardized_mse"}
     # distill term vs the frozen teacher's tracks. SOTA-grounded options:
     #   poisson_multinomial (Borzoi/Enigma) · mse · pearson (1−corr over positions = the eval metric) ·
     #   teacher_bounded (Chen 2017) · dist (NeurIPS'22 correlation-matching, robust to capacity gap) ·
     #   standardized_mse (CVPR'24 logit-standardization, per-track z-score → scale-invariant) ·
     #   cwd (ICCV'21 channel-wise distillation, per-track softmax-KL over positions → scale-invariant).
     distill_loss: str = "poisson_multinomial"
-    multinomial_weight: float = 5.0            # Poisson-multinomial shape/scale coefficient (Borzoi=5)
-    teacher_bound_margin: float = 0.0          # margin for the teacher_bounded distill loss
-    cwd_temperature: float = 4.0               # softmax temperature for the cwd distill loss (ICCV'21 default)
-    distill_target_gt_mix: float = 0.0         # Enigma-style: distill target = (1-m)·teacher + m·ground-truth
+    multinomial_weight: float = 5.0  # Poisson-multinomial shape/scale coefficient (Borzoi=5)
+    teacher_bound_margin: float = 0.0  # margin for the teacher_bounded distill loss
+    cwd_temperature: float = 4.0  # softmax temperature for the cwd distill loss (ICCV'21 default)
+    distill_target_gt_mix: float = (
+        0.0  # Enigma-style: distill target = (1-m)·teacher + m·ground-truth
+    )
 
 
 def _corr_along(pred: torch.Tensor, target: torch.Tensor, dim: int) -> torch.Tensor:
@@ -156,14 +160,17 @@ def _cwd_term(pred: torch.Tensor, target: torch.Tensor, temperature: float) -> t
         L = (T²/C)·Σ_c Σ_i softmax_i(t^c/T)·log[softmax_i(t^c/T)/softmax_i(s^c/T)].
     pred/target: [B, L, T_tracks]; softmax/KL are along the position axis (dim=1)."""
     Tm = temperature
-    s_logp = F.log_softmax(pred / Tm, dim=1)      # [B, L, C]: log-prob over positions per track
-    t_logp = F.log_softmax(target / Tm, dim=1)    # (log-softmax both -> KL is exactly 0 when identical)
+    s_logp = F.log_softmax(pred / Tm, dim=1)  # [B, L, C]: log-prob over positions per track
+    t_logp = F.log_softmax(
+        target / Tm, dim=1
+    )  # (log-softmax both -> KL is exactly 0 when identical)
     kl = (t_logp.exp() * (t_logp - s_logp)).sum(dim=1)  # [B, C]: KL over positions per track
     return (Tm * Tm) * kl.mean()
 
 
-def _teacher_bounded_term(student: torch.Tensor, teacher: torch.Tensor, gt: torch.Tensor,
-                          margin: float) -> torch.Tensor:
+def _teacher_bounded_term(
+    student: torch.Tensor, teacher: torch.Tensor, gt: torch.Tensor, margin: float
+) -> torch.Tensor:
     """Chen et al. 2017 teacher-bounded regression: squared student error vs GT, counted ONLY where
     the student is worse than the teacher (by > margin). student/teacher/gt: [B, L, T]."""
     s_err = (student - gt) ** 2
@@ -172,8 +179,9 @@ def _teacher_bounded_term(student: torch.Tensor, teacher: torch.Tensor, gt: torc
     return (mask * s_err).sum() / (mask.sum() + 1e-8)
 
 
-def _regression_term(pred: torch.Tensor, target: torch.Tensor, kind: str, mw: float,
-                     cwd_temp: float = 4.0) -> torch.Tensor:
+def _regression_term(
+    pred: torch.Tensor, target: torch.Tensor, kind: str, mw: float, cwd_temp: float = 4.0
+) -> torch.Tensor:
     """One regression loss between pred and (fixed) target, both [B, L, T] (positions, tracks)."""
     if kind == "mse":
         return F.mse_loss(pred, target)
@@ -198,9 +206,16 @@ def _align_positions(student: torch.Tensor, target_len: int) -> torch.Tensor:
     return pooled.permute(0, 2, 1).contiguous()
 
 
-def track_kd_loss(student: torch.Tensor, teacher: torch.Tensor, gt: torch.Tensor, *,
-                  student_feat: torch.Tensor = None, teacher_feat: torch.Tensor = None,
-                  cfg: TrackKDConfig = None, student_layout: str = "BLT"):
+def track_kd_loss(
+    student: torch.Tensor,
+    teacher: torch.Tensor,
+    gt: torch.Tensor,
+    *,
+    student_feat: torch.Tensor = None,
+    teacher_feat: torch.Tensor = None,
+    cfg: TrackKDConfig = None,
+    student_layout: str = "BLT",
+):
     """3-term KD loss for per-bp track regression. Returns ``(total_loss, components_dict)``.
 
     student / teacher / gt: ``[B, L, T]`` (positions, tracks). ``teacher`` and ``gt`` are targets;
@@ -218,7 +233,9 @@ def track_kd_loss(student: torch.Tensor, teacher: torch.Tensor, gt: torch.Tensor
     gt = gt.detach()
     student = _align_positions(student, teacher.shape[1])
     if not (student.shape == teacher.shape == gt.shape):
-        raise ValueError(f"shape mismatch student {tuple(student.shape)} teacher {tuple(teacher.shape)} gt {tuple(gt.shape)}")
+        raise ValueError(
+            f"shape mismatch student {tuple(student.shape)} teacher {tuple(teacher.shape)} gt {tuple(gt.shape)}"
+        )
 
     L_gt = _regression_term(student, gt, cfg.gt_loss, cfg.multinomial_weight, cfg.cwd_temperature)
     # Enigma-style soft target: blend a little ground truth into the teacher target (m=0.1 typical), so
@@ -230,8 +247,9 @@ def track_kd_loss(student: torch.Tensor, teacher: torch.Tensor, gt: torch.Tensor
     if cfg.distill_loss == "teacher_bounded":
         L_distill = _teacher_bounded_term(student, teacher, gt, cfg.teacher_bound_margin)
     else:
-        L_distill = _regression_term(student, distill_target, cfg.distill_loss,
-                                     cfg.multinomial_weight, cfg.cwd_temperature)
+        L_distill = _regression_term(
+            student, distill_target, cfg.distill_loss, cfg.multinomial_weight, cfg.cwd_temperature
+        )
     if cfg.w_mse > 0 and student_feat is not None and teacher_feat is not None:
         # FitNets feature alignment. Channels must already match (caller projects student->teacher dim);
         # adaptive-pool the student's SEQUENCE axis to the teacher's if they differ (mirrors the track
@@ -249,5 +267,9 @@ def track_kd_loss(student: torch.Tensor, teacher: torch.Tensor, gt: torch.Tensor
         L_feat = student.new_zeros(())
 
     total = cfg.w_ce * L_gt + cfg.w_kl * L_distill + cfg.w_mse * L_feat
-    return total, {"gt": L_gt.detach(), "distill": L_distill.detach(),
-                   "feat": L_feat.detach(), "total": total.detach()}
+    return total, {
+        "gt": L_gt.detach(),
+        "distill": L_distill.detach(),
+        "feat": L_feat.detach(),
+        "total": total.detach(),
+    }

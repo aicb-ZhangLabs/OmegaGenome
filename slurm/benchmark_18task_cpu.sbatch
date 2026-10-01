@@ -1,6 +1,6 @@
 #!/bin/bash
 # FULL 18-task CPU latency+memory (RSS) sweep on galaxy (AMD EPYC). The deployment claim
-# (R1.11 "inference may take minutes"): NT-2.5B / Carbon-3B are ~minutes/batch on CPU.
+# ("inference may take minutes"): NT-2.5B / Carbon-3B are ~minutes/batch on CPU.
 # Two phases share the same CPU (cpu_name recorded, device=cpu):
 #   Phase A (big teachers, SLOW): NT-2.5B, Carbon-3B, Enformer with FEW timed batches
 #     (warmup 0/1, num_batches 1-2) -> per-batch latency + EXTRAPOLATED whole-dataset time.
@@ -19,20 +19,20 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 
 HOME_HF="$REPO/.hf_cache"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
 export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false WANDB_MODE=offline
 export HF_HUB_DISABLE_XET=1
 export HF_XET_CACHE="$REPO/.hf_cache/xet"
-export CARBON_TEACHER_DIR=/home/pengchx3/carbon_teachers/carbon_3b_lora
+export CARBON_TEACHER_DIR=${CARBON_TEACHER_DIR:-$PWD/data/finetuned_models}/carbon_3b_lora
 export CUDA_VISIBLE_DEVICES=""
-# On galaxy the SSD is local at /srv/disk00/sshfs/pengchx3.
-export OUTPUT_PATH=/srv/disk00/sshfs/pengchx3/latency_18task/cpu
+# On galaxy the SSD is local at ${OG_SCRATCH:-$PWD/output}.
+export OUTPUT_PATH=${OG_SCRATCH:-$PWD/output}/latency_18task/cpu
 
 PY="$REPO/.venv_carbon_portable/bin/python"
 # Space-separated for tyro List[str] (NOT a bracket string).

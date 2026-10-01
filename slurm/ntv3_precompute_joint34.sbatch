@@ -2,7 +2,7 @@
 # Precompute the JOINT 34-track teacher-logit MEMMAP cache in ONE 650M pass over the fixed training
 # windows (num_windows 64000 -> ~63707 valid windows). Writes logits.npy (fp16, ~53GB) + meta.pt so the
 # from-scratch distilled size sweep can train TEACHER-FREE via --cached_teacher_logits <this dir>.
-# One big teacher-bound GPU job (~hours). Ref: ntv3_size_ladder_design.md §6, ntv3_size_audit.md item 2.
+# One big teacher-bound GPU job (~hours).
 #   sbatch slurm/ntv3_precompute_joint34.sbatch
 #SBATCH --job-name=loom_ntv3-teachercache
 #SBATCH --nodes=1
@@ -15,18 +15,18 @@
 #SBATCH --time=1-00:00:00
 #SBATCH --output=slurm-%x-%j.out
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
-SSD=/tmp/galaxy_srv_disk00/pengchx3
-mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3
+SSD=${OG_SCRATCH:-$PWD/output}
+mountpoint -q "$SSD" 2>/dev/null || SSD=${OG_SCRATCH:-$PWD/output}
 # HF cache -> SSD archive (models--*/ at its root == the hub); audit-verified offline 650M resolve.
 HOME_HF="$SSD/hf_cache_archive_from_code_carbon"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF" TRANSFORMERS_CACHE="$HOME_HF"
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export TRITON_CACHE_DIR="/tmp/triton_${USER}_$(hostname -s)"
-PV=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
+PV=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
 OUT="$SSD/ntv3_targets/teacher_cache_joint34"
 
 # --- PREFLIGHT (lab policy: assert past failure modes before burning GPU) ---

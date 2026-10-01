@@ -144,9 +144,7 @@ def test_parallel_one_is_serial_even_in_fork_mode():
     orig = (d.prepare_task, d.train_student, d.wandb, d._fork_pool, d._spawn_pool)
     try:
         d.prepare_task = lambda c, t: object()
-        d.train_student = lambda c, t, ctx: calls["order"].append(
-            c.distillation_config.temperature
-        )
+        d.train_student = lambda c, t, ctx: calls["order"].append(c.distillation_config.temperature)
         d.wandb = _FakeWandb
         d._fork_pool = lambda p: (_ for _ in ()).throw(AssertionError("serial must not fork"))
         d._spawn_pool = lambda p: (_ for _ in ()).throw(AssertionError("serial must not spawn"))
@@ -174,8 +172,12 @@ def test_fork_shares_ctx_overrides_seeds_and_matches_serial():
     seen = []
     seeds = []
     orig = (
-        d.prepare_task, d.train_student, d.wandb, d._fork_pool,
-        d._preload_teacher_arrays_for_fork, d._assert_no_cuda_before_fork,
+        d.prepare_task,
+        d.train_student,
+        d.wandb,
+        d._fork_pool,
+        d._preload_teacher_arrays_for_fork,
+        d._assert_no_cuda_before_fork,
         d._cuda_is_initialized,
     )
 
@@ -195,6 +197,7 @@ def test_fork_shares_ctx_overrides_seeds_and_matches_serial():
     def real_train(config, task_name, task_ctx):
         # Mirror train_student's seed-per-config; record what THIS child observed.
         from accelerate.utils import set_seed  # same call train_student makes
+
         set_seed(config.random_state)
         seeds.append(config.random_state)
         # child "mutates" its own config copy + a fake model; must not leak to siblings/parent.
@@ -226,30 +229,56 @@ def test_fork_shares_ctx_overrides_seeds_and_matches_serial():
         d.distill_task_batch(base, "T", overrides, parallel=2, parallel_mode="fork")
 
         # (a) prepare ONCE
-        ok(prep["count"] == 1, f"(a) prepare_task called exactly ONCE per task (got {prep['count']})")
-        ok(_SyncForkPool.created == [2], f"(a) ONE fork pool with parallel=2 (got {_SyncForkPool.created})")
+        ok(
+            prep["count"] == 1,
+            f"(a) prepare_task called exactly ONCE per task (got {prep['count']})",
+        )
+        ok(
+            _SyncForkPool.created == [2],
+            f"(a) ONE fork pool with parallel=2 (got {_SyncForkPool.created})",
+        )
         # (a) SAME shared ctx handed to every worker (the 5th tuple element is the ctx).
         ctx_ids_in_pool = {id(item[4]) for item in _SyncForkPool.ran_items}
-        ok(ctx_ids_in_pool == {id(prep["ctx"])}, "(a) every worker received the SAME shared ctx object")
+        ok(
+            ctx_ids_in_pool == {id(prep["ctx"])},
+            "(a) every worker received the SAME shared ctx object",
+        )
         # but each child trains on a SHALLOW COPY (different id) that still SHARES the big arrays.
         child_ids = {s["ctx_id"] for s in seen}
-        ok(id(prep["ctx"]) not in child_ids, "(b) each child trains on its own shallow ctx copy (isolated)")
-        ok(all(s["shares_parent_arrays"] for s in seen),
-           "(a)(b) child shallow-copy still SHARES the parent teacher arrays (COW source identity)")
+        ok(
+            id(prep["ctx"]) not in child_ids,
+            "(b) each child trains on its own shallow ctx copy (isolated)",
+        )
+        ok(
+            all(s["shares_parent_arrays"] for s in seen),
+            "(a)(b) child shallow-copy still SHARES the parent teacher arrays (COW source identity)",
+        )
 
         # (b)(f) per-child override + seed correctness, all configs covered.
-        ok(sorted(s["temp"] for s in seen) == [1.0, 2.0, 3.0], "(b) each child got its own temperature override")
+        ok(
+            sorted(s["temp"] for s in seen) == [1.0, 2.0, 3.0],
+            "(b) each child got its own temperature override",
+        )
         ok(sorted(seeds) == [7, 8, 9], "(b)(f) each child seeded with ITS config.random_state")
         temp_to_rs = {s["temp"]: s["rs"] for s in seen}
-        ok(temp_to_rs == {1.0: 7, 2.0: 8, 3.0: 9}, "(f) override<->seed pairing matches serial (no cross-talk)")
+        ok(
+            temp_to_rs == {1.0: 7, 2.0: 8, 3.0: 9},
+            "(f) override<->seed pairing matches serial (no cross-talk)",
+        )
 
         # (b) shared parent arrays were NOT mutated by any child.
-        ok(np.array_equal(prep["ctx"].teacher_logits, shared_logits),
-           "(b) shared parent teacher arrays unchanged after all children ran")
+        ok(
+            np.array_equal(prep["ctx"].teacher_logits, shared_logits),
+            "(b) shared parent teacher arrays unchanged after all children ran",
+        )
     finally:
         (
-            d.prepare_task, d.train_student, d.wandb, d._fork_pool,
-            d._preload_teacher_arrays_for_fork, d._assert_no_cuda_before_fork,
+            d.prepare_task,
+            d.train_student,
+            d.wandb,
+            d._fork_pool,
+            d._preload_teacher_arrays_for_fork,
+            d._assert_no_cuda_before_fork,
             d._cuda_is_initialized,
         ) = orig
 
@@ -262,8 +291,12 @@ def test_fork_error_isolation():
 
     trained = []
     orig = (
-        d.prepare_task, d.train_student, d.wandb, d._fork_pool,
-        d._preload_teacher_arrays_for_fork, d._assert_no_cuda_before_fork,
+        d.prepare_task,
+        d.train_student,
+        d.wandb,
+        d._fork_pool,
+        d._preload_teacher_arrays_for_fork,
+        d._assert_no_cuda_before_fork,
         d._cuda_is_initialized,
     )
     try:
@@ -288,12 +321,19 @@ def test_fork_error_isolation():
             {"distillation_config": {"temperature": 2.0}},
         ]
         d.distill_task_batch(base, "T", overrides, parallel=2, parallel_mode="fork")
-        ok(sorted(trained) == [1.0, 2.0], f"(c) siblings completed despite a raising child (got {sorted(trained)})")
+        ok(
+            sorted(trained) == [1.0, 2.0],
+            f"(c) siblings completed despite a raising child (got {sorted(trained)})",
+        )
         ok(0.0 not in trained, "(c) the raising config did not complete but did not abort siblings")
     finally:
         (
-            d.prepare_task, d.train_student, d.wandb, d._fork_pool,
-            d._preload_teacher_arrays_for_fork, d._assert_no_cuda_before_fork,
+            d.prepare_task,
+            d.train_student,
+            d.wandb,
+            d._fork_pool,
+            d._preload_teacher_arrays_for_fork,
+            d._assert_no_cuda_before_fork,
             d._cuda_is_initialized,
         ) = orig
 
@@ -320,8 +360,14 @@ def test_fork_worker_entry_isolation_and_sharing():
         idx, ok_flag, err = d._run_one_config_fork_worker(
             (3, _FakeExperimentCfg(), "T", {"distillation_config": {"temperature": 1.0}}, ctx)
         )
-        ok(idx == 3 and ok_flag is True and err is None, "(c') fork worker success -> (idx, True, None)")
-        ok(observed["shares"] is True, "(c') worker's shallow ctx SHARES the big teacher_logits array (COW)")
+        ok(
+            idx == 3 and ok_flag is True and err is None,
+            "(c') fork worker success -> (idx, True, None)",
+        )
+        ok(
+            observed["shares"] is True,
+            "(c') worker's shallow ctx SHARES the big teacher_logits array (COW)",
+        )
         ok(observed["xtrain_shares"] is True, "(c') worker's shallow ctx SHARES X_train (COW)")
 
         def boom(config, task_name, task_ctx):
@@ -331,8 +377,10 @@ def test_fork_worker_entry_isolation_and_sharing():
         idx2, ok2, err2 = d._run_one_config_fork_worker(
             (4, _FakeExperimentCfg(), "T", {"distillation_config": {"temperature": 2.0}}, ctx)
         )
-        ok(idx2 == 4 and ok2 is False and "kaboom-fork" in err2,
-           "(c') fork worker captures the traceback, does not raise")
+        ok(
+            idx2 == 4 and ok2 is False and "kaboom-fork" in err2,
+            "(c') fork worker captures the traceback, does not raise",
+        )
     finally:
         d.train_student, d.wandb = orig
 
@@ -345,8 +393,11 @@ def test_fork_falls_back_to_spawn_when_cuda_initialized():
     import src.train.distill as d
 
     orig = (
-        d.prepare_task, d._cuda_is_initialized, d._fork_pool,
-        d._distill_task_batch_parallel, d._preload_teacher_arrays_for_fork,
+        d.prepare_task,
+        d._cuda_is_initialized,
+        d._fork_pool,
+        d._distill_task_batch_parallel,
+        d._preload_teacher_arrays_for_fork,
     )
     try:
         # prepare returns a ctx whose teacher_model is a LIVE (non-stub) object -> NOT cache-skipped.
@@ -356,7 +407,9 @@ def test_fork_falls_back_to_spawn_when_cuda_initialized():
         d._preload_teacher_arrays_for_fork = lambda *a, **k: (_ for _ in ()).throw(
             AssertionError("must not preload arrays when falling back")
         )
-        d._fork_pool = lambda p: (_ for _ in ()).throw(AssertionError("must NOT fork when CUDA is up"))
+        d._fork_pool = lambda p: (_ for _ in ()).throw(
+            AssertionError("must NOT fork when CUDA is up")
+        )
 
         captured = {}
 
@@ -370,13 +423,21 @@ def test_fork_falls_back_to_spawn_when_cuda_initialized():
         overrides = [{"distillation_config": {"weight_kl": 0.5, "temperature": 1.0}}]
         d.distill_task_batch(base, "T", overrides, parallel=4, parallel_mode="fork")
 
-        ok(captured.get("parallel") == 4, "(d) fell back to the spawn path with the same parallelism")
-        ok(captured.get("prebuilt_ctx_is") is True,
-           "(d) spawn reuses the ALREADY-built ctx (no second prepare_task / 3B reload)")
+        ok(
+            captured.get("parallel") == 4,
+            "(d) fell back to the spawn path with the same parallelism",
+        )
+        ok(
+            captured.get("prebuilt_ctx_is") is True,
+            "(d) spawn reuses the ALREADY-built ctx (no second prepare_task / 3B reload)",
+        )
     finally:
         (
-            d.prepare_task, d._cuda_is_initialized, d._fork_pool,
-            d._distill_task_batch_parallel, d._preload_teacher_arrays_for_fork,
+            d.prepare_task,
+            d._cuda_is_initialized,
+            d._fork_pool,
+            d._distill_task_batch_parallel,
+            d._preload_teacher_arrays_for_fork,
         ) = orig
 
 
@@ -397,7 +458,10 @@ def test_assert_no_cuda_guard():
             d._assert_no_cuda_before_fork()
             ok(False, "guard should raise when CUDA is initialized")
         except RuntimeError as e:
-            ok("Refusing to fork" in str(e), "(d') guard raises a clear error when CUDA is initialized")
+            ok(
+                "Refusing to fork" in str(e),
+                "(d') guard raises a clear error when CUDA is initialized",
+            )
     finally:
         d._cuda_is_initialized = orig
 
@@ -416,15 +480,16 @@ def test_guard_catches_primary_context_missed_by_is_initialized():
     # driver primary context DOES exist (_cuda_hasPrimaryContext True) -- the precise real failure.
     fake_C = types.SimpleNamespace(_cuda_hasPrimaryContext=lambda dev: True)
     fake_cuda = types.SimpleNamespace(
-        is_initialized=lambda: False,           # the misleading signal (matches the box)
+        is_initialized=lambda: False,  # the misleading signal (matches the box)
         _is_in_bad_fork=lambda: False,
-        device_count=lambda: 1,                 # NVML-based, fork-safe
+        device_count=lambda: 1,  # NVML-based, fork-safe
     )
     fake_torch = types.ModuleType("torch")
     fake_torch.cuda = fake_cuda
     fake_torch._C = fake_C
 
     import builtins
+
     real_import = builtins.__import__
 
     def fake_import(name, *a, **k):
@@ -434,8 +499,10 @@ def test_guard_catches_primary_context_missed_by_is_initialized():
 
     builtins.__import__ = fake_import
     try:
-        ok(d._cuda_context_exists() is True,
-           "(g) hardened detector catches a primary context that is_initialized() misses (real-box gap)")
+        ok(
+            d._cuda_context_exists() is True,
+            "(g) hardened detector catches a primary context that is_initialized() misses (real-box gap)",
+        )
     finally:
         builtins.__import__ = real_import
 
@@ -453,6 +520,7 @@ def test_detector_confirms_clean_when_no_primary_context():
     fake_torch._C = fake_C
 
     import builtins
+
     real_import = builtins.__import__
 
     def fake_import(name, *a, **k):
@@ -462,8 +530,10 @@ def test_detector_confirms_clean_when_no_primary_context():
 
     builtins.__import__ = fake_import
     try:
-        ok(d._cuda_context_exists() is False,
-           "(g) detector POSITIVELY confirms clean (no primary context on any device) -> fork allowed")
+        ok(
+            d._cuda_context_exists() is False,
+            "(g) detector POSITIVELY confirms clean (no primary context on any device) -> fork allowed",
+        )
     finally:
         builtins.__import__ = real_import
 
@@ -485,6 +555,7 @@ def test_detector_conservative_when_probe_raises():
     fake_torch._C = fake_C
 
     import builtins
+
     real_import = builtins.__import__
 
     def fake_import(name, *a, **k):
@@ -494,8 +565,10 @@ def test_detector_conservative_when_probe_raises():
 
     builtins.__import__ = fake_import
     try:
-        ok(d._cuda_context_exists() is True,
-           "(g) probe failure -> conservative True (spawn fallback), never an unsafe fork")
+        ok(
+            d._cuda_context_exists() is True,
+            "(g) probe failure -> conservative True (spawn fallback), never an unsafe fork",
+        )
     finally:
         builtins.__import__ = real_import
 
@@ -508,14 +581,20 @@ def test_import_time_env_var_is_fork_safe():
     fork while staying invisible to is_initialized(). Setting PYTORCH_NVML_BASED_CUDA_CHECK=1 BEFORE
     torch's first is_available() routes it through NVML (no cuInit).
     """
-    import os
+
     # Importing the distill module (done above transitively) must have set it.
     import src.train.distill  # noqa: F401
-    ok(os.environ.get("PYTORCH_NVML_BASED_CUDA_CHECK") == "1",
-       "(g) PYTORCH_NVML_BASED_CUDA_CHECK=1 set at import (root-cause fix: no cuInit pre-fork)")
+
+    ok(
+        os.environ.get("PYTORCH_NVML_BASED_CUDA_CHECK") == "1",
+        "(g) PYTORCH_NVML_BASED_CUDA_CHECK=1 set at import (root-cause fix: no cuInit pre-fork)",
+    )
     import src.trainer.distill_trainer  # noqa: F401
-    ok(os.environ.get("PYTORCH_NVML_BASED_CUDA_CHECK") == "1",
-       "(g) trainer module also sets the fork-safe cuda-check env var before importing torch")
+
+    ok(
+        os.environ.get("PYTORCH_NVML_BASED_CUDA_CHECK") == "1",
+        "(g) trainer module also sets the fork-safe cuda-check env var before importing torch",
+    )
 
 
 def test_fork_end_to_end_falls_back_when_real_detector_sees_context():
@@ -529,8 +608,12 @@ def test_fork_end_to_end_falls_back_when_real_detector_sees_context():
     import src.train.distill as d
 
     orig = (
-        d.prepare_task, d._cuda_context_exists, d._cuda_is_initialized, d._fork_pool,
-        d._distill_task_batch_parallel, d._preload_teacher_arrays_for_fork,
+        d.prepare_task,
+        d._cuda_context_exists,
+        d._cuda_is_initialized,
+        d._fork_pool,
+        d._distill_task_batch_parallel,
+        d._preload_teacher_arrays_for_fork,
     )
     try:
         stub_ctx = _make_ctx(d)  # teacher_model is _NoOpTeacher -> cache-skipped (fork-eligible)
@@ -554,12 +637,18 @@ def test_fork_end_to_end_falls_back_when_real_detector_sees_context():
         base = _FakeExperimentCfg(trainer_config=_FakeTrainerCfg(output_dir=tempfile.mkdtemp()))
         overrides = [{"distillation_config": {"weight_kl": 0.5, "temperature": 1.0}}]
         d.distill_task_batch(base, "T", overrides, parallel=8, parallel_mode="fork")
-        ok(captured.get("parallel") == 8,
-           "(g) detected parent CUDA context -> fork skipped, fell back to spawn (no broken children)")
+        ok(
+            captured.get("parallel") == 8,
+            "(g) detected parent CUDA context -> fork skipped, fell back to spawn (no broken children)",
+        )
     finally:
         (
-            d.prepare_task, d._cuda_context_exists, d._cuda_is_initialized, d._fork_pool,
-            d._distill_task_batch_parallel, d._preload_teacher_arrays_for_fork,
+            d.prepare_task,
+            d._cuda_context_exists,
+            d._cuda_is_initialized,
+            d._fork_pool,
+            d._distill_task_batch_parallel,
+            d._preload_teacher_arrays_for_fork,
         ) = orig
 
 
@@ -597,23 +686,33 @@ def test_preload_teacher_arrays():
         # KL+MSE sweep -> both arrays preloaded.
         ovs = [{"distillation_config": {"weight_kl": 0.5, "weight_mse": 0.5}}]
         d._preload_teacher_arrays_for_fork(base, "T", ctx, ovs)
-        ok(ctx.teacher_logits is not None and np.array_equal(ctx.teacher_logits, logits),
-           "(a') logits preloaded from cache into ctx")
-        ok(ctx.teacher_features is not None and np.array_equal(ctx.teacher_features, feats),
-           "(a') features preloaded from cache into ctx")
+        ok(
+            ctx.teacher_logits is not None and np.array_equal(ctx.teacher_logits, logits),
+            "(a') logits preloaded from cache into ctx",
+        )
+        ok(
+            ctx.teacher_features is not None and np.array_equal(ctx.teacher_features, feats),
+            "(a') features preloaded from cache into ctx",
+        )
 
         # pure-CE sweep -> nothing preloaded.
         ctx2 = _make_ctx(d)
         d._preload_teacher_arrays_for_fork(base, "T", ctx2, [{"distillation_config": {}}])
-        ok(ctx2.teacher_logits is None and ctx2.teacher_features is None,
-           "(a') pure-CE sweep preloads NO teacher arrays")
+        ok(
+            ctx2.teacher_logits is None and ctx2.teacher_features is None,
+            "(a') pure-CE sweep preloads NO teacher arrays",
+        )
 
         # stale cache (wrong max_len) -> leaves None (children fall back to per-config read).
         ctx3 = _make_ctx(d)
         base_stale = replace(base, trainer_config=replace(base.trainer_config, max_len=999))
-        d._preload_teacher_arrays_for_fork(base_stale, "T", ctx3,
-                                           [{"distillation_config": {"weight_kl": 0.5}}])
-        ok(ctx3.teacher_logits is None, "(a') stale/mismatched cache -> preload leaves None (safe fallback)")
+        d._preload_teacher_arrays_for_fork(
+            base_stale, "T", ctx3, [{"distillation_config": {"weight_kl": 0.5}}]
+        )
+        ok(
+            ctx3.teacher_logits is None,
+            "(a') stale/mismatched cache -> preload leaves None (safe fallback)",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -625,24 +724,31 @@ def test_trainer_uses_preloaded_arrays_only_when_present_and_needed():
     # asserting it on representative inputs (the gate is a pure boolean; running the full trainer
     # needs torch models). This guards the byte-identical-serial property: no preload -> precompute.
     def use_preloaded(pl, pf, needs_logits, needs_features):
-        return (
-            (pl is not None or pf is not None)
-            and ((pl is not None or not needs_logits) and (pf is not None or not needs_features))
+        return (pl is not None or pf is not None) and (
+            (pl is not None or not needs_logits) and (pf is not None or not needs_features)
         )
 
     A = np.zeros((2, 2), dtype=np.float32)
     # serial/SLURM: both None -> never use preloaded (reads cache as before).
-    ok(use_preloaded(None, None, True, True) is False, "no preload -> precompute (serial-identical)")
+    ok(
+        use_preloaded(None, None, True, True) is False,
+        "no preload -> precompute (serial-identical)",
+    )
     # KL-only config with logits preloaded -> use it.
     ok(use_preloaded(A, None, True, False) is True, "KL-only: preloaded logits used")
     # KL+MSE but only logits preloaded -> needed feature missing -> fall back to precompute.
-    ok(use_preloaded(A, None, True, True) is False, "needed feature missing -> fall back to precompute")
+    ok(
+        use_preloaded(A, None, True, True) is False,
+        "needed feature missing -> fall back to precompute",
+    )
     # MSE-only with features preloaded -> use it.
     ok(use_preloaded(None, A, False, True) is True, "MSE-only: preloaded features used")
     # pure-CE (needs neither): gate is irrelevant; trainer's outer `needs_logits or needs_features`
     # is False so neither branch runs -> teacher arrays never touched.
-    ok(use_preloaded(A, A, False, False) is True,
-       "preloaded present but pure-CE -> outer gate skips teacher entirely (verified in trainer)")
+    ok(
+        use_preloaded(A, A, False, False) is True,
+        "preloaded present but pure-CE -> outer gate skips teacher entirely (verified in trainer)",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -676,27 +782,56 @@ def test_real_fork_cow_shares_parent_array():
     for p in procs:
         p.join()
 
-    ok(all(s == parent_sum for _, s in results),
-       f"(COW) all forked children read the parent's array values (sums={[s for _, s in results]})")
+    ok(
+        all(s == parent_sum for _, s in results),
+        f"(COW) all forked children read the parent's array values (sums={[s for _, s in results]})",
+    )
     # Parent's array is unchanged (children never wrote to it).
     ok(float(parent_arr.sum()) == parent_sum, "(COW) parent array unchanged after children read it")
 
 
 def main():
     for name, fn in [
-        ("test_parallel_one_is_serial_even_in_fork_mode", test_parallel_one_is_serial_even_in_fork_mode),
-        ("test_fork_shares_ctx_overrides_seeds_and_matches_serial", test_fork_shares_ctx_overrides_seeds_and_matches_serial),
+        (
+            "test_parallel_one_is_serial_even_in_fork_mode",
+            test_parallel_one_is_serial_even_in_fork_mode,
+        ),
+        (
+            "test_fork_shares_ctx_overrides_seeds_and_matches_serial",
+            test_fork_shares_ctx_overrides_seeds_and_matches_serial,
+        ),
         ("test_fork_error_isolation", test_fork_error_isolation),
-        ("test_fork_worker_entry_isolation_and_sharing", test_fork_worker_entry_isolation_and_sharing),
-        ("test_fork_falls_back_to_spawn_when_cuda_initialized", test_fork_falls_back_to_spawn_when_cuda_initialized),
+        (
+            "test_fork_worker_entry_isolation_and_sharing",
+            test_fork_worker_entry_isolation_and_sharing,
+        ),
+        (
+            "test_fork_falls_back_to_spawn_when_cuda_initialized",
+            test_fork_falls_back_to_spawn_when_cuda_initialized,
+        ),
         ("test_assert_no_cuda_guard", test_assert_no_cuda_guard),
-        ("test_guard_catches_primary_context_missed_by_is_initialized", test_guard_catches_primary_context_missed_by_is_initialized),
-        ("test_detector_confirms_clean_when_no_primary_context", test_detector_confirms_clean_when_no_primary_context),
-        ("test_detector_conservative_when_probe_raises", test_detector_conservative_when_probe_raises),
+        (
+            "test_guard_catches_primary_context_missed_by_is_initialized",
+            test_guard_catches_primary_context_missed_by_is_initialized,
+        ),
+        (
+            "test_detector_confirms_clean_when_no_primary_context",
+            test_detector_confirms_clean_when_no_primary_context,
+        ),
+        (
+            "test_detector_conservative_when_probe_raises",
+            test_detector_conservative_when_probe_raises,
+        ),
         ("test_import_time_env_var_is_fork_safe", test_import_time_env_var_is_fork_safe),
-        ("test_fork_end_to_end_falls_back_when_real_detector_sees_context", test_fork_end_to_end_falls_back_when_real_detector_sees_context),
+        (
+            "test_fork_end_to_end_falls_back_when_real_detector_sees_context",
+            test_fork_end_to_end_falls_back_when_real_detector_sees_context,
+        ),
         ("test_preload_teacher_arrays", test_preload_teacher_arrays),
-        ("test_trainer_uses_preloaded_arrays_only_when_present_and_needed", test_trainer_uses_preloaded_arrays_only_when_present_and_needed),
+        (
+            "test_trainer_uses_preloaded_arrays_only_when_present_and_needed",
+            test_trainer_uses_preloaded_arrays_only_when_present_and_needed,
+        ),
         ("test_real_fork_cow_shares_parent_array", test_real_fork_cow_shares_parent_array),
     ]:
         print(name)

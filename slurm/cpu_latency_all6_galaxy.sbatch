@@ -1,6 +1,6 @@
 #!/bin/bash
 # UNIFIED CPU inference-latency for ALL SIX models in ONE job on ONE node under identical
-# conditions, for the OmegaGenome rebuttal CPU-latency table (T18 / R1.11):
+# conditions, for the OmegaGenome revision CPU-latency table:
 #   NT-2.5B, Carbon-3B, DNABERT-2, Enformer, Caduceus, and the BPNet student (re-measured here,
 #   NOT reused from the old run) -> every row shares the exact same hardware + thread count + no
 #   contention. fp32, batch 16, max_length 1000, task splice_sites_all -- identical across all 6.
@@ -27,7 +27,7 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 
 N=64
@@ -36,14 +36,14 @@ export OMP_NUM_THREADS=$N MKL_NUM_THREADS=$N
 HOME_HF="$REPO/.hf_cache"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" HUGGINGFACE_HUB_CACHE="$HOME_HF/hub"
 export HF_DATASETS_CACHE="$HOME_HF/datasets" TRANSFORMERS_CACHE="$HOME_HF/hub" HF_ASSETS_CACHE="$HOME_HF/assets"
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false WANDB_MODE=offline
 export HF_HUB_DISABLE_XET=1 HF_XET_CACHE="$HOME_HF/xet"
-export CARBON_TEACHER_DIR=/home/pengchx3/carbon_teachers/carbon_3b_lora
+export CARBON_TEACHER_DIR=${CARBON_TEACHER_DIR:-$PWD/data/finetuned_models}/carbon_3b_lora
 export CUDA_VISIBLE_DEVICES=""
 
 PY="$REPO/.venv_carbon_portable/bin/python"
-OUT="$REPO/rebuttal_infra/cpu_teacher_latency/results_all6.jsonl"
+OUT="$REPO/analysis/cpu_teacher_latency/results_all6.jsonl"
 : > "$OUT"   # fresh file for the unified run
 
 echo "=== CPU node ==="; hostname; grep -m1 "model name" /proc/cpuinfo

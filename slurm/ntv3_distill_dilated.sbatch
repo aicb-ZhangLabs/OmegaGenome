@@ -14,12 +14,12 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
-HOME_HF=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.hf_cache
+HOME_HF=${OG_ROOT:-$PWD}/.hf_cache
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF/hub" TRANSFORMERS_CACHE="$HOME_HF/hub"
-PY=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
-DATA=/tmp/galaxy_srv_disk00/pengchx3/ntv3_targets/v1_100m_8k   # 8k-window cached 100M targets
+PY=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
+DATA=${OG_SCRATCH:-$PWD/output}/ntv3_targets/v1_100m_8k   # 8k-window cached 100M targets
 
 # dilated student (RF ~32kb covers the 16kb window); mse (ablation: mse~poisson, both > correlation)
 "$PY" -m src.train.distill_tracks --data "$DATA" --out "$DATA/student_dilated" \

@@ -1,5 +1,5 @@
 #!/bin/bash
-# PER-ASSAY multi-track KD-vs-baseline (R1.1c "multiple contexts"): train ONE 8M student on all tracks of
+# PER-ASSAY multi-track KD-vs-baseline (multiple biological contexts): train ONE 8M student on all tracks of
 # ONE assay family, both distilled-from-teacher (KD) and from-scratch (baseline, data-matched), for each
 # of the 5 families. The exact recipe/hardening of slurm/ntv3_size_sweep_pertrack_t12{,_nokd}.sbatch,
 # generalized from --track_subset 12 (1 track) to --track_subset "<assay idxs>" (N tracks).
@@ -28,7 +28,7 @@
 #SBATCH --time=30-00:00:00
 #SBATCH --output=slurm-loom_ntv3-assay-%a-%A.out
 
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
 source "$REPO/slurm/_mount_guard.sh"
 source "$REPO/slurm/_hang_watchdog.sh"
@@ -47,11 +47,11 @@ trap 'hang_watchdog_stop; rm -rf "$TMPDIR"' EXIT
 HOME_HF="$SSD/hf_cache_archive_ntv3_assay"; mkdir -p "$HOME_HF"   # tokenizer/module cache dir (created at runtime)
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF" TRANSFORMERS_CACHE="$HOME_HF"
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export TRITON_CACHE_DIR="$SSD/triton_cache_${USER}_$(hostname -s)"; mkdir -p "$TRITON_CACHE_DIR"
 export WANDB_MODE=offline WANDB_DIR="$SSD/wandb_logs" WANDB_CACHE_DIR="$SSD/wandb_cache"; mkdir -p "$WANDB_DIR" "$WANDB_CACHE_DIR"
-PV=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
+PV=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
 
 scontrol update JobId="${SLURM_JOB_ID}" JobName="loom_ntv3-assay-${ASSAY}-${MODE}-s${SEED}" 2>/dev/null || true
 OUT="$SSD/ntv3_targets/assay_experiment/${ASSAY}/8m_${MODE}_s${SEED}"
@@ -62,7 +62,7 @@ echo "=== [array $T] assay=$ASSAY idx=$IDX mode=$MODE seed=$SEED -> $OUT (host $
 GUARD_PATHS=("$SSD/ntv3_benchmark_data/human/genome.fasta"
              "$SSD/ntv3_benchmark_data/human/genome.fasta.fai"
              "$SSD/ntv3_benchmark_data/human/functional_tracks"
-             "/extra/zhanglab0/INDV/pengchx3/ntv3_local/8m_pre")   # random-init 8M template (modeling+tokenizer)
+             "${OG_STORE:-$PWD/data}/ntv3_local/8m_pre")   # random-init 8M template (modeling+tokenizer)
 if [ "$MODE" = kd ]; then
   [ -f "$CACHE" ] || { echo "FATAL: assay KD cache missing at $CACHE (build with build_assay_cache_from_joint.py)"; exit 1; }
   GUARD_PATHS+=("$CACHE")

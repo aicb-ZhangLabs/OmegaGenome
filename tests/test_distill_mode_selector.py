@@ -66,9 +66,11 @@ def test_run_distillation_routes_each_mode():
     orig = (d.main, d.distill_task_batch)
     try:
         d.main = lambda config: captured["main"].append(config)
-        d.distill_task_batch = lambda base_config, task_name, overrides, parallel=1, parallel_mode="fork": captured[
-            "batch"
-        ].append((task_name, len(overrides), parallel))
+        d.distill_task_batch = (
+            lambda base_config, task_name, overrides, parallel=1, parallel_mode="fork": captured[
+                "batch"
+            ].append((task_name, len(overrides), parallel))
+        )
 
         cfg = _FakeExperimentCfg()
         d.run_distillation("slurm", config=cfg)
@@ -76,11 +78,21 @@ def test_run_distillation_routes_each_mode():
         ok(captured["batch"] == [], "(1) mode='slurm' does NOT touch the batch path")
 
         base = _FakeExperimentCfg()
-        ovs = [{"distillation_config": {"temperature": 1.0}}, {"distillation_config": {"temperature": 2.0}}]
-        d.run_distillation("batch", base_config=base, task_name="H3K4me1", config_overrides_list=ovs)
-        ok(captured["batch"] == [("H3K4me1", 2, 1)], "(2) mode='batch' routes to distill_task_batch (default parallel=1)")
+        ovs = [
+            {"distillation_config": {"temperature": 1.0}},
+            {"distillation_config": {"temperature": 2.0}},
+        ]
+        d.run_distillation(
+            "batch", base_config=base, task_name="H3K4me1", config_overrides_list=ovs
+        )
+        ok(
+            captured["batch"] == [("H3K4me1", 2, 1)],
+            "(2) mode='batch' routes to distill_task_batch (default parallel=1)",
+        )
 
-        d.run_distillation("batch", base_config=base, task_name="H3K4me1", config_overrides_list=ovs, parallel=8)
+        d.run_distillation(
+            "batch", base_config=base, task_name="H3K4me1", config_overrides_list=ovs, parallel=8
+        )
         ok(captured["batch"][-1] == ("H3K4me1", 2, 8), "(2) mode='batch' HONORS parallel>1")
     finally:
         d.main, d.distill_task_batch = orig
@@ -126,6 +138,7 @@ def test_unified_cli_batch_routes_like_legacy():
 
     orig_exp = carbon.experiment_configs
     try:
+
         def fake_run(mode, **kw):
             captured["mode"] = mode
             captured["kw"] = kw
@@ -141,8 +154,13 @@ def test_unified_cli_batch_routes_like_legacy():
         ok(captured["kw"]["task_name"] == "H3K4me1", "(4) CLI batch task plumbed through")
 
         # explicit parallel 8 (the H100 config-parallel invocation)
-        dr.main(["--mode", "batch", "--task", "H3K4me1", "--config-list", "x.txt", "--parallel", "8"])
-        ok(captured["kw"]["parallel"] == 8, "(4) CLI batch --parallel 8 plumbed through (H100 config-parallel)")
+        dr.main(
+            ["--mode", "batch", "--task", "H3K4me1", "--config-list", "x.txt", "--parallel", "8"]
+        )
+        ok(
+            captured["kw"]["parallel"] == 8,
+            "(4) CLI batch --parallel 8 plumbed through (H100 config-parallel)",
+        )
     finally:
         dr.run_distillation = orig[0]
         dt.load_config_list = orig_load
@@ -175,11 +193,23 @@ def test_unified_cli_slurm_routes_to_main():
 
         dr.run_distillation = fake_run
 
-        dr.main(["--mode", "slurm", "--", "carbon-raw", "--task-names", "H3K27me3", "--slurm-config.mode", "run"])
+        dr.main(
+            [
+                "--mode",
+                "slurm",
+                "--",
+                "carbon-raw",
+                "--task-names",
+                "H3K27me3",
+                "--slurm-config.mode",
+                "run",
+            ]
+        )
         ok(captured["mode"] == "slurm", "(4) CLI --mode slurm -> run_distillation(mode='slurm')")
         ok(captured["config"] is sentinel, "(4) resolved config forwarded to main path")
         ok(
-            captured["argv"] == ["carbon-raw", "--task-names", "H3K27me3", "--slurm-config.mode", "run"],
+            captured["argv"]
+            == ["carbon-raw", "--task-names", "H3K27me3", "--slurm-config.mode", "run"],
             "(4) only the post-`--` spec is handed to tyro (unified flags hidden)",
         )
     finally:
@@ -210,17 +240,25 @@ def test_legacy_distill_task_cli_unchanged():
     try:
         dt.experiment_configs = {"carbon-raw-original": (None, _FakeExperimentCfg())}
         dt.load_config_list = lambda path, task: [{"distillation_config": {"temperature": 1.0}}]
-        dt.distill_task_batch = lambda base_config, task, overrides, parallel=1, parallel_mode="fork": captured.update(
-            parallel=parallel, task=task
+        dt.distill_task_batch = (
+            lambda base_config, task, overrides, parallel=1, parallel_mode="fork": captured.update(
+                parallel=parallel, task=task
+            )
         )
 
         sys.argv = ["prog", "--task", "H3K4me1", "--config-list", "x.txt"]
         dt.main()
-        ok(captured["parallel"] == 1, "(5) legacy distill_task.main default parallel=1 (H100 serial)")
+        ok(
+            captured["parallel"] == 1,
+            "(5) legacy distill_task.main default parallel=1 (H100 serial)",
+        )
 
         sys.argv = ["prog", "--task", "H3K4me1", "--config-list", "x.txt", "--parallel", "8"]
         dt.main()
-        ok(captured["parallel"] == 8, "(5) legacy distill_task.main --parallel 8 plumbed through (H100 config-parallel)")
+        ok(
+            captured["parallel"] == 8,
+            "(5) legacy distill_task.main --parallel 8 plumbed through (H100 config-parallel)",
+        )
     finally:
         dt.distill_task_batch, dt.load_config_list, dt.experiment_configs = orig
 
@@ -231,7 +269,6 @@ def test_legacy_distill_task_cli_unchanged():
 # ---------------------------------------------------------------------------
 def test_legacy_slurm_main_dispatch_unchanged():
     import src.train.distill as d
-    from dataclasses import replace
 
     # main() does: distill[distill_config.slurm_config](distill_config, task_name)
     # Build a tiny config whose distill[...] is indexable to a recorder.
@@ -241,6 +278,7 @@ def test_legacy_slurm_main_dispatch_unchanged():
         def __getitem__(self, slurm_config):
             def run(config, task_name):
                 dispatched.append((slurm_config, task_name, config.dataset_config.task_name))
+
             return run
 
     @dataclass
@@ -268,7 +306,10 @@ def main():
         ("test_run_distillation_validation", test_run_distillation_validation),
         ("test_unified_cli_batch_routes_like_legacy", test_unified_cli_batch_routes_like_legacy),
         ("test_unified_cli_slurm_routes_to_main", test_unified_cli_slurm_routes_to_main),
-        ("test_unified_cli_batch_requires_task_and_list", test_unified_cli_batch_requires_task_and_list),
+        (
+            "test_unified_cli_batch_requires_task_and_list",
+            test_unified_cli_batch_requires_task_and_list,
+        ),
         ("test_legacy_distill_task_cli_unchanged", test_legacy_distill_task_cli_unchanged),
         ("test_legacy_slurm_main_dispatch_unchanged", test_legacy_slurm_main_dispatch_unchanged),
     ]:

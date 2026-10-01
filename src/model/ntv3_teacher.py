@@ -19,10 +19,10 @@ from typing import List, Optional, Sequence
 NTV3_INPUT_MULTIPLE = 128  # NTv3 requires input length a multiple of 128
 
 # Known checkpoints (override model_name_or_path to point elsewhere):
-NTV3_650M_POST = "InstaDeepAI/NTv3_650M_post"   # default teacher (HF; gated -> needs HF token)
+NTV3_650M_POST = "InstaDeepAI/NTv3_650M_post"  # default teacher (HF; gated -> needs HF token)
 # quick-test snapshot on the galaxy SSD (NOT /extra). Path is the sshfs mount on laniakea/voyager;
-# on galaxy natively it's /srv/disk00/sshfs/pengchx3/ntv3_local/100m_post (sbatches resolve per node).
-NTV3_100M_POST_LOCAL = "/tmp/galaxy_srv_disk00/pengchx3/ntv3_local/100m_post"
+# on galaxy natively it's ${OG_SCRATCH}/ntv3_local/100m_post (sbatches resolve per node).
+NTV3_100M_POST_LOCAL = os.environ.get("OG_SCRATCH", "output") + "/ntv3_local/100m_post"
 
 _GATED_PREFIX = "InstaDeepAI/ntv3_base_model--"
 
@@ -87,7 +87,9 @@ class NTv3TeacherConfig:
     # it under autocast. fp32 650M inference fits comfortably on an H100.
     bf16: bool = False
     # HF token for the gated NTv3 repos (650M etc.). Falls back to the HF_TOKEN env var.
-    hf_token_path: Optional[str] = "/home/pengchx3/text-dna/huggingface-token-0616.txt"
+    hf_token_path: Optional[str] = (
+        os.environ.get("OG_WORKSPACE", os.path.dirname(os.getcwd())) + "/huggingface-token-0616.txt"
+    )
     # Optional subset of bigwig track indices to distill (human has 7362; a paper subset is
     # far smaller). None = all tracks for the species.
     track_subset: Optional[Sequence[int]] = None
@@ -113,9 +115,7 @@ class NTv3Teacher:
         if token and not local:
             kw["token"] = token
         self.tokenizer = AutoTokenizer.from_pretrained(resolved, **kw)
-        self.model = (
-            AutoModel.from_pretrained(resolved, torch_dtype=dtype, **kw).to(device).eval()
-        )
+        self.model = AutoModel.from_pretrained(resolved, torch_dtype=dtype, **kw).to(device).eval()
 
     @property
     def all_track_names(self) -> List[str]:

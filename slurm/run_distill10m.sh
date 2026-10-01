@@ -8,21 +8,21 @@
 #SBATCH --mem=64G
 #SBATCH --partition=zhanglab.p
 #SBATCH --time=2-00:00:00
-#SBATCH --output=slurm/slurm-distill10m-%j.out
+#SBATCH --output=logs/slurm-distill10m-%j.out
 set -uo pipefail
-REPO="${REPO:-/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon}"
+REPO="${REPO:-${OG_ROOT:-$PWD}}"
 cd "$REPO"
 PY="$REPO/.venv_carbon_portable/bin/python"
-if   [ -d /srv/disk00/sshfs/pengchx3 ];      then SSD=/srv/disk00/sshfs/pengchx3
-elif [ -d /tmp/galaxy_srv_disk00/pengchx3 ]; then SSD=/tmp/galaxy_srv_disk00/pengchx3; fi
-RNT="$SSD/rebuttal_nt"
+if   [ -d ${OG_SCRATCH:-$PWD/output} ];      then SSD=${OG_SCRATCH:-$PWD/output}
+elif [ -d ${OG_SCRATCH:-$PWD/output} ]; then SSD=${OG_SCRATCH:-$PWD/output}; fi
+RNT="$SSD/nt_runs"
 export PYTHONUNBUFFERED=1 SKIP_TEACHER_EVAL=1 WANDB_MODE=disabled WANDB_DISABLED=true
 export HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 HF_DATASETS_TRUST_REMOTE_CODE=1
 export HF_HOME="$RNT/hf_cache" HF_HUB_CACHE="$RNT/hf_cache/hub" HUGGINGFACE_HUB_CACHE="$RNT/hf_cache/hub"
 export HF_DATASETS_CACHE="$RNT/hf_cache/datasets" TRANSFORMERS_CACHE="$RNT/hf_cache/hub"
 TASK="${TASK:?set TASK}"
-YAML="${YAML:-/home/pengchx3/text-dna/OmegaGenome_Revise_202606/rebuttal_infra/best_hp/best_hp_nt_distill10m.yaml}"
-TCACHE="${TCACHE:-/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_all_versions/OmegaGenome_1-27-clean/OmegaGenome/data/cache/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch20-10-17-revised-r32-fix-num-label}"
+YAML="${YAML:-${OG_WORKSPACE:-$PWD/..}/analysis/best_hp/best_hp_nt_distill10m.yaml}"
+TCACHE="${TCACHE:-${OG_WORKSPACE:-$PWD/..}/code_all_versions/OmegaGenome_1-27-clean/OmegaGenome/data/cache/2b5-multi-species_nucleotide-transformer-finetune-results-lora-epoch20-10-17-revised-r32-fix-num-label}"
 WRITE="${WRITE:-$RNT/run_fromscratch_ntbase}"
 RESULTS_CSV="${RESULTS_CSV:-$WRITE/results/distill10m_${TASK}.csv}"
 echo "[$(date)] distill10m TASK=$TASK on $(hostname) GPU=$CUDA_VISIBLE_DEVICES"

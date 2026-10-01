@@ -5,7 +5,8 @@ empirically, reusing cached targets (no re-gen). Eval = per-track Pearson vs the
 (correlation is affine-invariant, so z-norm/raw train targets are comparable; poisson predicts a
 log-rate so we exponentiate before correlating).
 """
-import sys
+
+import os
 
 import numpy as np
 import torch
@@ -16,7 +17,7 @@ from src.model.bpnet_regressor import BPNetRegressor, BPNetRegressorConfig
 from src.trainer.track_distill import _teacher_to_btl, align_student_to_teacher, track_distill_loss
 from src.trainer.track_metrics import per_track_pearson
 
-D = "/tmp/galaxy_srv_disk00/pengchx3/ntv3_targets/v1_100m"
+D = os.environ.get("OG_SCRATCH", "output") + "/ntv3_targets/v1_100m"
 N_TR, N_TE, EPOCHS = 800, 300, 30
 dev = "cuda" if torch.cuda.is_available() else "cpu"
 tr = torch.load(f"{D}/train.pt", weights_only=False)
@@ -35,9 +36,9 @@ def make_ds(seq, raw, norm):
 @torch.no_grad()
 def evaluate(model, ds, kind):
     model.eval()
-    P, G = [], []
+    P = []
     for ids, _ in DataLoader(ds, batch_size=16):
-        out = model(ids.to(dev))                       # [B,T,Ls] (log-rate if poisson)
+        out = model(ids.to(dev))  # [B,T,Ls] (log-rate if poisson)
         if kind == "poisson":
             out = out.exp()
         P.append(align_student_to_teacher(out, te_rawb.shape[-1]).cpu().numpy())
@@ -46,16 +47,16 @@ def evaluate(model, ds, kind):
 
 
 # raw teacher aligned, for eval target (same for every config)
-te_rawb = _teacher_to_btl(te_raw)                       # [N,T,Lt]
+te_rawb = _teacher_to_btl(te_raw)  # [N,T,Lt]
 G_raw = [te_rawb.numpy()]
 
 CONFIGS = [
-    ("mse",         "medium", "z"),
-    ("pearson",     "medium", "z"),
+    ("mse", "medium", "z"),
+    ("pearson", "medium", "z"),
     ("mse+pearson", "medium", "z"),
-    ("mse",         "large",  "z"),
-    ("pearson",     "large",  "z"),
-    ("poisson",     "medium", "raw"),
+    ("mse", "large", "z"),
+    ("pearson", "large", "z"),
+    ("poisson", "medium", "raw"),
 ]
 print(f"device={dev}  train={N_TR} test={N_TE} epochs={EPOCHS}\n")
 print(f"{'loss':14s} {'arch':8s} {'norm':4s} {'best_test_pearson':>17s}  {'params':>9s}")
@@ -74,5 +75,5 @@ for kind, size, norm in CONFIGS:
         r = evaluate(m, dte, kind)
         best = max(best, r)
     n = sum(p.numel() for p in m.parameters())
-    print(f"{kind:14s} {size:8s} {norm:4s} {best:17.4f}  {n/1e6:8.3f}M", flush=True)
+    print(f"{kind:14s} {size:8s} {norm:4s} {best:17.4f}  {n / 1e6:8.3f}M", flush=True)
 print("\n(baseline mse/medium/z should reproduce ~0.17 from job 235979)")

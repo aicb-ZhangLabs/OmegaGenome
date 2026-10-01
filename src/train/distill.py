@@ -26,7 +26,7 @@ DISPATCH LAYER (the only thing that varies between modes) -- see ``MODES``.
       mode="batch" + parallel == 1  -> SERIAL single-box batch. ``distill_task_batch`` loads
                        the teacher ONCE (prepare_task) then loops the task's whole config list
                        calling train_student per config. Amortizes the 3B load across ~32 configs.
-                       USE WHEN one fat box has no per-config scheduler (e.g. the vast.ai H100).
+                       USE WHEN one fat box has no per-config scheduler (e.g. a single rented GPU box).
 
       mode="batch" + parallel > 1   -> CONFIG-PARALLEL single-box batch. Same single teacher
                        load, but the teacher outputs are warmed into the on-disk cache once, the
@@ -232,8 +232,7 @@ def _teacher_hidden_from_cache_or_config(
         tcfg = config.trainer_config
         cache_base = getattr(tcfg, "cache_base_dir", None) or project_path
         metadata_path = (
-            _get_cache_dir(cache_base, config.teacher_parent_dir, task_name)
-            / "metadata.json"
+            _get_cache_dir(cache_base, config.teacher_parent_dir, task_name) / "metadata.json"
         )
         try:
             with open(metadata_path, "r") as f:
@@ -312,15 +311,11 @@ def prepare_task(
     # ===========================================================
     # FAST PATH: skip the 3B teacher load when its output caches are already valid.
     # ===========================================================
-    needs_logits, needs_features = _resolve_needed_teacher_outputs(
-        config, config_overrides_list
-    )
+    needs_logits, needs_features = _resolve_needed_teacher_outputs(config, config_overrides_list)
     if _teacher_caches_valid_for_task(
         config, task_name, teacher_ckpt, X_train, needs_logits, needs_features
     ):
-        print(
-            f"[prepare_task] teacher cache valid for {task_name} — skipping 3B teacher load"
-        )
+        print(f"[prepare_task] teacher cache valid for {task_name} — skipping 3B teacher load")
         # teacher_hidden comes from the cache metadata (features) when MSE is in play;
         # otherwise the student never reads it (no MSE projection), so a sentinel of the
         # config's declared hidden size is correct. This matches what the loaded path
@@ -456,12 +451,16 @@ def _config_already_done(config, task_name) -> bool:
     Run output dirs are randomized (timestamp+uuid), so we glob the task subtree rather than stat a
     fixed path. Defensive: any unreadable/partial summary is ignored (treated as not-a-match).
     """
-    import glob, json
+    import glob
+    import json
 
     dc = config.distillation_config
     target = (
         task_name,
-        float(dc.weight_ce), float(dc.weight_kl), float(dc.weight_mse), float(dc.temperature),
+        float(dc.weight_ce),
+        float(dc.weight_kl),
+        float(dc.weight_mse),
+        float(dc.temperature),
         int(config.random_state),
     )
     pattern = os.path.join(config.trainer_config.output_dir, task_name, "**", "final_summary.json")
@@ -474,8 +473,11 @@ def _config_already_done(config, task_name) -> bool:
             hp = s["hyperparameters"]
             if (
                 s.get("task"),
-                float(hp["weight_ce"]), float(hp["weight_kl"]), float(hp["weight_mse"]),
-                float(hp["temperature"]), int(s.get("random_state", 42)),
+                float(hp["weight_ce"]),
+                float(hp["weight_kl"]),
+                float(hp["weight_mse"]),
+                float(hp["temperature"]),
+                int(s.get("random_state", 42)),
             ) == target:
                 return True
         except Exception:
@@ -538,8 +540,6 @@ def train_student(
     X_train, y_train = task_ctx.X_train, task_ctx.y_train
     X_val, y_val = task_ctx.X_val, task_ctx.y_val
     X_test, y_test = task_ctx.X_test, task_ctx.y_test
-
-    model_type = getattr(config, "model_type", "glm")
 
     # Build student model
 
@@ -720,16 +720,10 @@ def distill_task_batch(
     if parallel is None or parallel <= 1:
         return _distill_task_batch_serial(base_config, task_name, config_overrides_list)
     if parallel_mode == "fork":
-        return _distill_task_batch_fork(
-            base_config, task_name, config_overrides_list, parallel
-        )
+        return _distill_task_batch_fork(base_config, task_name, config_overrides_list, parallel)
     if parallel_mode == "spawn":
-        return _distill_task_batch_parallel(
-            base_config, task_name, config_overrides_list, parallel
-        )
-    raise ValueError(
-        f"Unknown parallel_mode {parallel_mode!r}; expected 'fork' or 'spawn'."
-    )
+        return _distill_task_batch_parallel(base_config, task_name, config_overrides_list, parallel)
+    raise ValueError(f"Unknown parallel_mode {parallel_mode!r}; expected 'fork' or 'spawn'.")
 
 
 def _distill_task_batch_serial(
@@ -1070,9 +1064,7 @@ def _warm_teacher_cache(
     # throwaway run + a throwaway run_dir (its per-run copy lands there, never colliding
     # with any real config's run_dir).
     print("[parallel] warming teacher-eval cache (teacher_evaluation.json)...")
-    warm_run_dir = os.path.join(
-        tcfg.output_dir, "_parallel_warm", f"{task_name}_teacher_eval"
-    )
+    warm_run_dir = os.path.join(tcfg.output_dir, "_parallel_warm", f"{task_name}_teacher_eval")
     os.makedirs(warm_run_dir, exist_ok=True)
     try:
         wandb.init(
@@ -1151,8 +1143,7 @@ def _distill_task_batch_parallel(
     # batches skip the warm entirely -- exactly the serial per-config behavior, where
     # precompute is skipped for weight_kl==0 AND weight_mse==0.
     any_needs_teacher = any(
-        _config_needs_teacher(_apply_override(base_config, ov))
-        for ov in config_overrides_list
+        _config_needs_teacher(_apply_override(base_config, ov)) for ov in config_overrides_list
     )
     # If prepare_task already skipped the 3B load (caches valid), the teacher is the
     # _NoOpTeacher stub and every cache the warm would populate is ALREADY present — so
@@ -1180,10 +1171,7 @@ def _distill_task_batch_parallel(
 
     # --- (5) Run ALL configs (0..n-1) in a spawn-based worker pool. Every config --
     # including config-0 -- gets its FULL training here; nothing is run serially.
-    work = [
-        (i, base_config, task_name, config_overrides_list[i], cache_path)
-        for i in range(n)
-    ]
+    work = [(i, base_config, task_name, config_overrides_list[i], cache_path) for i in range(n)]
     if work:
         pool = _spawn_pool(parallel)
         try:
@@ -1475,15 +1463,11 @@ def _distill_task_batch_fork(
     n = len(config_overrides_list)
     results = {}  # index -> (ok, error_repr)
     # Workers inherit `ctx` via fork COW; we hand it directly (no disk serialization needed).
-    work = [
-        (i, base_config, task_name, config_overrides_list[i], ctx) for i in range(n)
-    ]
+    work = [(i, base_config, task_name, config_overrides_list[i], ctx) for i in range(n)]
     if work:
         pool = _fork_pool(parallel)
         try:
-            for index, ok_flag, err in pool.imap_unordered(
-                _run_one_config_fork_worker, work
-            ):
+            for index, ok_flag, err in pool.imap_unordered(_run_one_config_fork_worker, work):
                 results[index] = (ok_flag, err)
                 if ok_flag:
                     print(f"[fork] config {index + 1}/{n} OK")

@@ -19,10 +19,9 @@ Run: <venv>/bin/python -m tests.test_teacher_cache_skip
 """
 
 import os
-import sys
 import json
 import tempfile
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 
 _n = 0
 
@@ -111,9 +110,12 @@ def _common_patches(d, *, teacher_ckpt="/parent/H3K27ac_finetuned"):
     d.get_num_labels = lambda task_name: 2
     d.find_teacher_checkpoint = lambda config, task_name: (teacher_ckpt, 0.83)
     d.build_data_splits_from_huggingface = lambda dataset_config: (
-        ["ACGT", "TTTT"], [0, 1],   # X_train, y_train
-        ["GGGG"], [1],              # X_val, y_val
-        ["CCCC"], [0],              # X_test, y_test
+        ["ACGT", "TTTT"],
+        [0, 1],  # X_train, y_train
+        ["GGGG"],
+        [1],  # X_val, y_val
+        ["CCCC"],
+        [0],  # X_test, y_test
     )
     return orig
 
@@ -138,7 +140,10 @@ def test_skips_load_when_caches_valid():
         ctx = d.prepare_task(base, "H3K27ac", config_overrides_list=overrides)
 
         ok(ctx is not None, "ctx returned (not skipped as missing-teacher)")
-        ok(isinstance(ctx.teacher_model, _NoOpTeacher), "(a) teacher is the no-op stub (no 3B load)")
+        ok(
+            isinstance(ctx.teacher_model, _NoOpTeacher),
+            "(a) teacher is the no-op stub (no 3B load)",
+        )
         ok(ctx.teacher_tokenizer is None, "(a) no tokenizer needed in the skip path")
         ok(ctx.X_train == ["ACGT", "TTTT"], "(a) data splits built + carried")
         ok(ctx.X_test == ["CCCC"] and ctx.num_labels == 2, "(a) test split + num_labels carried")
@@ -148,7 +153,9 @@ def test_skips_load_when_caches_valid():
         ok(ctx.teacher_model.to("cuda") is ctx.teacher_model, "(a) stub .to() no-op")
         ok(ctx.teacher_model.eval() is ctx.teacher_model, "(a) stub .eval() no-op")
     finally:
-        (d.get_num_labels, d.find_teacher_checkpoint, d.build_data_splits_from_huggingface) = orig_common
+        (d.get_num_labels, d.find_teacher_checkpoint, d.build_data_splits_from_huggingface) = (
+            orig_common
+        )
         (d.get_teacher_model, d._teacher_caches_valid_for_task) = orig
 
 
@@ -181,7 +188,9 @@ def test_loads_when_cache_missing():
         ok(ctx.teacher_tokenizer == "TOKENIZER", "(b) ctx carries the loaded tokenizer")
         ok(ctx.teacher_hidden == 256, "(b) teacher_hidden from the loaded model")
     finally:
-        (d.get_num_labels, d.find_teacher_checkpoint, d.build_data_splits_from_huggingface) = orig_common
+        (d.get_num_labels, d.find_teacher_checkpoint, d.build_data_splits_from_huggingface) = (
+            orig_common
+        )
         (d.get_teacher_model, d._teacher_caches_valid_for_task) = orig
 
 
@@ -226,37 +235,61 @@ def test_stale_cache_key_forces_load():
         )
         ok(
             teacher_cache_is_valid(
-                seqs, teacher_ckpt, max_len,
-                needs_logits=True, needs_features=False,
-                project_path=proj, teacher_parent_dir=teacher_parent, task_name=task,
-            ) is True,
+                seqs,
+                teacher_ckpt,
+                max_len,
+                needs_logits=True,
+                needs_features=False,
+                project_path=proj,
+                teacher_parent_dir=teacher_parent,
+                task_name=task,
+            )
+            is True,
             "(c) fresh matching cache validates",
         )
         # Now the training set CHANGED (different seqs) -> key mismatches -> NOT valid.
         ok(
             teacher_cache_is_valid(
-                ["AAAA", "CCCC", "TTTT"], teacher_ckpt, max_len,
-                needs_logits=True, needs_features=False,
-                project_path=proj, teacher_parent_dir=teacher_parent, task_name=task,
-            ) is False,
+                ["AAAA", "CCCC", "TTTT"],
+                teacher_ckpt,
+                max_len,
+                needs_logits=True,
+                needs_features=False,
+                project_path=proj,
+                teacher_parent_dir=teacher_parent,
+                task_name=task,
+            )
+            is False,
             "(c) stale cache (different X_train) is INVALID -> forces a real load",
         )
         # Different teacher_ckpt also invalidates.
         ok(
             teacher_cache_is_valid(
-                seqs, "/ckpt/OTHER", max_len,
-                needs_logits=True, needs_features=False,
-                project_path=proj, teacher_parent_dir=teacher_parent, task_name=task,
-            ) is False,
+                seqs,
+                "/ckpt/OTHER",
+                max_len,
+                needs_logits=True,
+                needs_features=False,
+                project_path=proj,
+                teacher_parent_dir=teacher_parent,
+                task_name=task,
+            )
+            is False,
             "(c) different teacher_ckpt is INVALID",
         )
         # Missing-entirely cache (different task) is invalid.
         ok(
             teacher_cache_is_valid(
-                seqs, teacher_ckpt, max_len,
-                needs_logits=True, needs_features=False,
-                project_path=proj, teacher_parent_dir=teacher_parent, task_name="OTHERTASK",
-            ) is False,
+                seqs,
+                teacher_ckpt,
+                max_len,
+                needs_logits=True,
+                needs_features=False,
+                project_path=proj,
+                teacher_parent_dir=teacher_parent,
+                task_name="OTHERTASK",
+            )
+            is False,
             "(c) absent cache is INVALID",
         )
 
@@ -282,11 +315,18 @@ def test_prepare_task_stale_cache_loads():
         d._teacher_caches_valid_for_task = lambda *a, **k: False
 
         base = _FakeExperimentCfg(dataset_config=_FakeDatasetCfg(task_name="H3K27ac"))
-        ctx = d.prepare_task(base, "H3K27ac", config_overrides_list=[{"distillation_config": {"weight_kl": 1.0}}])
-        ok(loaded["flag"] is True, "(c2) stale cache -> prepare_task loaded the teacher (no wrong skip)")
+        ctx = d.prepare_task(
+            base, "H3K27ac", config_overrides_list=[{"distillation_config": {"weight_kl": 1.0}}]
+        )
+        ok(
+            loaded["flag"] is True,
+            "(c2) stale cache -> prepare_task loaded the teacher (no wrong skip)",
+        )
         ok(ctx.teacher_model is teacher, "(c2) loaded teacher carried")
     finally:
-        (d.get_num_labels, d.find_teacher_checkpoint, d.build_data_splits_from_huggingface) = orig_common
+        (d.get_num_labels, d.find_teacher_checkpoint, d.build_data_splits_from_huggingface) = (
+            orig_common
+        )
         (d.get_teacher_model, d._teacher_caches_valid_for_task) = orig
 
 
@@ -365,19 +405,31 @@ def test_features_run_wont_skip_on_logits_only_cache():
         # logits-only request: valid.
         ok(
             teacher_cache_is_valid(
-                seqs, teacher_ckpt, max_len,
-                needs_logits=True, needs_features=False,
-                project_path=proj, teacher_parent_dir=teacher_parent, task_name=task,
-            ) is True,
+                seqs,
+                teacher_ckpt,
+                max_len,
+                needs_logits=True,
+                needs_features=False,
+                project_path=proj,
+                teacher_parent_dir=teacher_parent,
+                task_name=task,
+            )
+            is True,
             "(d2) logits-only request validates on a logits-only cache",
         )
         # features-needing request: INVALID (no features file) -> won't skip.
         ok(
             teacher_cache_is_valid(
-                seqs, teacher_ckpt, max_len,
-                needs_logits=True, needs_features=True,
-                project_path=proj, teacher_parent_dir=teacher_parent, task_name=task,
-            ) is False,
+                seqs,
+                teacher_ckpt,
+                max_len,
+                needs_logits=True,
+                needs_features=True,
+                project_path=proj,
+                teacher_parent_dir=teacher_parent,
+                task_name=task,
+            )
+            is False,
             "(d2) features-needing request does NOT skip on a logits-only cache",
         )
 
@@ -459,7 +511,12 @@ def test_missing_teacher_eval_blocks_skip():
 
             d.find_teacher_checkpoint = lambda config, task_name: (teacher_ckpt, 0.5)
             d.build_data_splits_from_huggingface = lambda dataset_config: (
-                seqs, [0, 1], ["GG"], [1], ["CC"], [0]
+                seqs,
+                [0, 1],
+                ["GG"],
+                [1],
+                ["CC"],
+                [0],
             )
 
             teacher = _StubTeacher("LIVE")
@@ -476,10 +533,16 @@ def test_missing_teacher_eval_blocks_skip():
                 trainer_config=_FakeTrainerCfg(cache_base_dir=proj, max_len=max_len),
             )
             ctx = d.prepare_task(
-                base, "H3K27ac",
-                config_overrides_list=[{"distillation_config": {"weight_kl": 1.0, "weight_mse": 1.0}}],
+                base,
+                "H3K27ac",
+                config_overrides_list=[
+                    {"distillation_config": {"weight_kl": 1.0, "weight_mse": 1.0}}
+                ],
             )
-            ok(loaded["flag"] is True, "(f) valid logits/features but MISSING teacher-eval -> still loads")
+            ok(
+                loaded["flag"] is True,
+                "(f) valid logits/features but MISSING teacher-eval -> still loads",
+            )
             ok(ctx.teacher_model is teacher, "(f) loaded teacher carried")
 
             # Now WRITE a matching teacher_evaluation.json -> skip kicks in.
@@ -488,14 +551,26 @@ def test_missing_teacher_eval_blocks_skip():
             with open(os.path.join(teacher_ckpt, "teacher_evaluation.json"), "w") as f:
                 json.dump({"teacher_checkpoint": teacher_ckpt, "teacher_test_mcc": 0.5}, f)
             ctx2 = d.prepare_task(
-                base, "H3K27ac",
-                config_overrides_list=[{"distillation_config": {"weight_kl": 1.0, "weight_mse": 1.0}}],
+                base,
+                "H3K27ac",
+                config_overrides_list=[
+                    {"distillation_config": {"weight_kl": 1.0, "weight_mse": 1.0}}
+                ],
             )
             from src.train.distill import _NoOpTeacher
-            ok(isinstance(ctx2.teacher_model, _NoOpTeacher), "(f) once ALL caches valid -> skips the 3B load")
-            ok(ctx2.teacher_hidden == 8, "(f) teacher_hidden read from features_shape in cache metadata")
+
+            ok(
+                isinstance(ctx2.teacher_model, _NoOpTeacher),
+                "(f) once ALL caches valid -> skips the 3B load",
+            )
+            ok(
+                ctx2.teacher_hidden == 8,
+                "(f) teacher_hidden read from features_shape in cache metadata",
+            )
     finally:
-        (d.get_num_labels, d.find_teacher_checkpoint, d.build_data_splits_from_huggingface) = orig_common
+        (d.get_num_labels, d.find_teacher_checkpoint, d.build_data_splits_from_huggingface) = (
+            orig_common
+        )
         (d.get_teacher_model,) = orig
 
 

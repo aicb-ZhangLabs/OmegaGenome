@@ -1,8 +1,8 @@
 #!/bin/bash
 # Validate the Carbon install + weights (sequence-recovery proxy) on one GPU.
 #   sbatch slurm/carbon_reproduce.sbatch
-# Confirm with Jing before submitting (lab policy).
-# GPU: laniakea=A6000 48G (default), voyager=H100 80G (ask Jing; cap 3), galaxy=3090 24G.
+# Confirm with the lab before submitting (GPU-sharing policy).
+# GPU: laniakea=A6000 48G (default), voyager=H100 80G (limited availability), galaxy=3090 24G.
 #SBATCH --job-name=carbon_reproduce
 #SBATCH --nodes=1
 #SBATCH --nodelist=laniakea
@@ -14,7 +14,7 @@
 #SBATCH --output=slurm-%x-%j.out
 
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon
+REPO=${OG_ROOT:-$PWD}
 cd "$REPO"
 source slurm/env_setup.sh
 

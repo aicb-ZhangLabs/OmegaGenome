@@ -1,12 +1,12 @@
 #!/bin/bash
-# Capped submitter for the R1.3 base-NT-embedding suite. Leaves >=1 GPU FREE per node for others:
+# Capped submitter for the base-NT-embedding suite. Leaves >=1 GPU FREE per node for others:
 # submits a 1-GPU job to a node only when that node currently has >=2 free GPUs (all-user count), so
 # after the job lands >=1 remains free. Manages Phase-1 (from-scratch) to completion, then Phase-2
 # (distilled). Dedups on CSV-completion + already-queued. Skips down/drained nodes. NEVER scancels.
 set -uo pipefail
 SB=/pkg/slurm/22.05.3/bin
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606
-RUN=$REPO/code_carbon/slurm/run_r13_matched.sh
+REPO=${OG_WORKSPACE:-$PWD/..}
+RUN=$REPO/code_carbon/slurm/run_matched_capacity.sh
 LOG=$REPO/code_carbon/slurm/gpu_throttle.log
 # PER-TASK: ONLY the base-NT embedding arm (replaceK). onehot is embedding-independent -> its baseline
 # already exists in the from-scratch results, so skip it here. 1 arm/task = the essential base-NT point.
@@ -15,11 +15,11 @@ TASKS="promoter_tata H3K4me3 H3K4me2 splice_sites_donors splice_sites_acceptors 
 declare -A TOTGPU=( [galaxy]=6 [laniakea]=8 [voyager]=4 )
 # QUEUE mode (per user "can queue"): submit jobs so they sit PENDING and start the instant a GPU frees,
 # holding our place in SLURM's queue instead of only submitting when >=2 are free (which lost races to
-# other users). CAP = max concurrent r13nb jobs PINNED per node = fair-share headroom over the arc3 jobs
+# other users). CAP = max concurrent ntbase jobs PINNED per node = fair-share headroom over the arc3 jobs
 # (arc3 uses ~laniakea 4, voyager 2; caps galaxy 4 / laniakea 6 / voyager 3). Jobs beyond a node's free
 # GPUs simply pend on that node and run as GPUs free.
 declare -A CAP=( [galaxy]=4 [laniakea]=2 [voyager]=1 )
-NODES="galaxy laniakea voyager"          # preference order; galaxy has the most r13nb headroom now
+NODES="galaxy laniakea voyager"          # preference order; galaxy has the most ntbase headroom now
 POLL="${POLL:-120}"
 log(){ echo "[$(date '+%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
@@ -32,14 +32,14 @@ node_up(){ local s; s=$($SB/sinfo -h -n "$1" -o '%t' 2>/dev/null | head -1 | tr 
 run_on(){ $SB/squeue -h -t RUNNING -w "$1" -O 'tres-per-node:40' 2>/dev/null | grep -oE 'gpu:[0-9]+' | awk -F: '{s+=$2} END{print s+0}'; }
 mypend_on(){ printf '%s\n' "$SNAP" | grep -c "_${1}_" | head -1 | tr -d '[:space:]'; }
 free_gpu(){ local n="$1"; echo $(( ${TOTGPU[$n]:-0} - $(run_on "$n") - $(mypend_on "$n") )); }
-# QUEUE mode: pick the first node whose PINNED r13nb count (running+pending, from SNAP job names) is
+# QUEUE mode: pick the first node whose PINNED ntbase count (running+pending, from SNAP job names) is
 # below its fair-share CAP. The job is submitted --nodelist=<node>; if that node is full it PENDS there
 # and SLURM starts it the moment a GPU frees -- so we hold queue position instead of losing the race.
 pick_node(){ local n; for n in $NODES; do node_up "$n" || continue; [ "$(mypend_on "$n")" -lt "${CAP[$n]:-0}" ] && { echo "$n"; return 0; }; done; echo ""; }
 csv_done(){ local f="$1" nb; [ -f "$f" ] || return 1
   # done = >=1 base-NT REPLACEK row specifically. Must match the ARM we run (replaceK_ntbase); an older
   # replace4 nt_base row does NOT count -- several tasks have a stale replace4 row and were being wrongly
-  # skipped, leaving the rebuttal table missing their replaceK point. onehot baseline is reused from the
+  # skipped, leaving the table missing their replaceK point. onehot baseline is reused from the
   # from-scratch results, so it is not required here.
   nb=$(grep -c ',nt_base,mid,replaceK,' "$f" 2>/dev/null | head -1 | tr -d '[:space:]')
   [ "${nb:-0}" -ge 1 ]; }
@@ -49,7 +49,7 @@ in_queue(){ printf '%s\n' "$SNAP" | grep -qE "^${1}_[a-z0-9]+_${2}$"; }   # pref
 # fork-wedge). csv_done stays false so the task is resubmitted fresh (workers=0). Only ever touches
 # jobs named <pfx>_* -- never arc3/loom/rondo/others.
 reap_wedged(){ local pfx="$1" jid task lg age ep
-  for jid in $($SB/squeue -h -u pengchx3 -t RUNNING -o '%i %j' 2>/dev/null | grep -E "^[0-9]+ ${pfx}_" | awk '{print $1}'); do
+  for jid in $($SB/squeue -h -u $USER -t RUNNING -o '%i %j' 2>/dev/null | grep -E "^[0-9]+ ${pfx}_" | awk '{print $1}'); do
     lg=$(ls -t "$REPO/code_carbon/slurm/slurm-${pfx}-"*"-${jid}.out" 2>/dev/null | head -1); [ -z "$lg" ] && continue
     age=$(( ($(date +%s) - $(stat -c %Y "$lg")) / 60 ))
     ep=$(tr '\r' '\n' < "$lg" 2>/dev/null | grep -ciE 'epoch [0-9]+/')
@@ -62,22 +62,22 @@ reap_wedged(){ local pfx="$1" jid task lg age ep
 
 run_phase(){ # pname jobprefix subdir yaml  (write path = node-local /tmp mount)
   local pname="$1" pfx="$2" subdir="$3" yaml="$4"
-  local login="/srv/disk00/sshfs/pengchx3/rebuttal_nt/$subdir"          # read (login=galaxy mount)
-  local write="/tmp/galaxy_srv_disk00/pengchx3/rebuttal_nt/$subdir"     # write (compute-node mount)
+  local login="${OG_SCRATCH:-$PWD/output}/nt_runs/$subdir"          # read (login=galaxy mount)
+  local write="${OG_SCRATCH:-$PWD/output}/nt_runs/$subdir"     # write (compute-node mount)
   mkdir -p "$login/results"
   log "PHASE $pname START subdir=$subdir yaml=$(basename "$yaml")"
   while :; do
     reap_wedged "$pfx"
-    SNAP=$($SB/squeue -h -u pengchx3 -t RUNNING,PENDING -o '%j' 2>/dev/null) || { sleep "$POLL"; continue; }
+    SNAP=$($SB/squeue -h -u $USER -t RUNNING,PENDING -o '%j' 2>/dev/null) || { sleep "$POLL"; continue; }
     local remaining=0 t node jid
     for t in $TASKS; do
-      csv_done "$login/results/r13_ntbase_$t.csv" && continue
+      csv_done "$login/results/ntbase_matched_$t.csv" && continue
       remaining=$((remaining+1))
       in_queue "$pfx" "$t" && continue
       node=$(pick_node); [ -z "$node" ] && continue
       jid=$($SB/sbatch --parsable --nodelist="$node" --gres=gpu:1 --mem=98304 \
         --job-name="${pfx}_${node}_${t}" --output="$REPO/code_carbon/slurm/slurm-${pfx}-${t}-%j.out" \
-        --export="ALL,TASK=$t,ARMS=$ARMS,BEST_HP=$yaml,CACHE_BASE=$write,RESULTS_CSV=$write/results/r13_ntbase_$t.csv,PARAM_MATCHED=1,TEACHER_BS=32,NUM_WORKERS=0,WANDB_MODE=disabled,WANDB_DISABLED=true,WANDB_FORCE_DISABLE=1,SKIP_TEACHER_EVAL=1,PATIENCE=50,THREADS1=1,PYTHONUNBUFFERED=1" \
+        --export="ALL,TASK=$t,ARMS=$ARMS,BEST_HP=$yaml,CACHE_BASE=$write,RESULTS_CSV=$write/results/ntbase_matched_$t.csv,PARAM_MATCHED=1,TEACHER_BS=32,NUM_WORKERS=0,WANDB_MODE=disabled,WANDB_DISABLED=true,WANDB_FORCE_DISABLE=1,SKIP_TEACHER_EVAL=1,PATIENCE=50,THREADS1=1,PYTHONUNBUFFERED=1" \
         "$RUN" 2>>"$LOG")
       [ -n "$jid" ] && { log "PHASE $pname SUBMIT $t -> $node jid=$jid (free left >=1)"; SNAP="$SNAP"$'\n'"${pfx}_${node}_${t}"; sleep 8; }
     done
@@ -87,6 +87,6 @@ run_phase(){ # pname jobprefix subdir yaml  (write path = node-local /tmp mount)
   done
 }
 log "=== gpu_throttle start (leave >=1 GPU free per node) ==="
-run_phase FROMSCRATCH r13nb   run_fromscratch_ntbase "$REPO/rebuttal_infra/best_hp/best_hp_nt_fromscratch.yaml"
-run_phase DISTILLED   r13nbKD run_distilled_ntbase   "$REPO/rebuttal_infra/best_hp/best_hp_nt.yaml"
+run_phase FROMSCRATCH ntbase   run_fromscratch_ntbase "$REPO/analysis/best_hp/best_hp_nt_fromscratch.yaml"
+run_phase DISTILLED   ntbasekd run_distilled_ntbase   "$REPO/analysis/best_hp/best_hp_nt.yaml"
 log "=== ALL PHASES COMPLETE ==="

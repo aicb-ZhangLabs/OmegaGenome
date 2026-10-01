@@ -3,7 +3,9 @@
 slurm/auto_submit_specs.sh. One line per (task, seed) with the task's best-on-val raw hyperparameters.
 Usage: python slurm/gen_3seed_best_specs.py [--best best_hyperparams.json] [--seeds 0 1 2] [--out best_3seed_specs.txt]
 """
-import argparse, json
+
+import argparse
+import json
 
 
 def main():
@@ -28,7 +30,9 @@ def main():
             )
     with open(args.out, "w") as f:
         f.write("\n".join(lines) + ("\n" if lines else ""))
-    print(f"{len(best)} tasks x {len(args.seeds)} seeds = {len(lines)} specs ({args.variant}) -> {args.out}")
+    print(
+        f"{len(best)} tasks x {len(args.seeds)} seeds = {len(lines)} specs ({args.variant}) -> {args.out}"
+    )
 
 
 if __name__ == "__main__":

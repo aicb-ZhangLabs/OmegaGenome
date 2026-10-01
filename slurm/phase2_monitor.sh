@@ -4,17 +4,17 @@
 # run_distilled_ntbase) ONCE and exit. No caps/node-picking — SLURM throttles; galaxy excluded.
 set -uo pipefail
 SB=/pkg/slurm/22.05.3/bin
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606
-RUN=$REPO/code_carbon/slurm/run_r13_matched.sh
-FS=/srv/disk00/sshfs/pengchx3/rebuttal_nt/run_fromscratch_ntbase/results     # login (galaxy) read path
-KDCB=/tmp/galaxy_srv_disk00/pengchx3/rebuttal_nt/run_distilled_ntbase          # compute-node write path
-YAML_KD=$REPO/rebuttal_infra/best_hp/best_hp_nt.yaml
+REPO=${OG_WORKSPACE:-$PWD/..}
+RUN=$REPO/code_carbon/slurm/run_matched_capacity.sh
+FS=${OG_SCRATCH:-$PWD/output}/nt_runs/run_fromscratch_ntbase/results     # login (galaxy) read path
+KDCB=${OG_SCRATCH:-$PWD/output}/nt_runs/run_distilled_ntbase          # compute-node write path
+YAML_KD=$REPO/analysis/best_hp/best_hp_nt.yaml
 ARMS="onehot replace4_ntbase replaceK_ntbase latefuse_onehot_ntbase"
 TASKS="H2AFZ H3K27ac H3K27me3 H3K36me3 H3K4me1 H3K4me2 H3K4me3 H3K9ac H3K9me3 H4K20me1 promoter_all promoter_tata promoter_no_tata enhancers enhancers_types splice_sites_all splice_sites_acceptors splice_sites_donors"
 LOG=$REPO/code_carbon/slurm/phase2_monitor.log
 log(){ echo "[$(date '+%m-%d %H:%M:%S')] $*" >> "$LOG"; }
 done_count(){ local d=0 t f oh nb
-  for t in $TASKS; do f="$FS/r13_ntbase_$t.csv"
+  for t in $TASKS; do f="$FS/ntbase_matched_$t.csv"
     [ -f "$f" ] || continue
     oh=$(grep -c ',onehot,' "$f" 2>/dev/null || echo 0); nb=$(grep -c ',nt_base,mid,' "$f" 2>/dev/null || echo 0)
     [ "${oh:-0}" -ge 1 ] && [ "${nb:-0}" -ge 3 ] && d=$((d+1))
@@ -28,9 +28,9 @@ done
 log "Phase-1 COMPLETE -> submitting Phase-2 (distilled, KD + base-NT embedding)"
 mkdir -p "$KDCB/results"
 for t in $TASKS; do
-  jid=$($SB/sbatch --parsable --mem=98304 --job-name="r13nbKD_$t" \
-    --output="$REPO/code_carbon/slurm/slurm-r13nbKD-$t-%j.out" \
-    --export="ALL,TASK=$t,ARMS=$ARMS,BEST_HP=$YAML_KD,CACHE_BASE=$KDCB,RESULTS_CSV=$KDCB/results/r13_ntbase_$t.csv,PARAM_MATCHED=1" \
+  jid=$($SB/sbatch --parsable --mem=98304 --job-name="ntbasekd_$t" \
+    --output="$REPO/code_carbon/slurm/slurm-ntbasekd-$t-%j.out" \
+    --export="ALL,TASK=$t,ARMS=$ARMS,BEST_HP=$YAML_KD,CACHE_BASE=$KDCB,RESULTS_CSV=$KDCB/results/ntbase_matched_$t.csv,PARAM_MATCHED=1" \
     "$RUN" 2>>"$LOG")
   log "Phase-2 SUBMIT $t -> ${jid:-FAILED}"; sleep 2
 done

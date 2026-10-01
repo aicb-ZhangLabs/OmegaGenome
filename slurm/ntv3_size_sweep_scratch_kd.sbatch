@@ -1,5 +1,5 @@
 #!/bin/bash
-# FROM-SCRATCH distilled NTv3 size sweep (series 1 of the two-line design, ntv3_size_ladder_design.md §5A).
+# FROM-SCRATCH distilled NTv3 size sweep (series 1 of the two-line size-ladder design).
 # 5 random-init tiers (ntv3-4m/8m/30m/100m/300m), each KD'd from the 650M teacher via the precomputed
 # JOINT-34 memmap cache -> TEACHER-FREE. SAME KD recipe as the existing distilled runs
 # (kd_w_ce 0.5 / kd_w_kl 0.5 / standardized_mse / w_mse 0, 19932 steps, seq 32768, eff-batch 32, amp),
@@ -17,20 +17,20 @@
 #SBATCH --time=30-00:00:00
 #SBATCH --output=slurm-%x-%A_%a.out
 set -euo pipefail
-REPO=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_ntv3
+REPO=${OG_NTV3_ROOT:-$PWD}
 cd "$REPO"
-SSD=/tmp/galaxy_srv_disk00/pengchx3
-mountpoint -q "$SSD" 2>/dev/null || SSD=/srv/disk00/sshfs/pengchx3
+SSD=${OG_SCRATCH:-$PWD/output}
+mountpoint -q "$SSD" 2>/dev/null || SSD=${OG_SCRATCH:-$PWD/output}
 # HF cache -> SSD archive (only needed for the tokenizer template resolve; students are random-init, teacher-free).
 HOME_HF="$SSD/hf_cache_archive_from_code_carbon"
 export HF_HOME="$HOME_HF" HF_HUB_CACHE="$HOME_HF" TRANSFORMERS_CACHE="$HOME_HF"
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
-export HF_TOKEN="$(cat /home/pengchx3/text-dna/huggingface-token-0616.txt)"
+export HF_TOKEN="$(cat ${HF_TOKEN_FILE})"
 export TOKENIZERS_PARALLELISM=false PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export TRITON_CACHE_DIR="/tmp/triton_${USER}_$(hostname -s)"
 export WANDB_MODE=offline WANDB_DIR="$SSD/wandb_logs" WANDB_CACHE_DIR="$SSD/wandb_cache"
 mkdir -p "$WANDB_DIR" "$WANDB_CACHE_DIR"
-PV=/home/pengchx3/text-dna/OmegaGenome_Revise_202606/code_carbon/.venv_carbon_portable/bin/python
+PV=${OG_ROOT:-$PWD}/.venv_carbon_portable/bin/python
 
 SIZES=(ntv3-4m ntv3-8m ntv3-30m ntv3-100m ntv3-300m)
 SIZE="${SIZES[${SLURM_ARRAY_TASK_ID:-0}]}"

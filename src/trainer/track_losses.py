@@ -20,8 +20,12 @@ def _safe_for_grad_log(x: torch.Tensor) -> torch.Tensor:
     return torch.log(torch.where(x > 0.0, x, torch.ones_like(x)))
 
 
-def poisson_multinomial_loss(logits: torch.Tensor, targets: torch.Tensor,
-                             shape_loss_coefficient: float = 5.0, epsilon: float = 1e-7) -> torch.Tensor:
+def poisson_multinomial_loss(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    shape_loss_coefficient: float = 5.0,
+    epsilon: float = 1e-7,
+) -> torch.Tensor:
     """Poisson-multinomial loss for ``(batch, seq_length, num_tracks)`` predictions and targets."""
     batch_size, seq_length, num_tracks = logits.shape
 
