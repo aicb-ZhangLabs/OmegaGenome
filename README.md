@@ -36,6 +36,7 @@ base-resolution, multi-track regression benchmark.
 | `slurm/` | cluster submission scripts, grid generation and result aggregation |
 | `scripts/` | standalone entry points; `scripts/experiments/` holds campaign driver scripts |
 | `analysis/` | analysis code: cross-task transfer, feature-space comparison, KD-method comparison |
+| `paper_figures/` | the main-text figures as submitted, the code that draws them, and the tables it reads |
 | `best_hp_all_teachers/`, `best_hyperparams.json` | selected hyperparameters per teacher and task |
 | `results/` | collated result tables |
 | `docs/` | dataset and design documentation |
@@ -57,7 +58,10 @@ The teachers need mutually incompatible dependency sets, so each lives in its ow
 uv sync --extra default                                             # NT-2.5B, DNABERT-2, Enformer, Carbon-3B
 UV_PROJECT_ENVIRONMENT=.venv_caduceus uv sync --extra caduceus      # Caduceus
 UV_PROJECT_ENVIRONMENT=.venv_aido_dna uv sync --extra aido_dna      # AIDO.DNA
+UV_PROJECT_ENVIRONMENT=.venv_ntv3 uv sync --extra ntv3              # base-resolution regression
 ```
+
+The figure and analysis scripts need only `uv sync --extra analysis` (matplotlib, seaborn, scipy).
 
 Activate an environment before adding packages to it:
 
@@ -195,6 +199,26 @@ python -m pytest tests/
 ruff format . && ruff check .
 ```
 
+## Figures
+
+The six main-text figures ship as submitted in
+[`paper_figures/figures/`](paper_figures/figures), next to the code that draws them and the result
+tables that code reads. Figures 2, 3 and 5 regenerate from the bundled tables on a laptop in
+seconds:
+
+```bash
+uv sync --extra analysis
+cd paper_figures
+python figure_panels/build/fig2_combined_carbon.py    # Figure 2
+python figure_panels/build/fig4_efficiency_carbon.py  # Figure 3
+python figure_panels/build/fig6_method_size_hp.py     # Figure 5
+```
+
+Figures 1 and 6 are hand-drawn schematics with no script; Figure 4 is built from extracted model
+features by `analysis/extract_feats_logits.py` and `analysis/feature_viz_omega_dkd.py`, which need
+the trained checkpoints. See [paper_figures/README.md](paper_figures/README.md) for the figure-to-script
+map and the supplementary panels.
+
 ## Documentation
 
 - [docs/carbon-teacher.md](docs/carbon-teacher.md) — the stage-1 teacher fine-tuning path and the
@@ -202,6 +226,9 @@ ruff format . && ruff check .
 - [docs/ntv3-dataset.md](docs/ntv3-dataset.md) — the base-resolution multi-track dataset.
 - [docs/assay-experiment.md](docs/assay-experiment.md) — the per-assay distillation versus
   from-scratch comparison.
+- [docs/ntv3-io-example.md](docs/ntv3-io-example.md) — a worked input/output example for the
+  base-resolution regression pipeline.
+- [paper_figures/README.md](paper_figures/README.md) — which script draws which figure.
 
 ## Branches
 

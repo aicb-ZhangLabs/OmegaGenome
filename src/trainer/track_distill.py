@@ -1,10 +1,15 @@
-"""Per-bp multi-track distillation loss + student/teacher resolution alignment.
+"""Per-bp multi-track distillation loss.
 
-NTv3 (teacher) emits ``bigwig_tracks_logits`` as ``[B, L_teacher, T]`` (positions, then tracks),
-binned by its U-Net (e.g. 1024 bp -> 384 bins). The BPNetRegressor (student) emits
-``[B, T, L_student]`` at input resolution. To compare them we put both in ``[B, T, L_teacher]``
-(adaptive-avg-pool the student's length down to the teacher's, permute the teacher's track axis
-to the middle) and apply a per-position regression loss.
+Everything here is SINGLE-NUCLEOTIDE resolution. Teacher, student and ground truth are all
+``[B, L, T]`` (positions, then tracks) over the central 0.375 crop — e.g. a 32768-bp window ->
+``L = 12288`` per-bp predictions, one per nucleotide. The NTv3 teacher/student take the per-nt last
+hidden state; the BPNet student uses stride-1 'same'-padded dilated convs (length-preserving, no
+binning), so its output is per-bp too. Predictions align 1:1 with the per-bp bigWig targets, so the
+losses are applied element-wise per position.
+
+``track_kd_loss`` accepts a ``[B, T, L]`` student via ``student_layout='BTL'`` (permuted to ``[B, L, T]``)
+and, as a safety net, adaptive-pools the student's position axis to the teacher's if they ever differ
+(a no-op when both are the same per-bp length, which is the normal case).
 """
 
 from dataclasses import dataclass
@@ -13,6 +18,25 @@ import torch
 import torch.nn.functional as F
 
 from src.trainer.track_losses import poisson_multinomial_loss
+
+
+def resolve_kd_track_targets(subset_idx, num_native_tracks: int, teacher_specialist: bool = False):
+    """Resolve the KD teacher's track count + index-select indices so its per-bp output lines up with
+    a (possibly specialist) student's tracks. Pure function — no torch/device, so it is unit-testable.
+
+    - ``subset_idx`` None/empty (full-model student): teacher used whole -> ``(num_native_tracks, None)``.
+    - subset + GENERALIST teacher (default): teacher emits all native tracks, pick the subset out of its
+      output -> ``(num_native_tracks, list(subset_idx))``.
+    - subset + SPECIALIST teacher (``teacher_specialist``): teacher already has a ``len(subset)``-track
+      head (trained on the same subset), use directly, no index-select -> ``(len(subset_idx), None)``.
+
+    Returns ``(teacher_num_tracks, kd_track_idx_or_None)``; the caller wraps the int list in a tensor.
+    """
+    if not subset_idx:
+        return num_native_tracks, None
+    if teacher_specialist:
+        return len(subset_idx), None
+    return num_native_tracks, list(subset_idx)
 
 
 def _teacher_to_btl(teacher: torch.Tensor) -> torch.Tensor:

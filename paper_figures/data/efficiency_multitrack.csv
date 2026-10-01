@@ -1,0 +1,5 @@
+model,params_M,n_tracks,gpu_ms_per_batch_mean,gpu_ms_per_batch_median,gpu_ms_per_batch_p90,gpu_whole_test_s,gpu_peak_mem_mb,gpu_extrapolated,cpu_ms_per_batch_mean,cpu_whole_test_s,cpu_peak_rss_mb,cpu_extrapolated,n_test_windows,n_test_batches,batch_size,seqlen,gpu,amp
+BPNet-0.12M,0.12,34,4.0,3.9,4.2,10.6,89.0,False,417.6,1099.5,5505.0,False,10531,2633,4,32768,NVIDIA GeForce RTX 3090,True
+NTv3-8M,7.702,34,51.7,52.9,55.8,136.0,1210.0,False,2993.4,7881.6,5418.0,False,10531,2633,4,32768,NVIDIA GeForce RTX 3090,True
+NTv3-100M,106.491,34,267.9,266.4,281.5,705.4,3909.0,False,13710.1,36098.8,5505.0,False,10531,2633,4,32768,NVIDIA GeForce RTX 3090,True
+NTv3-650M-teacher,655.326,34,806.0,799.8,836.5,2122.1,9472.0,False,44984.1,118432.0,11239.0,True,10531,2633,4,32768,NVIDIA GeForce RTX 3090,True

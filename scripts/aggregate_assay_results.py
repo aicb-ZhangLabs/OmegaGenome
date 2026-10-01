@@ -70,17 +70,20 @@ def _tex_val(vals):
     return f"{m:.3f}"
 
 
-def emit_tex(root, out_path):
+def emit_tex(root, out_path, seed_subset=None):
     """Write a paper-ready LaTeX table body (\\ogtable style, mean$\\pm$s.d. over seeds).
 
     Reuses the same per-seed pairing as the markdown path. Includes every assay with >=1 complete seed
-    pair; assays with >=2 pairs carry a s.d. Not wired into any docx/paper build — a staged fragment only.
+    pair; assays with >=2 pairs carry a s.d. ``seed_subset`` (e.g. [0]) restricts to specific seeds so
+    every assay uses an IDENTICAL seed setting (a uniform single-seed table while the 3-seed run finishes).
+    Not wired into any docx/paper build — a staged fragment only.
     """
+    seeds = seed_subset if seed_subset is not None else SEEDS
     tea = _teacher_per_assay()
     rows, seen_seed_counts = [], []
     for assay in ASSAYS:
         kd_means, base_means, delta_means = [], [], []
-        for seed in SEEDS:
+        for seed in seeds:
             kd, base = _load(root, assay, "kd", seed), _load(root, assay, "base", seed)
             if kd is None or base is None:
                 continue
@@ -146,11 +149,17 @@ def main():
     ap.add_argument(
         "--emit_tex", default=None, help="also write a paper-ready LaTeX table body to this path"
     )
+    ap.add_argument(
+        "--emit_seeds",
+        default=None,
+        help="comma seeds to include in --emit_tex (e.g. '0' for a uniform single-seed table); default all",
+    )
     args = ap.parse_args()
 
     if args.emit_tex:
-        n, smax = emit_tex(args.root, args.emit_tex)
-        print(f"[emit_tex] wrote {args.emit_tex}: {n} assays, up to {smax} seeds")
+        ss = [int(x) for x in args.emit_seeds.split(",")] if args.emit_seeds else None
+        n, smax = emit_tex(args.root, args.emit_tex, seed_subset=ss)
+        print(f"[emit_tex] wrote {args.emit_tex}: {n} assays, seeds={ss or 'all'}")
 
     summary_rows, per_track_blocks, missing = [], [], []
     for assay in ASSAYS:

@@ -8,9 +8,14 @@ dependencies = [
     "ipython>=9.6.0",
     "nntool==2.1.0",
     "numpy==1.26.4",
+    "pandas>=2.0",
+    "psutil>=5.9",
     "pydantic==2.10.6",
+    "pyyaml>=6.0",
     "scikit-learn>=1.7.2",
+    "tqdm>=4.66",
     "tyro>=0.9.33",
+    "wandb>=0.17",
 ]
 
 [project.optional-dependencies]
@@ -22,6 +27,21 @@ default = [
     "datasets>=4.2.0",
     "einops>=0.8.1",
     "mamba-ssm==2.2.4",
+    "enformer-pytorch>=0.8",
+]
+# Base-resolution multi-track regression (NTv3 teacher + track students).
+ntv3 = [
+    "torch==2.6.0",
+    "transformers==4.57.1",
+    "torchmetrics>=1.4",
+    "pyBigWig>=0.3.22",
+    "pyfaidx>=0.8",
+]
+# Figure and analysis scripts.
+analysis = [
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "scipy>=1.11",
 ]
 aido_dna = [
     "torch==2.6.0",
@@ -37,6 +57,7 @@ conflicts = [
       { extra = "default" },
       { extra = "aido_dna" },
       { extra = "caduceus" },
+      { extra = "ntv3" },
     ],
 ]
 no-build-isolation-package = ['mamba-ssm']

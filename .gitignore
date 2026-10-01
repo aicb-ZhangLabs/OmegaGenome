@@ -20,6 +20,7 @@ data
 !src/data
 output
 output_*
+previews/
 logs/
 !logs/.gitkeep
 slurm-*.out

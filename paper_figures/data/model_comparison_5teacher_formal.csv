@@ -1,0 +1,199 @@
+Task,Model,Score,Model Family,Type,Std
+H2AFZ,Distilled Caduceus,0.4867,Caduceus,Student,0.0124
+H3K27ac,Distilled Caduceus,0.4577,Caduceus,Student,0.0076
+H3K27me3,Distilled Caduceus,0.5596,Caduceus,Student,0.004
+H3K36me3,Distilled Caduceus,0.5799,Caduceus,Student,0.0115
+H3K4me1,Distilled Caduceus,0.4711,Caduceus,Student,0.0037
+H3K4me2,Distilled Caduceus,0.5463,Caduceus,Student,0.0079
+H3K4me3,Distilled Caduceus,0.6115,Caduceus,Student,0.0079
+H3K9ac,Distilled Caduceus,0.5035,Caduceus,Student,0.0146
+H3K9me3,Distilled Caduceus,0.422,Caduceus,Student,0.0166
+H4K20me1,Distilled Caduceus,0.607,Caduceus,Student,0.0102
+enhancers,Distilled Caduceus,0.5028,Caduceus,Student,0.0059
+enhancers_types,Distilled Caduceus,0.4771,Caduceus,Student,0.008
+promoter_all,Distilled Caduceus,0.7211,Caduceus,Student,0.0041
+promoter_no_tata,Distilled Caduceus,0.7373,Caduceus,Student,0.006
+promoter_tata,Distilled Caduceus,0.7996,Caduceus,Student,0.0347
+splice_sites_acceptors,Distilled Caduceus,0.8122,Caduceus,Student,0.0076
+splice_sites_all,Distilled Caduceus,0.8394,Caduceus,Student,0.0075
+splice_sites_donors,Distilled Caduceus,0.8168,Caduceus,Student,0.0336
+H2AFZ,Distilled Carbon-3B,0.493,Carbon-3B,Student,0.0079
+H3K27ac,Distilled Carbon-3B,0.4669,Carbon-3B,Student,0.0052
+H3K27me3,Distilled Carbon-3B,0.5752,Carbon-3B,Student,0.0039
+H3K36me3,Distilled Carbon-3B,0.5677,Carbon-3B,Student,0.0052
+H3K4me1,Distilled Carbon-3B,0.4741,Carbon-3B,Student,0.0068
+H3K4me2,Distilled Carbon-3B,0.5457,Carbon-3B,Student,0.0043
+H3K4me3,Distilled Carbon-3B,0.602,Carbon-3B,Student,0.0132
+H3K9ac,Distilled Carbon-3B,0.5154,Carbon-3B,Student,0.0087
+H3K9me3,Distilled Carbon-3B,0.4082,Carbon-3B,Student,0.0084
+H4K20me1,Distilled Carbon-3B,0.6191,Carbon-3B,Student,0.0046
+enhancers,Distilled Carbon-3B,0.5016,Carbon-3B,Student,0.0052
+enhancers_types,Distilled Carbon-3B,0.4594,Carbon-3B,Student,0.004
+promoter_all,Distilled Carbon-3B,0.7287,Carbon-3B,Student,0.0078
+promoter_no_tata,Distilled Carbon-3B,0.7294,Carbon-3B,Student,0.0062
+promoter_tata,Distilled Carbon-3B,0.8157,Carbon-3B,Student,0.0085
+splice_sites_acceptors,Distilled Carbon-3B,0.8643,Carbon-3B,Student,0.0113
+splice_sites_all,Distilled Carbon-3B,0.8974,Carbon-3B,Student,0.0274
+splice_sites_donors,Distilled Carbon-3B,0.8901,Carbon-3B,Student,0.015
+H2AFZ,Distilled DNABERT-2,0.4812,DNABERT-2,Student,0.0057
+H3K27ac,Distilled DNABERT-2,0.4494,DNABERT-2,Student,0.0155
+H3K27me3,Distilled DNABERT-2,0.5493,DNABERT-2,Student,0.0042
+H3K36me3,Distilled DNABERT-2,0.5617,DNABERT-2,Student,0.0052
+H3K4me1,Distilled DNABERT-2,0.4611,DNABERT-2,Student,0.0036
+H3K4me2,Distilled DNABERT-2,0.5411,DNABERT-2,Student,0.0063
+H3K4me3,Distilled DNABERT-2,0.6119,DNABERT-2,Student,0.0128
+H3K9ac,Distilled DNABERT-2,0.5026,DNABERT-2,Student,0.0112
+H3K9me3,Distilled DNABERT-2,0.3905,DNABERT-2,Student,0.0173
+H4K20me1,Distilled DNABERT-2,0.6053,DNABERT-2,Student,0.008
+enhancers,Distilled DNABERT-2,0.4971,DNABERT-2,Student,0.001
+enhancers_types,Distilled DNABERT-2,0.459,DNABERT-2,Student,0.0099
+promoter_all,Distilled DNABERT-2,0.7233,DNABERT-2,Student,0.0044
+promoter_no_tata,Distilled DNABERT-2,0.7161,DNABERT-2,Student,0.0083
+promoter_tata,Distilled DNABERT-2,0.834,DNABERT-2,Student,0.0494
+splice_sites_acceptors,Distilled DNABERT-2,0.8457,DNABERT-2,Student,0.0074
+splice_sites_all,Distilled DNABERT-2,0.8301,DNABERT-2,Student,0.0107
+splice_sites_donors,Distilled DNABERT-2,0.8607,DNABERT-2,Student,0.0243
+H2AFZ,Distilled Enformer,0.5047,Enformer,Student,0.0061
+H3K27ac,Distilled Enformer,0.4614,Enformer,Student,0.0066
+H3K27me3,Distilled Enformer,0.5882,Enformer,Student,0.007
+H3K36me3,Distilled Enformer,0.5929,Enformer,Student,0.0012
+H3K4me1,Distilled Enformer,0.4749,Enformer,Student,0.0016
+H3K4me2,Distilled Enformer,0.5427,Enformer,Student,0.0132
+H3K4me3,Distilled Enformer,0.6272,Enformer,Student,0.0071
+H3K9ac,Distilled Enformer,0.5137,Enformer,Student,0.0046
+H3K9me3,Distilled Enformer,0.4294,Enformer,Student,0.008
+H4K20me1,Distilled Enformer,0.6177,Enformer,Student,0.0052
+enhancers,Distilled Enformer,0.5061,Enformer,Student,0.0058
+enhancers_types,Distilled Enformer,0.4696,Enformer,Student,0.0045
+promoter_all,Distilled Enformer,0.7281,Enformer,Student,0.0048
+promoter_no_tata,Distilled Enformer,0.7402,Enformer,Student,0.0045
+promoter_tata,Distilled Enformer,0.7969,Enformer,Student,0.0194
+splice_sites_acceptors,Distilled Enformer,0.8525,Enformer,Student,0.0128
+splice_sites_all,Distilled Enformer,0.8277,Enformer,Student,0.0116
+splice_sites_donors,Distilled Enformer,0.8903,Enformer,Student,0.0125
+H2AFZ,Distilled Nucleotide Transformer,0.4905,Nucleotide Transformer,Student,0.0029
+H3K27ac,Distilled Nucleotide Transformer,0.4831,Nucleotide Transformer,Student,0.0058
+H3K27me3,Distilled Nucleotide Transformer,0.5794,Nucleotide Transformer,Student,0.0058
+H3K36me3,Distilled Nucleotide Transformer,0.5867,Nucleotide Transformer,Student,0.0012
+H3K4me1,Distilled Nucleotide Transformer,0.4751,Nucleotide Transformer,Student,0.0079
+H3K4me2,Distilled Nucleotide Transformer,0.5469,Nucleotide Transformer,Student,0.0057
+H3K4me3,Distilled Nucleotide Transformer,0.6269,Nucleotide Transformer,Student,0.0103
+H3K9ac,Distilled Nucleotide Transformer,0.5243,Nucleotide Transformer,Student,0.0086
+H3K9me3,Distilled Nucleotide Transformer,0.4454,Nucleotide Transformer,Student,0.0109
+H4K20me1,Distilled Nucleotide Transformer,0.6309,Nucleotide Transformer,Student,0.011
+enhancers,Distilled Nucleotide Transformer,0.5026,Nucleotide Transformer,Student,0.0084
+enhancers_types,Distilled Nucleotide Transformer,0.4727,Nucleotide Transformer,Student,0.0099
+promoter_all,Distilled Nucleotide Transformer,0.7343,Nucleotide Transformer,Student,0.0107
+promoter_no_tata,Distilled Nucleotide Transformer,0.7474,Nucleotide Transformer,Student,0.0042
+promoter_tata,Distilled Nucleotide Transformer,0.8002,Nucleotide Transformer,Student,0.0061
+splice_sites_acceptors,Distilled Nucleotide Transformer,0.8599,Nucleotide Transformer,Student,0.009
+splice_sites_all,Distilled Nucleotide Transformer,0.8495,Nucleotide Transformer,Student,0.0133
+splice_sites_donors,Distilled Nucleotide Transformer,0.9313,Nucleotide Transformer,Student,0.0084
+H3K9ac,BPNet,0.52134,BPNet,Baseline,0.0
+H3K9ac,DNABERT-2,0.53237,DNABERT-2,Teacher,0.0
+H3K9ac,Enformer,0.63638,Enformer,Teacher,0.0
+H3K9ac,Nucleotide Transformer,0.53832327,Nucleotide Transformer,Teacher,0.0
+H3K9ac,Caduceus,0.53722,Caduceus,Teacher,0.0
+H3K27ac,BPNet,0.42754,BPNet,Baseline,0.0
+H3K27ac,DNABERT-2,0.51289,DNABERT-2,Teacher,0.0
+H3K27ac,Enformer,0.5451,Enformer,Teacher,0.0
+H3K27ac,Nucleotide Transformer,0.522573268,Nucleotide Transformer,Teacher,0.0
+H3K27ac,Caduceus,0.47796,Caduceus,Teacher,0.0
+enhancers,BPNet,0.47267,BPNet,Baseline,0.0
+enhancers,DNABERT-2,0.54418,DNABERT-2,Teacher,0.0
+enhancers,Enformer,0.65099,Enformer,Teacher,0.0
+enhancers,Nucleotide Transformer,0.507693649,Nucleotide Transformer,Teacher,0.0
+enhancers,Caduceus,0.51375,Caduceus,Teacher,0.0
+enhancers_types,BPNet,0.453,BPNet,Baseline,0.0
+enhancers_types,DNABERT-2,0.51178,DNABERT-2,Teacher,0.0
+enhancers_types,Enformer,0.59294,Enformer,Teacher,0.0
+enhancers_types,Nucleotide Transformer,0.473265852,Nucleotide Transformer,Teacher,0.0
+enhancers_types,Caduceus,0.49228,Caduceus,Teacher,0.0
+promoter_all,BPNet,0.67679,BPNet,Baseline,0.0
+promoter_all,DNABERT-2,0.76396,DNABERT-2,Teacher,0.0
+promoter_all,Enformer,0.74647,Enformer,Teacher,0.0
+promoter_all,Nucleotide Transformer,0.73374,Nucleotide Transformer,Teacher,0.0
+promoter_all,Caduceus,0.76154,Caduceus,Teacher,0.0
+promoter_tata,BPNet,0.78333,BPNet,Baseline,0.0
+promoter_tata,DNABERT-2,0.90582,DNABERT-2,Teacher,0.0
+promoter_tata,Enformer,0.76584,Enformer,Teacher,0.0
+promoter_tata,Nucleotide Transformer,0.9476,Nucleotide Transformer,Teacher,0.0
+promoter_tata,Caduceus,0.81496,Caduceus,Teacher,0.0
+promoter_no_tata,BPNet,0.69826,BPNet,Baseline,0.0
+promoter_no_tata,DNABERT-2,0.77019,DNABERT-2,Teacher,0.0
+promoter_no_tata,Enformer,0.7659,Enformer,Teacher,0.0
+promoter_no_tata,Nucleotide Transformer,0.7531,Nucleotide Transformer,Teacher,0.0
+promoter_no_tata,Caduceus,0.7675,Caduceus,Teacher,0.0
+H3K4me1,BPNet,0.46064,BPNet,Baseline,0.0
+H3K4me1,DNABERT-2,0.51208,DNABERT-2,Teacher,0.0
+H3K4me1,Enformer,0.56812,Enformer,Teacher,0.0
+H3K4me1,Nucleotide Transformer,0.479414067,Nucleotide Transformer,Teacher,0.0
+H3K4me1,Caduceus,0.4902,Caduceus,Teacher,0.0
+H3K4me2,BPNet,0.53658,BPNet,Baseline,0.0
+H3K4me2,DNABERT-2,0.56252,DNABERT-2,Teacher,0.0
+H3K4me2,Enformer,0.63124,Enformer,Teacher,0.0
+H3K4me2,Nucleotide Transformer,0.556654317,Nucleotide Transformer,Teacher,0.0
+H3K4me2,Caduceus,0.55484,Caduceus,Teacher,0.0
+H3K4me3,BPNet,0.62384,BPNet,Baseline,0.0
+H3K4me3,DNABERT-2,0.63931,DNABERT-2,Teacher,0.0
+H3K4me3,Enformer,0.64848,Enformer,Teacher,0.0
+H3K4me3,Nucleotide Transformer,0.632808114,Nucleotide Transformer,Teacher,0.0
+H3K4me3,Caduceus,0.63665,Caduceus,Teacher,0.0
+H2AFZ,BPNet,0.4568,BPNet,Baseline,0.0
+H2AFZ,DNABERT-2,0.48564,DNABERT-2,Teacher,0.0
+H2AFZ,Enformer,0.56217,Enformer,Teacher,0.0
+H2AFZ,Nucleotide Transformer,0.510011906,Nucleotide Transformer,Teacher,0.0
+H2AFZ,Caduceus,0.50129,Caduceus,Teacher,0.0
+H3K27me3,BPNet,0.54969,BPNet,Baseline,0.0
+H3K27me3,DNABERT-2,0.60376,DNABERT-2,Teacher,0.0
+H3K27me3,Enformer,0.57781,Enformer,Teacher,0.0
+H3K27me3,Nucleotide Transformer,0.611405927,Nucleotide Transformer,Teacher,0.0
+H3K27me3,Caduceus,0.58968,Caduceus,Teacher,0.0
+H3K36me3,BPNet,0.55461,BPNet,Baseline,0.0
+H3K36me3,DNABERT-2,0.64535,DNABERT-2,Teacher,0.0
+H3K36me3,Enformer,0.58053,Enformer,Teacher,0.0
+H3K36me3,Nucleotide Transformer,0.653046675,Nucleotide Transformer,Teacher,0.0
+H3K36me3,Caduceus,0.60672,Caduceus,Teacher,0.0
+H3K9me3,BPNet,0.32946,BPNet,Baseline,0.0
+H3K9me3,DNABERT-2,0.50377,DNABERT-2,Teacher,0.0
+H3K9me3,Enformer,0.49418,Enformer,Teacher,0.0
+H3K9me3,Nucleotide Transformer,0.463561624,Nucleotide Transformer,Teacher,0.0
+H3K9me3,Caduceus,0.45532,Caduceus,Teacher,0.0
+H4K20me1,BPNet,0.60608,BPNet,Baseline,0.0
+H4K20me1,DNABERT-2,0.6424,DNABERT-2,Teacher,0.0
+H4K20me1,Enformer,0.63323,Enformer,Teacher,0.0
+H4K20me1,Nucleotide Transformer,0.655704093,Nucleotide Transformer,Teacher,0.0
+H4K20me1,Caduceus,0.6275,Caduceus,Teacher,0.0
+splice_sites_donors,BPNet,0.85273,BPNet,Baseline,0.0
+splice_sites_donors,DNABERT-2,0.84534,DNABERT-2,Teacher,0.0
+splice_sites_donors,Enformer,0.85665,Enformer,Teacher,0.0
+splice_sites_donors,Nucleotide Transformer,0.970110204,Nucleotide Transformer,Teacher,0.0
+splice_sites_donors,Caduceus,0.7307,Caduceus,Teacher,0.0
+splice_sites_all,BPNet,0.7571,BPNet,Baseline,0.0
+splice_sites_all,DNABERT-2,0.86448,DNABERT-2,Teacher,0.0
+splice_sites_all,Enformer,0.83829,Enformer,Teacher,0.0
+splice_sites_all,Nucleotide Transformer,0.954118811,Nucleotide Transformer,Teacher,0.0
+splice_sites_all,Caduceus,0.72975,Caduceus,Teacher,0.0
+splice_sites_acceptors,BPNet,0.82799,BPNet,Baseline,0.0
+splice_sites_acceptors,DNABERT-2,0.834,DNABERT-2,Teacher,0.0
+splice_sites_acceptors,Enformer,0.84664,Enformer,Teacher,0.0
+splice_sites_acceptors,Nucleotide Transformer,0.955175662,Nucleotide Transformer,Teacher,0.0
+splice_sites_acceptors,Caduceus,0.7256,Caduceus,Teacher,0.0
+H2AFZ,Carbon-3B,0.5138934004275322,Carbon-3B,Teacher,0.0
+H3K27ac,Carbon-3B,0.4086581555471983,Carbon-3B,Teacher,0.0
+H3K27me3,Carbon-3B,0.6026541511968219,Carbon-3B,Teacher,0.0
+H3K36me3,Carbon-3B,0.608295752304769,Carbon-3B,Teacher,0.0
+H3K4me1,Carbon-3B,0.4757799948802187,Carbon-3B,Teacher,0.0
+H3K4me2,Carbon-3B,0.5856004186748309,Carbon-3B,Teacher,0.0
+H3K4me3,Carbon-3B,0.6532783808219426,Carbon-3B,Teacher,0.0
+H3K9ac,Carbon-3B,0.5358576368989549,Carbon-3B,Teacher,0.0
+H3K9me3,Carbon-3B,0.3502282641336323,Carbon-3B,Teacher,0.0
+H4K20me1,Carbon-3B,0.6711769444959546,Carbon-3B,Teacher,0.0
+enhancers,Carbon-3B,0.5369466495428454,Carbon-3B,Teacher,0.0
+enhancers_types,Carbon-3B,0.5492346819627704,Carbon-3B,Teacher,0.0
+promoter_all,Carbon-3B,0.7745296713025749,Carbon-3B,Teacher,0.0
+promoter_no_tata,Carbon-3B,0.7818805257369318,Carbon-3B,Teacher,0.0
+promoter_tata,Carbon-3B,0.971741356487122,Carbon-3B,Teacher,0.0
+splice_sites_acceptors,Carbon-3B,0.9733446058823734,Carbon-3B,Teacher,0.0
+splice_sites_all,Carbon-3B,0.9720178517017776,Carbon-3B,Teacher,0.0
+splice_sites_donors,Carbon-3B,0.9780025010870148,Carbon-3B,Teacher,0.0
