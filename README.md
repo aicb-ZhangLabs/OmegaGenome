@@ -7,8 +7,9 @@ task-specific knowledge into a compact student that keeps most of the teacher's 
 fraction of the inference cost. This repository holds the training, evaluation and analysis code for
 the accompanying paper.
 
-An archived snapshot of this code is deposited at Zenodo:
-**[10.5281/zenodo.22805336](https://doi.org/10.5281/zenodo.22805336)**.
+This code is archived at Zenodo under
+**[10.5281/zenodo.22805335](https://doi.org/10.5281/zenodo.22805335)**, a DOI that always resolves to
+the latest archived version.
 
 ## Method
 
@@ -248,8 +249,8 @@ Please cite the paper and, if you use this code directly, the archived snapshot:
   author = {Xu, Pengcheng and Liu, Junhao and Dai, Yi and Nishida, Kainoa Andrew and
             Sun, Dongbo and Lei, Yutong and Hu, Yaqi and Wang, Chaoyang and Zhang, Jing},
   year   = {2026},
-  doi    = {10.5281/zenodo.22805336},
-  url    = {https://doi.org/10.5281/zenodo.22805336}
+  doi    = {10.5281/zenodo.22805335},
+  url    = {https://doi.org/10.5281/zenodo.22805335}
 }
 ```
 

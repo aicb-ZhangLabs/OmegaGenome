@@ -6,8 +6,8 @@ license: MIT
 repository-code: "https://github.com/aicb-ZhangLabs/OmegaGenome"
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.22805336
-    description: Archived snapshot of the source code
+    value: 10.5281/zenodo.22805335
+    description: Archived source code, all versions (resolves to the latest)
 authors:
   - family-names: Xu
     given-names: Pengcheng
