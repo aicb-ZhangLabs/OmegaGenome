@@ -1,15 +1,92 @@
-# OmegaGenome
+<h1 align="center">OmegaGenome</h1>
 
-Distilling large genomic language models (gLMs) into sub-million-parameter task experts.
+<p align="center">
+  <b>Toward better sub-million-scale expert models from large genomic language models<br>via knowledge distillation</b>
+</p>
 
-OmegaGenome fine-tunes a large gLM on a downstream genomic task and then compresses that
-task-specific knowledge into a compact student that keeps most of the teacher's accuracy at a
-fraction of the inference cost. This repository holds the training, evaluation and analysis code for
-the accompanying paper.
+<p align="center">
+  Pengcheng Xu · Junhao Liu · Yi Dai · Kainoa Andrew Nishida · Dongbo Sun ·<br>
+  Yutong Lei · Yaqi Hu · Chaoyang Wang · Jing Zhang
+  <br><i>University of California, Irvine</i>
+</p>
 
-This code is archived at Zenodo under
+<p align="center">
+  <a href="https://github.com/aicb-ZhangLabs/OmegaGenome/actions/workflows/main.yaml"><img alt="lint" src="https://github.com/aicb-ZhangLabs/OmegaGenome/actions/workflows/main.yaml/badge.svg"></a>
+  <a href="https://doi.org/10.5281/zenodo.22805335"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.5281/zenodo.22805335.svg"></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/code%20license-MIT-blue.svg"></a>
+  <img alt="python" src="https://img.shields.io/badge/python-3.11-blue.svg">
+  <br>
+  <a href="https://huggingface.co/datasets/InstaDeepAI/nucleotide_transformer_downstream_tasks_revised"><img alt="dataset" src="https://img.shields.io/badge/%F0%9F%A4%97%20dataset-NT%20benchmark%20(18%20tasks)-ffce1c.svg"></a>
+  <a href="https://huggingface.co/explcre/omegagenome-distilled-students"><img alt="students" src="https://img.shields.io/badge/%F0%9F%A4%97%20checkpoints-distilled%20students-ffce1c.svg"></a>
+  <a href="https://huggingface.co/ryan-superman/nt-2.5b-lora-teachers-r48"><img alt="teachers" src="https://img.shields.io/badge/%F0%9F%A4%97%20checkpoints-teacher%20adapters-ffce1c.svg"></a>
+</p>
+
+<p align="center">
+  <a href="https://explcre.github.io/OmegaGenome-Project/"><b>Project page</b></a> ·
+  <a href="https://doi.org/10.5281/zenodo.22805335"><b>Archive &amp; DOI</b></a> ·
+  <a href="https://huggingface.co/explcre/omegagenome-distilled-students"><b>Checkpoints</b></a> ·
+  <a href="https://huggingface.co/datasets/InstaDeepAI/nucleotide_transformer_downstream_tasks_revised"><b>Dataset</b></a>
+</p>
+
+<p align="center">
+  <img src="paper_figures/figures/png/Figure1.png" alt="OmegaGenome overview" width="100%">
+</p>
+
+A large genomic language model (gLM) is fine-tuned on one downstream task and then compressed into a
+compact student that keeps most of the teacher's accuracy at a fraction of the inference cost. The
+deployable student has **~0.12 M parameters** — roughly 1/20,000 of a 2.5-billion-parameter teacher —
+and still beats a same-architecture model trained from scratch on all 18 benchmark tasks.
+
+This repository holds the training, evaluation and analysis code, the figure code, and the
+main-text figures. It is archived at Zenodo under
 **[10.5281/zenodo.22805335](https://doi.org/10.5281/zenodo.22805335)**, a DOI that always resolves to
 the latest archived version.
+
+## Highlights
+
+- **Five teachers, one recipe.** NT-2.5B, DNABERT-2, Enformer, Caduceus and Carbon-3B are distilled
+  with the same two-stage objective; adding a teacher is one config entry.
+- **A 0.12 M student recovers most of the teacher.** 18-task mean MCC 0.627 for the
+  NT-distilled student against 0.662 for its 2.5-billion-parameter teacher and 0.588 for the
+  from-scratch baseline.
+- **Up to 658× faster and 680× lighter.** Whole-benchmark GPU inference drops from 7,304 s (NT-2.5B)
+  to 11.1 s, and peak GPU memory from 11.3 GB to 17 MB, on the same RTX 3090.
+- **Not only classification.** On a base-resolution 34-track regression benchmark the distilled
+  student is ~200× faster and ~106× lighter than the NTv3-650M teacher, and beats a size-matched
+  from-scratch baseline at every size and in every assay family.
+- **Reproducible figures.** 22 of the 23 figure scripts redraw the paper's panels from the bundled
+  result tables on a laptop — no GPU, no downloads.
+
+## Results
+
+18-task mean test MCC on the revised Nucleotide Transformer benchmark (three seeds; the full
+per-task tables are in [`paper_figures/data/`](paper_figures/data)):
+
+| Teacher | Teacher MCC | Distilled student (0.12 M) MCC | From-scratch baseline |
+|---|---|---|---|
+| Carbon-3B | 0.664 | **0.620** | 0.588 |
+| Enformer | 0.663 | **0.620** | 0.588 |
+| NT-2.5B | 0.662 | **0.627** | 0.588 |
+| DNABERT-2 | 0.649 | **0.607** | 0.588 |
+| Caduceus | 0.612 | **0.608** | 0.588 |
+
+Measured inference cost over the whole benchmark, single RTX 3090, and a full 3,000-example task on
+16 CPU threads ([`paper_figures/data/efficiency_18task_authoritative.csv`](paper_figures/data/efficiency_18task_authoritative.csv)):
+
+| Model | Params | All-18 GPU time | Peak GPU memory | One task on CPU |
+|---|---|---|---|---|
+| NT-2.5B | 2.54 B | 7,304 s | 11,553 MB | 8.3 h |
+| Carbon-3B | 3.45 B | 1,073 s | 8,004 MB | 6.6 h |
+| DNABERT-2 | 117 M | 531 s | 3,074 MB | 23.6 min |
+| Caduceus | 7.7 M | 342 s | 489 MB | 4.2 h |
+| Enformer | 251 M | 102 s | 1,184 MB | 1.9 min |
+| **OmegaGenome student** | **0.12 M** | **11.1 s** | **17 MB** | **2.65 s** |
+
+<p align="center">
+  <img src="paper_figures/figures/png/Figure3.png" alt="Accuracy versus inference cost" width="92%">
+  <br><sub>Distilled students match teacher accuracy at a fraction of the compute, for both the
+  classification benchmark (top) and the base-resolution regression benchmark (bottom).</sub>
+</p>
 
 ## Method
 
@@ -89,6 +166,26 @@ Keep large files outside the repository and link them in:
 ```bash
 ln -s /path/to/storage/OmegaGenome/data   data
 ln -s /path/to/storage/OmegaGenome/output output
+```
+
+## Model checkpoints
+
+Released on the Hugging Face Hub. Every student can also be regenerated from the public datasets
+with the code here.
+
+| Repository | Contents | Licence |
+|---|---|---|
+| [`explcre/omegagenome-distilled-students`](https://huggingface.co/explcre/omegagenome-distilled-students) | the distilled ~0.12 M students, 5 teachers × 18 tasks × 3 seeds | mixed, per teacher — see the model card |
+| [`ryan-superman/nt-2.5b-lora-teachers-r48`](https://huggingface.co/ryan-superman/nt-2.5b-lora-teachers-r48) | the 18 NT-2.5B LoRA teacher adapters used in the paper (r=48, α=64) | CC BY-NC-SA 4.0, inherited from NT-2.5B |
+| [`explcre/carbon-3b-lora-teachers-nt18`](https://huggingface.co/explcre/carbon-3b-lora-teachers-nt18) | the 18 Carbon-3B LoRA teacher adapters (r=16, α=32) | Apache-2.0, inherited from Carbon-3B |
+| [`explcre/nt-2.5b-lora-teachers-r32`](https://huggingface.co/explcre/nt-2.5b-lora-teachers-r32) | an earlier NT-2.5B adapter set (r=32) | CC BY-NC-SA 4.0, inherited from NT-2.5B |
+
+A student distilled from a non-commercially licensed teacher inherits that restriction; the code in
+this repository is MIT regardless.
+
+```python
+from huggingface_hub import snapshot_download
+snapshot_download("explcre/omegagenome-distilled-students", allow_patterns="nt/H3K4me3/*")
 ```
 
 ## Configuration
@@ -203,8 +300,9 @@ ruff format . && ruff check .
 ## Figures
 
 The six main-text figures ship as submitted in
-[`paper_figures/figures/`](paper_figures/figures), next to the code that draws them and the result
-tables that code reads. Figures 2, 3 and 5 regenerate from the bundled tables on a laptop in
+[`paper_figures/figures/`](paper_figures/figures) (vector PDF, plus web-resolution PNG renders under
+[`paper_figures/figures/png/`](paper_figures/figures/png)), next to the code that draws them and the
+result tables that code reads. Figures 2, 3 and 5 regenerate from the bundled tables on a laptop in
 seconds:
 
 ```bash
@@ -256,6 +354,11 @@ Please cite the paper and, if you use this code directly, the archived snapshot:
 
 ## License
 
-MIT — see [LICENSE](LICENSE). The teacher models and datasets are distributed by their original
-providers under their own licences; the Nucleotide Transformer weights, for example, are
-CC BY-NC-SA 4.0.
+| What | Licence |
+|---|---|
+| the code in this repository | [MIT](LICENSE) |
+| the figures in `paper_figures/figures/` | © the authors, reproduced from the manuscript |
+| teacher weights, and students distilled from them | the upstream licence — CC BY-NC-SA 4.0 for NT-2.5B and NTv3-derived models, Apache-2.0 for Carbon-3B and Caduceus, CC BY 4.0 for Enformer |
+| the benchmark datasets | the terms of their original providers (InstaDeep, ENCODE, GENCODE) |
+
+A model distilled from a non-commercially licensed teacher inherits that restriction.
